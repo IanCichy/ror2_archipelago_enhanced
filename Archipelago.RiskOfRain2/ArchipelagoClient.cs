@@ -259,27 +259,25 @@ namespace Archipelago.RiskOfRain2
 
         private bool IsEndingAcceptable(GameEndingDef gameEndingDef)
         {
-            // Acceptable ending types
-            var acceptableEndings = new[] { 
-                RoR2Content.GameEndings.MainEnding, 
-                RoR2Content.GameEndings.ObliterationEnding, 
-                RoR2Content.GameEndings.LimboEnding, 
-                DLC1Content.GameEndings.VoidEnding 
-            };
+            // Any ending flagged as a win is acceptable (covers vanilla + all DLC endings)
+            if (gameEndingDef.isWin)
+            {
+                return true;
+            }
 
-            // Acceptable stages to die on
+            // Acceptable stages to die on (for final_stage_death option)
             var acceptableLosses = new[]
             {
                 "moon",
                 "moon2",
-                "voidraid"
+                "voidraid",
+                "meridian",       // SOTS - Prime Meridian (False Son)
+                "solusweb"        // AC - Neural Sanctum (Solus Wing)
             };
 
-            return acceptableEndings.Contains(gameEndingDef) 
-                  ||(finalStageDeath 
-                     && gameEndingDef == RoR2Content.GameEndings.StandardLoss 
-                     && acceptableLosses.Contains(Stage.instance.sceneDef.baseSceneName)
-                    );
+            return finalStageDeath
+                   && gameEndingDef == RoR2Content.GameEndings.StandardLoss
+                   && acceptableLosses.Contains(Stage.instance.sceneDef.baseSceneName);
         }
 
         private void Run_onRunDestroyGlobal(Run obj)
