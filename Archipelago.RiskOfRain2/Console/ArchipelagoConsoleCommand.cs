@@ -73,9 +73,9 @@ namespace Archipelago.RiskOfRain2.Console
 
         private static void ArchipelagoDeathlink(ConCommandArgs args)
         {
-            if (args.Count > 1)
+            if (args.Count != 1)
             {
-                ChatMessage.Send("Only accepts one arguement!");
+                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_deathlink true/false");
             }
             else if(args.GetArgString(0) == "true" || args.GetArgString(0) == "false")
             {
@@ -93,29 +93,28 @@ namespace Archipelago.RiskOfRain2.Console
 
         private static void ArchipelagoFinalStageDeath(ConCommandArgs args)
         {
-            if (args.Count > 1)
+            if (args.Count != 1)
             {
-                ChatMessage.Send("Only accepts one arguement!");
+                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_final_stage_death true/false");
             }
             else if (args.GetArgString(0) == "true" || args.GetArgString(0) == "false")
             {
                 bool finalstage = Convert.ToBoolean(args.GetArgString(0));
                 OnArchipelagoFinalStageDeathCommandCalled(finalstage);
                 ChatMessage.Send($"FinalStageDeath is now set to {finalstage}");
-
             }
             else
             {
-                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_final_stage_deat true/false");
+                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_final_stage_death true/false");
             }
         }
 
         [ConCommand(commandName = "archipelago_highlight_satellite", flags =ConVarFlags.SenderMustBeServer, helpText = "Change to highlight the radar satellite <true/false>.")]
         private static void ArchipelagoHighlightSatellite(ConCommandArgs args)
         {
-            if (args.Count > 1)
+            if (args.Count != 1)
             {
-                ChatMessage.Send("Only accepts one arguement!");
+                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_highlight_satellite true/false");
             }
             else if (args.GetArgString(0) == "true" || args.GetArgString(0) == "false")
             {
@@ -124,13 +123,13 @@ namespace Archipelago.RiskOfRain2.Console
                 var radar = UnityEngine.GameObject.Find("RadarTower(Clone)");
                 if (radar != null)
                 {
-                    radar.GetComponent<Highlight>().isOn = Convert.ToBoolean(args.GetArgString(0));
+                    radar.GetComponent<Highlight>().isOn = highlight;
                 }
-                ChatMessage.Send($"Satellite Highlight is now set to {Convert.ToBoolean(args.GetArgString(0))}");
+                ChatMessage.Send($"Satellite Highlight is now set to {highlight}");
             }
             else
             {
-                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_highlight_satellitek true/false");
+                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_highlight_satellite true/false");
             }
         }
     }

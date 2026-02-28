@@ -385,7 +385,6 @@ namespace Archipelago.RiskOfRain2.Handlers
         private bool scavbackpackWasLocation = false; // used to track if the scavenger backpack that was opened was used as a location
         private bool scavbackpackblockitem = false; // used to keep track of when the scavenger backpack's items are blocked from a location check
         // private bool blockVoidTriple = false;
-        public const int testing = 3;
         private bool highlightOn = false;
         public static SceneDef sceneDef { get; private set; } //used for the currect scene loaded
 
@@ -521,7 +520,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
             // update UI to the results of sending the location
             ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
-            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
+            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
             int TotalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
             new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
             if (0 == ArchipelagoLocationsInEnvironmentController.count.total())
@@ -900,7 +899,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             if (currentlocations.TryGetValue(sceneIndex, out var locationsinenvironment))
             {
                 Log.LogDebug($"amount of shrine locations left {locationsinenvironment[LocationTypes.shrine]}");
-                if (locationsinenvironment[1] == 0) return;
+                if (locationsinenvironment[LocationTypes.shrine] == 0) return;
             }
             if (self.purchaseCount == 1) ChatMessage.Send("Hmm thats weird, maybe try again");
         }
@@ -990,7 +989,10 @@ namespace Archipelago.RiskOfRain2.Handlers
                 if (highlightOn)
                 {
                     var radar = UnityEngine.GameObject.Find("RadarTower(Clone)");
-                    radar.GetComponent<Highlight>().isOn = true;
+                    if (radar != null)
+                    {
+                        radar.GetComponent<Highlight>().isOn = true;
+                    }
                 }
 
             }
@@ -998,7 +1000,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         private void RadiotowerTerminal_GrantUnlock(On.RoR2.RadiotowerTerminal.orig_GrantUnlock orig, RadiotowerTerminal self, Interactor interactor)
         {
-            Log.LogDebug("RadiotowerTerminal_GrantUnlock"); // XXX
+            Log.LogDebug("RadiotowerTerminal_GrantUnlock");
 
             if (0 == checkAvailable(LocationTypes.radio_scanner))
             {
@@ -1007,7 +1009,10 @@ namespace Archipelago.RiskOfRain2.Handlers
                 return;
             }
             var radar = UnityEngine.GameObject.Find("RadarTower(Clone)");
-            radar.GetComponent<Highlight>().isOn = false;
+            if (radar != null)
+            {
+                radar.GetComponent<Highlight>().isOn = false;
+            }
             sendNextAvailable(LocationTypes.radio_scanner);
 
             // still play the effect for the scanner and lock it from being used again

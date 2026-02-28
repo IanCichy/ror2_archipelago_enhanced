@@ -29,7 +29,12 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         public void UnHook()
         {
+            SyncLocationCheckProgress.OnLocationSynced -= itemCheckBar.UpdateCheckProgress;
+            SyncShrineCheckProgress.OnShrineSynced -= shrineCheckBar.UpdateCheckProgress;
+            ArchipelagoStartClassic.OnArchipelagoStartClassic -= ArchipelagoStartClassic_OnArchipelagoStartClassic;
+            ArchipelagoStartExplore.OnArchipelagoStartExplore -= ArchipelagoStartExplore_OnArchipelagoStartExplore;
             ArchipelagoTeleportClient.OnArchipelagoTeleportClient -= ArchipelagoTeleportClient_OnArchipelagoTeleportClient;
+            Run.onRunDestroyGlobal -= Run_onRunDestroyGlobal;
             if (itemCheckBar != null)
             {
                 itemCheckBar.Dispose();
@@ -38,10 +43,6 @@ namespace Archipelago.RiskOfRain2.Handlers
             {
                 shrineCheckBar.Dispose();
             }
-            ArchipelagoStartExplore.OnArchipelagoStartExplore -= ArchipelagoStartExplore_OnArchipelagoStartExplore;
-            Run.onRunDestroyGlobal -= Run_onRunDestroyGlobal;
-
-
         }
 
         private void ArchipelagoStartClassic_OnArchipelagoStartClassic()

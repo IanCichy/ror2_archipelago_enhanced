@@ -245,7 +245,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 if (scenedef.sceneType == SceneType.Stage || scenedef.sceneType == SceneType.Intermission)
                 {
                     SceneIndex index = SceneCatalog.FindSceneIndex(scenedef.cachedName);
-                    if (index == SceneIndex.Invalid) return;
+                    if (index == SceneIndex.Invalid) continue;
 
                     Block(scenedef.cachedName);
 
@@ -666,7 +666,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             manuallyPickingStage = true;
             Run.instance.PickNextStageSceneFromCurrentSceneDestinations();
             manuallyPickingStage = false;
-            if (stages_available.Count > 0 && showSeerPortals)
+            if (stages_available.Count > 0 && showSeerPortals && seerPortal != null)
             {
                 seerPortal.CreatePortal(stages_available);
             }
@@ -707,10 +707,11 @@ namespace Archipelago.RiskOfRain2.Handlers
             if (SceneCatalog.mostRecentSceneDef.cachedName == "voidstage" && CheckBlocked("voidraid"))
             {
                 Log.LogDebug("loaded Void Locus without The Planetarium");
+                int savedStageOrder = SceneCatalog.mostRecentSceneDef.stageOrder;
                 SceneCatalog.mostRecentSceneDef.stageOrder = 1;
                 Log.LogDebug("Switching to stage 1");
                 self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
-                
+                SceneCatalog.mostRecentSceneDef.stageOrder = savedStageOrder;
             }
 
             // there are 2 conditions when we should mess with this call:
