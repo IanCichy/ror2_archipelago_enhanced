@@ -292,10 +292,6 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.EntityStates.ScavBackpack.Opening.OnEnter += Opening_OnEnter;
             On.RoR2.ChestBehavior.ItemDrop += ChestBehavior_ItemDrop_Scavenger;
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_Scavenger;
-            // Void Triple Chest
-           /* On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
-            On.RoR2.OptionChestBehavior.ItemDrop += OptionChestBehavior_ItemDrop;
-            On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3;*/
             // Radio Scanners
             On.RoR2.SceneDirector.PopulateScene += SceneDirector_PopulateScene;
             On.RoR2.RadiotowerTerminal.GrantUnlock += RadiotowerTerminal_GrantUnlock;
@@ -308,28 +304,6 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
 
 
-
-        /*        private void PickupDropletController_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3(On.RoR2.PickupDropletController.orig_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 orig, GenericPickupController.CreatePickupInfo pickupInfo, UnityEngine.Vector3 position, UnityEngine.Vector3 velocity)
-                {
-                    throw new NotImplementedException();
-                }
-
-                private void OptionChestBehavior_ItemDrop(On.RoR2.OptionChestBehavior.orig_ItemDrop orig, OptionChestBehavior self)
-                {
-                    if (blockVoidTriple)
-                    {
-                        Log.LogDebug("Blocked triple spawn");
-                        return;
-                    }
-                    orig(self);
-                }*/
-
-        /*        private void PurchaseInteraction_OnInteractionBegin(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
-                {
-                    Log.LogDebug($"Purchase Interaction {self.name} activator {activator.name}");
-                    if (self.name == "VoidTriple(Clone)") blockVoidTriple = true;
-                    orig(self, activator);
-                }*/
 
         public void UnHook()
         {
