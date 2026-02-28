@@ -385,3 +385,8 @@ FodyWeavers.xsd
 *.sln.iml
 
 Archipelago.RiskOfRain2/DLLs/**
+
+# Project-specific exclusions
+.claude/
+Reference DLLs/
+*.apworld

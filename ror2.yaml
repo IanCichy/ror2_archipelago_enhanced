@@ -1,0 +1,123 @@
+description: Risk of Rain 2 - Archipelago Multiworld Configuration
+name: Player1
+
+game: Risk of Rain 2
+requires:
+  version: 0.5.0
+
+Risk of Rain 2:
+  # ============================================================
+  # GAME MODE
+  # ============================================================
+  # classic = 0: Item pickups fill a progress bar for location checks.
+  # explore = 1: Each environment has location checks; environments are locked until received.
+  goal: 1
+
+  # ============================================================
+  # VICTORY CONDITION
+  # ============================================================
+  # any = 0, mithrix = 1, voidling = 2 (SOTV), limbo = 3,
+  # false_son = 4 (SOTS), solus_wing = 5 (AC)
+  victory: 0
+
+  # If true, dying on a final stage counts as a win (based on victory setting).
+  final_stage_death: 0
+
+  # ============================================================
+  # DLC TOGGLES
+  # ============================================================
+  # Enable these if the host has the corresponding DLC installed.
+  dlc_sotv: 1       # Survivors of the Void (DLC1) - adds SOTV environments + Void items
+  dlc_sots: 1       # Seekers of the Storm (DLC2) - adds SOTS environments + False Son victory
+  dlc_ac: 1         # Alloyed Collective (DLC3) - adds AC environments + Solus Wing victory
+
+  # ============================================================
+  # EXPLORE MODE OPTIONS
+  # ============================================================
+  chests_per_stage: 10      # 2-20, chests per environment
+  shrines_per_stage: 5      # 2-20, shrines per environment
+  scavengers_per_stage: 0   # 0-1, scavengers per environment
+  scanner_per_stage: 1      # 0-1, radio scanners per environment
+  altars_per_stage: 1       # 0-2, newt altars per environment
+
+  # Stage progression gating
+  require_stages: 1         # 0 = only locked by environment names, 1 = also locked by stage level
+  progressive_stages: 1     # Use "Progressive Stage" instead of "Stage 2", "Stage 3", etc.
+
+  # ============================================================
+  # CLASSIC MODE OPTIONS
+  # ============================================================
+  total_locations: 40       # 40-250, number of location checks in classic mode
+
+  # ============================================================
+  # GENERAL OPTIONS
+  # ============================================================
+  item_pickup_step: 1       # 0-5, items between each location check (0 = every item)
+  shrine_use_step: 0        # 0-3, shrines between each check (explore mode)
+  total_revivals: 4         # 0-10, percentage of locations that are Dio's Best Friend
+  start_with_revive: 1      # Start with a Dio's Best Friend
+  death_link: 0             # Enable DeathLink
+
+  # ============================================================
+  # LOOT POOL LIMITING
+  # ============================================================
+  # When enabled, the in-game drop pool starts small and expands via AP items.
+  loot_pool_limiting: 1
+  starting_white_items: 3       # 1-30
+  starting_green_items: 2       # 1-20
+  starting_red_items: 1         # 1-10
+  starting_boss_items: 1        # 1-10
+  starting_lunar_items: 1       # 1-10
+  starting_equipment: 1         # 1-10
+  items_per_pool_expansion: 3   # 1-5, in-game items unlocked per expansion check
+
+  # ============================================================
+  # SKILL & SURVIVOR OPTIONS
+  # ============================================================
+  # Skill Randomization: All survivor skills pooled together.
+  # Start with a few skills, unlock more via Skill Unlock items.
+  # All 4 slots are usable from the start.
+  skill_randomization: 1
+  total_skill_unlocks: 10       # 1-50, number of Skill Unlock items in the pool
+  starting_skills: 4            # 1-10, skills available at start
+
+  # Survivor Locking: Only 1 survivor available at start.
+  # Receive "Survivor Unlock" items to unlock more.
+  survivor_locking: 1
+  total_survivor_unlocks: 5     # 1-14, number of unlock items in the pool
+
+  # ============================================================
+  # ITEM WEIGHTS
+  # ============================================================
+  # Use presets (1) or custom weights below (0)
+  item_pool_presets: 0
+
+  # Preset choices: default=0, new=1, uncommon=2, legendary=3, chaos=4,
+  # no_scraps=5, even=6, scraps_only=7, lunartic=8, void=9
+  item_weights: 0
+
+  # Custom weights (only used if item_pool_presets is 0)
+  white_scrap: 32
+  green_scrap: 16
+  yellow_scrap: 1
+  red_scrap: 4
+  common_item: 64
+  uncommon_item: 32
+  legendary_item: 8
+  boss_item: 4
+  lunar_item: 16
+  void_item: 16
+  equipment: 32
+  money: 64
+  lunar_coin: 20
+  experience: 40
+
+  # Trap items
+  enable_trap: 0
+  mountain_trap: 5
+  time_warp_trap: 20
+  combat_trap: 20
+  teleport_trap: 20
+
+  # Lunar items in pool
+  enable_lunar: 1

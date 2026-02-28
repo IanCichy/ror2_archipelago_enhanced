@@ -7,27 +7,26 @@ using Archipelago.RiskOfRain2.UI;
 
 namespace Archipelago.RiskOfRain2.Net
 {
-    public class ArchipelagoStartMessage : INetMessage
+    public class ArchipelagoTeleportClient : INetMessage
     {
-        public static event Action OnArchipelagoSessionStart;
+        public static event Action OnArchipelagoTeleportClient;
 
         public void Deserialize(NetworkReader reader)
         {
-            
+
         }
 
         public void OnReceived()
         {
-            ArchipelagoTotalChecksObjectiveController.AddObjective();
-            if (OnArchipelagoSessionStart != null)
+            if (OnArchipelagoTeleportClient != null)
             {
-                OnArchipelagoSessionStart();
+                OnArchipelagoTeleportClient();
             }
         }
 
         public void Serialize(NetworkWriter writer)
         {
-            
+
         }
     }
 }

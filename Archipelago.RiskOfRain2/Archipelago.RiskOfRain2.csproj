@@ -1,37 +1,41 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LangVersion>preview</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <VersionPrefix>1.1.3</VersionPrefix>
+    <VersionPrefix>1.5.3</VersionPrefix>
+    <RiskOfRain2Refs>$(UserProfile)\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Archip\BepInEx\plugins\Sneaki-Archipelago\</RiskOfRain2Refs>
+    <OutputPath>bin\$(Configuration)</OutputPath>
   </PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="BepInEx.Analyzers" Version="1.0.*">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Archipelago.MultiClient.Net" Version="3.1.0" />
-		<PackageReference Include="BepInEx.Core" Version="5.4.19" />
-		<PackageReference Include="RiskOfRain2.GameLibs" Version="1.2.4-r.0" />
-		<PackageReference Include="UnityEngine.Modules" Version="2019.4.26" />
-		<PackageReference Include="MMHOOK.RoR2" Version="2022.4.19">
-			<NoWarn>NU1701</NoWarn>
-		</PackageReference>
-		<PackageReference Include="R2API" Version="4.3.5" />
-	</ItemGroup>
-
+  <Target Name="CopyMod" AfterTargets="PostBuildEvent">
+    <MakeDir Directories="bin/zip/" />
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)/$(TargetName).pdb; $(TargetDir)/$(TargetName).deps.json" DestinationFolder="bin/Build/" />
+    <Copy SourceFiles="$(OutputPath)/Archipelago.MultiClient.Net.dll;$(OutputPath)/Newtonsoft.Json.dll;" DestinationFolder="bin/Build/" />
+    <Copy SourceFiles="../README.md;./connectbundle;../manifest.json;../icon.png;../CHANGELOG.md" DestinationFolder="bin/Build/" />
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)/$(TargetName).pdb; $(TargetDir)/$(TargetName).deps.json" DestinationFolder="$(RiskOfRain2Refs)" />
+    <Copy SourceFiles="$(OutputPath)/Archipelago.MultiClient.Net.dll;$(OutputPath)/Newtonsoft.Json.dll;" DestinationFolder="$(RiskOfRain2Refs)" />
+    <Copy SourceFiles="../README.md;./connectbundle;../manifest.json;../icon.png" DestinationFolder="$(RiskOfRain2Refs)" />
+    <ZipDirectory SourceDirectory="bin/Build" DestinationFile="bin/zip/Sneaki-Archipelago-$(VersionPrefix).zip" Overwrite="true" />
+  </Target>
   <ItemGroup>
-    <Compile Remove="libs\**" />
-    <EmbeddedResource Remove="libs\**" />
-    <None Remove="libs\**" />
+    <PackageReference Include="BepInEx.Analyzers" Version="1.0.*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Archipelago.MultiClient.Net" Version="6.6.1" />
+    <PackageReference Include="BepInEx.Core" Version="5.*" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="UnityEngine.Modules" Version="2021.3.33" />
+	<PackageReference Include="RiskOfRain2.GameLibs" Version="1.4.1-r.0" />
+	<PackageReference Include="MMHOOK.RoR2" Version="2025.12.9" NoWarn="NU1701" />
+	<PackageReference Include="RoR2BepInExPack" Version="1.40.0" />
+    <PackageReference Include="R2API" Version="5.0.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="InLobbyConfig">
-      <HintPath>DLLs\InLobbyConfig.dll</HintPath>
-    </Reference>
+    <None Update="connectbundle">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-
 </Project>
