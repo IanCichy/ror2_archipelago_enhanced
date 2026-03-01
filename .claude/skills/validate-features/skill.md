@@ -7,34 +7,43 @@ description: Build, package, and validate the Archipelago RoR2 world by generati
 
 Rebuild the ror2 apworld, generate a multiworld, and parse the spoiler log to confirm features are present.
 
+## Environment Variables
+
+These must be set in `.claude/settings.local.json` under `"env"`:
+
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `AP_INSTALL` | `G:/Archipelago` | Archipelago install directory |
+| `R2MODMAN_PROFILES` | `$APPDATA/r2modmanPlus-local/RiskOfRain2/profiles` | r2modman profiles root |
+
 ## Paths
 
 | What | Path |
 |------|------|
-| Python world source | `c:/Users/IanCi/Repos/Archipelago.RiskOfRain2/worlds/ror2/` |
-| C# client source | `c:/Users/IanCi/Repos/Archipelago.RiskOfRain2/Archipelago.RiskOfRain2/` |
-| Archipelago install | `G:/Archipelago/` |
-| YAML config | `G:/Archipelago/Players/ror2.yaml` |
-| Apworld target | `G:/Archipelago/lib/worlds/ror2.apworld` |
-| Generator exe | `G:/Archipelago/ArchipelagoGenerate.exe` |
-| Output dir | `G:/Archipelago/output/` |
-| r2modman profiles | `$APPDATA/r2modmanPlus-local/RiskOfRain2/profiles/` |
-| Compiled DLL | `Archipelago.RiskOfRain2/bin/Debug/netstandard2.1/Archipelago.RiskOfRain2.dll` |
+| Python world source | `worlds/ror2/` (repo-relative) |
+| C# client source | `Archipelago.RiskOfRain2/` (repo-relative) |
+| Compiled DLL | `Archipelago.RiskOfRain2/bin/Debug/netstandard2.1/Archipelago.RiskOfRain2.dll` (repo-relative) |
+| Archipelago install | `$AP_INSTALL/` |
+| YAML config | `$AP_INSTALL/Players/ror2.yaml` |
+| Apworld target | `$AP_INSTALL/lib/worlds/ror2.apworld` |
+| Generator exe | `$AP_INSTALL/ArchipelagoGenerate.exe` |
+| Output dir | `$AP_INSTALL/output/` |
+| r2modman profiles | `$R2MODMAN_PROFILES/` |
 
 ## Workflow
 
 ### Step 1: Build C# client (if C# files changed)
 
 ```bash
-cd "c:/Users/IanCi/Repos/Archipelago.RiskOfRain2/Archipelago.RiskOfRain2" && dotnet build
+cd "<repo-root>/Archipelago.RiskOfRain2" && dotnet build
 ```
 
 Copy DLL to r2modman profiles (Archip, Testing, Default):
 
 ```bash
-SRC="c:/Users/IanCi/Repos/Archipelago.RiskOfRain2/Archipelago.RiskOfRain2/bin/Debug/netstandard2.1/Archipelago.RiskOfRain2.dll"
+SRC="<repo-root>/Archipelago.RiskOfRain2/bin/Debug/netstandard2.1/Archipelago.RiskOfRain2.dll"
 for profile in Archip Testing Default; do
-    cp "$SRC" "$APPDATA/r2modmanPlus-local/RiskOfRain2/profiles/$profile/BepInEx/plugins/Sneaki-Archipelago/Archipelago.RiskOfRain2.dll"
+    cp "$SRC" "$R2MODMAN_PROFILES/$profile/BepInEx/plugins/Sneaki-Archipelago/Archipelago.RiskOfRain2.dll"
 done
 ```
 
@@ -45,8 +54,8 @@ Create a zip of all `.py` files, docs, and `archipelago.json` from the source wo
 ```python
 import zipfile, os, json
 
-source_dir = 'c:/Users/IanCi/Repos/Archipelago.RiskOfRain2/worlds/ror2'
-output_path = 'c:/Users/IanCi/Repos/Archipelago.RiskOfRain2/ror2.apworld'
+source_dir = '<repo-root>/worlds/ror2'
+output_path = '<repo-root>/ror2.apworld'
 
 with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
     for f in os.listdir(source_dir):
@@ -65,16 +74,16 @@ with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
 Then install it:
 
 ```bash
-cp "c:/Users/IanCi/Repos/Archipelago.RiskOfRain2/ror2.apworld" "G:/Archipelago/lib/worlds/ror2.apworld"
+cp "<repo-root>/ror2.apworld" "$AP_INSTALL/lib/worlds/ror2.apworld"
 ```
 
 ### Step 3: Generate multiworld
 
 ```bash
-cd "G:/Archipelago" && ./ArchipelagoGenerate.exe --player_files_path "G:/Archipelago/Players" 2>&1
+cd "$AP_INSTALL" && ./ArchipelagoGenerate.exe --player_files_path "$AP_INSTALL/Players" 2>&1
 ```
 
-Check for errors in the output. A successful run ends with `Done. Enjoy.` and creates a zip in `G:/Archipelago/output/`.
+Check for errors in the output. A successful run ends with `Done. Enjoy.` and creates a zip in `$AP_INSTALL/output/`.
 
 ### Step 4: Parse spoiler log
 
@@ -84,7 +93,7 @@ Extract the spoiler `.txt` from the latest output zip and validate:
 import zipfile, glob, os, sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-zips = sorted(glob.glob('G:/Archipelago/output/AP_*.zip'), key=os.path.getmtime)
+zips = sorted(glob.glob(os.environ['AP_INSTALL'] + '/output/AP_*.zip'), key=os.path.getmtime)
 latest = zips[-1]
 
 with zipfile.ZipFile(latest) as z:
@@ -119,5 +128,6 @@ Summarize what was validated:
 
 - **UnicodeEncodeError**: Use `sys.stdout.reconfigure(encoding='utf-8')` and decode with `utf-8-sig`
 - **Generation fails with import error**: A Python syntax error in the world files. Check the traceback for the offending file/line.
-- **Missing environments**: Verify DLC toggles are enabled in `G:/Archipelago/Players/ror2.yaml`
+- **Missing environments**: Verify DLC toggles are enabled in `$AP_INSTALL/Players/ror2.yaml`
 - **apworld not loading**: The installed Archipelago uses Python 3.13 (bundled). Include `.py` source files in the apworld, not `.pyc` compiled with a different Python version.
+- **Env vars not set**: Ensure `AP_INSTALL` and `R2MODMAN_PROFILES` are defined in `.claude/settings.local.json` under `"env"`.
