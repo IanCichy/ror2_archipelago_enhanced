@@ -138,11 +138,15 @@ class FinalStageDeath(Toggle):
     """The following will count as a win if set to "true", and victory is set to "any":
     Dying in Commencement.
     Dying in The Planetarium.
+    Dying in Prime Meridian.
+    Dying in Neural Sanctum.
     Obliterating yourself
     If not use the following to tell if final stage death will count:
     Victory: mithrix - only dying in Commencement will count.
     Victory: voidling - only dying in The Planetarium will count.
-    Victory: limbo - Obliterating yourself will count."""
+    Victory: limbo - Obliterating yourself will count.
+    Victory: false_son - only dying in Prime Meridian will count.
+    Victory: solus_wing - only dying in Neural Sanctum will count."""
     display_name = "Final Stage Death is Win"
 
 

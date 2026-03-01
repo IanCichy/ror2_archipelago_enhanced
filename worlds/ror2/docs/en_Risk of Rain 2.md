@@ -94,6 +94,22 @@ Dlc_Sotv items
 * `Sulfur Pools`
 * `Void Locus`
 
+Dlc_Sots items
+* `Shattered Abodes`, `Disturbed Impact`
+* `Viscous Falls`
+* `Reformed Altar`
+* `Treeborn Colony`, `Golden Dieback`
+* `Helminth Hatchery`
+* `Prime Meridian`
+
+Dlc_AC items
+* `Pretender's Precipice`
+* `Iron Alluvium`, `Iron Auroras`
+* `Repurposed Crater`
+* `Conduit Canyon`
+* `Solutional Haunt`
+* `Neural Sanctum`
+
 When an explore item is granted, it will unlock that environment and will now be accessible! The 
 game will still pick randomly which environment is next, but it will first check to see if they are available. If you have
 multiple of the next environments unlocked, it will weight the game to have a ***higher chance*** to go to one you 

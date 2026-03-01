@@ -156,42 +156,42 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
     # Check to see if Victory needs to be removed from regions
     # For specific victory conditions, remove the Victory exit from non-target final regions
     if ror2_options.victory == "mithrix":
-        other_regions["Hidden Realm: A Moment, Whole"].region_exits.pop(0)
+        other_regions["Hidden Realm: A Moment, Whole"].region_exits.remove("Victory")
         if ror2_options.dlc_sotv:
-            dlc_other_regions["The Planetarium"].region_exits.pop(0)
+            dlc_other_regions["The Planetarium"].region_exits.remove("Victory")
         if ror2_options.dlc_sots:
-            sots_other_regions["Prime Meridian"].region_exits.pop(0)
+            sots_other_regions["Prime Meridian"].region_exits.remove("Victory")
         if ror2_options.dlc_ac:
-            ac_other_regions["Neural Sanctum"].region_exits.pop(0)
+            ac_other_regions["Neural Sanctum"].region_exits.remove("Victory")
     elif ror2_options.victory == "voidling":
-        other_regions["Commencement"].region_exits.pop(0)
-        other_regions["Hidden Realm: A Moment, Whole"].region_exits.pop(0)
+        other_regions["Commencement"].region_exits.remove("Victory")
+        other_regions["Hidden Realm: A Moment, Whole"].region_exits.remove("Victory")
         if ror2_options.dlc_sots:
-            sots_other_regions["Prime Meridian"].region_exits.pop(0)
+            sots_other_regions["Prime Meridian"].region_exits.remove("Victory")
         if ror2_options.dlc_ac:
-            ac_other_regions["Neural Sanctum"].region_exits.pop(0)
+            ac_other_regions["Neural Sanctum"].region_exits.remove("Victory")
     elif ror2_options.victory == "limbo":
-        other_regions["Commencement"].region_exits.pop(0)
+        other_regions["Commencement"].region_exits.remove("Victory")
         if ror2_options.dlc_sotv:
-            dlc_other_regions["The Planetarium"].region_exits.pop(0)
+            dlc_other_regions["The Planetarium"].region_exits.remove("Victory")
         if ror2_options.dlc_sots:
-            sots_other_regions["Prime Meridian"].region_exits.pop(0)
+            sots_other_regions["Prime Meridian"].region_exits.remove("Victory")
         if ror2_options.dlc_ac:
-            ac_other_regions["Neural Sanctum"].region_exits.pop(0)
+            ac_other_regions["Neural Sanctum"].region_exits.remove("Victory")
     elif ror2_options.victory == "false_son":
-        other_regions["Commencement"].region_exits.pop(0)
-        other_regions["Hidden Realm: A Moment, Whole"].region_exits.pop(0)
+        other_regions["Commencement"].region_exits.remove("Victory")
+        other_regions["Hidden Realm: A Moment, Whole"].region_exits.remove("Victory")
         if ror2_options.dlc_sotv:
-            dlc_other_regions["The Planetarium"].region_exits.pop(0)
+            dlc_other_regions["The Planetarium"].region_exits.remove("Victory")
         if ror2_options.dlc_ac:
-            ac_other_regions["Neural Sanctum"].region_exits.pop(0)
+            ac_other_regions["Neural Sanctum"].region_exits.remove("Victory")
     elif ror2_options.victory == "solus_wing":
-        other_regions["Commencement"].region_exits.pop(0)
-        other_regions["Hidden Realm: A Moment, Whole"].region_exits.pop(0)
+        other_regions["Commencement"].region_exits.remove("Victory")
+        other_regions["Hidden Realm: A Moment, Whole"].region_exits.remove("Victory")
         if ror2_options.dlc_sotv:
-            dlc_other_regions["The Planetarium"].region_exits.pop(0)
+            dlc_other_regions["The Planetarium"].region_exits.remove("Victory")
         if ror2_options.dlc_sots:
-            sots_other_regions["Prime Meridian"].region_exits.pop(0)
+            sots_other_regions["Prime Meridian"].region_exits.remove("Victory")
 
     # Create all the regions
     for name, data in regions_pool.items():

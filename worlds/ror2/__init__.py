@@ -245,7 +245,7 @@ class RiskOfRainWorld(World):
                                             "chests_per_stage", "shrines_per_stage", "scavengers_per_stage",
                                             "scanner_per_stage", "altars_per_stage", "total_revivals",
                                             "start_with_revive", "final_stage_death", "death_link", "require_stages",
-                                            "progressive_stages", "dlc_sots", "dlc_ac", casing="camel")
+                                            "progressive_stages", "dlc_sotv", "dlc_sots", "dlc_ac", casing="camel")
         return {
             **options_dict,
             "seed": "".join(self.random.choice(string.digits) for _ in range(16)),
