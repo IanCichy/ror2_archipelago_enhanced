@@ -369,6 +369,7 @@ FodyWeavers.xsd
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
+!ror2-archipelago.code-workspace
 
 # Local History for Visual Studio Code
 .history/
@@ -385,3 +386,6 @@ FodyWeavers.xsd
 *.sln.iml
 
 Archipelago.RiskOfRain2/DLLs/**
+
+# Claude Code
+.claude/

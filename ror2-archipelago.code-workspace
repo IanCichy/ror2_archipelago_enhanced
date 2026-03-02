@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "RoR2 Mod (C#)"
+    },
+    {
+      "path": "worlds/ror2",
+      "name": "AP World (Python)"
+    }
+  ],
+  "settings": {}
+}
