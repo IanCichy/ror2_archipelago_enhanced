@@ -69,11 +69,13 @@ namespace Archipelago.RiskOfRain2
 
         // Cached slot data for session reuse across runs
         private bool cachedGoalIsExplore;
+        private bool cachedDeathLinkEnabled;
         private uint cachedItemPickupStep = 3;
         private uint cachedShrineUseStep = 3;
         private Dictionary<string, object> cachedSlotData;
 
         // Cached ItemLogic state for restoring across runs
+        private bool hasCachedRunState;
         private int cachedItemLogicPickupStep;
         private int cachedItemLogicTotalChecks;
         private int cachedItemLogicCurrentChecks;
@@ -92,7 +94,7 @@ namespace Archipelago.RiskOfRain2
             lastPassword = password;
 
             // Session reuse: if already connected, just set up a new run
-            if (session != null && session.Socket.Connected)
+            if (IsConnected)
             {
                 ChatMessage.SendColored("Reusing existing Archipelago session.", Color.green);
                 CleanupRun();
@@ -101,13 +103,7 @@ namespace Archipelago.RiskOfRain2
             }
 
             // Stale session: clean up before creating a new one
-            if (session != null)
-            {
-                session.MessageLog.OnMessageReceived -= Session_OnMessageReceived;
-                session.Socket.SocketClosed -= Session_SocketClosed;
-                session.Socket.ErrorReceived -= Socket_ErrorReceived;
-                session = null;
-            }
+            TeardownSession();
 
             ChatMessage.SendColored($"Attempting to connect to Archipelago at {url}.", Color.green);
 
@@ -121,6 +117,8 @@ namespace Archipelago.RiskOfRain2
                 return;
             }
 
+            // Reset item index on fresh connect only — on session reuse (handled above),
+            // we intentionally preserve it to avoid re-processing already-received items.
             lastReceivedItemindex = 0;
 
             var result = session.TryConnectAndLogin("Risk of Rain 2", slotName, ItemsHandlingFlags.AllItems, new Version(0, 6, 4), password: password);
@@ -173,9 +171,11 @@ namespace Archipelago.RiskOfRain2
             deathLinkService = DeathLinkProvider.CreateDeathLinkService(session);
             Log.LogDebug("Starting DeathLink service");
             Deathlinkhandler = new DeathLinkHandler(deathLinkService);
+            cachedDeathLinkEnabled = false;
             if (successResult.SlotData.TryGetValue("deathLink", out var enabledeathlink))
             {
-                if (Convert.ToBoolean(enabledeathlink))
+                cachedDeathLinkEnabled = Convert.ToBoolean(enabledeathlink);
+                if (cachedDeathLinkEnabled)
                 {
                     deathLinkService.EnableDeathLink(); // deathlink should just be enabled, the DeathLinkHandler assumes it is already enabled
                 }
@@ -274,6 +274,7 @@ namespace Archipelago.RiskOfRain2
             session.MessageLog.OnMessageReceived += Session_OnMessageReceived;
             session.Socket.SocketClosed += Session_SocketClosed;
             session.Socket.ErrorReceived += Socket_ErrorReceived;
+            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
 
             // Stage unlock initialization (one-time, session-level)
             // Needed for backwards compatability
@@ -345,7 +346,7 @@ namespace Archipelago.RiskOfRain2
             itemCheckBar.ItemPickupStep = (int)cachedItemPickupStep;
 
             // Restore cached ItemLogic state for session reuse (run 2+)
-            if (cachedItemLogicPickupStep > 0)
+            if (hasCachedRunState)
             {
                 ItemLogic.ItemPickupStep = cachedItemLogicPickupStep;
                 ItemLogic.TotalChecks = cachedItemLogicTotalChecks;
@@ -354,9 +355,13 @@ namespace Archipelago.RiskOfRain2
             }
 
             ItemLogic.OnItemDropProcessed += ItemLogicHandler_ItemDropProcessed;
-            Deathlinkhandler?.Hook();
+            if (cachedDeathLinkEnabled)
+            {
+                Deathlinkhandler?.Hook();
+            }
             HookGame();
 
+            // These messages are idempotent — safe to re-send on session reuse
             new ArchipelagoStartMessage().Send(NetworkDestination.Clients);
             if (!cachedGoalIsExplore)
             {
@@ -375,11 +380,16 @@ namespace Archipelago.RiskOfRain2
         /// </summary>
         public void CleanupRun()
         {
+            // Re-entrance guard: Run_onRunDestroyGlobal and Session_SocketClosed can
+            // both call CleanupRun() near-simultaneously. Prevent double-dispose.
+            if (ItemLogic == null) return;
+
             UnhookGame();
 
             if (ItemLogic != null)
             {
                 // Cache state before disposing for session reuse
+                hasCachedRunState = true;
                 cachedItemLogicPickupStep = ItemLogic.ItemPickupStep;
                 cachedItemLogicTotalChecks = ItemLogic.TotalChecks;
                 cachedItemLogicCurrentChecks = ItemLogic.CurrentChecks;
@@ -411,29 +421,37 @@ namespace Archipelago.RiskOfRain2
         }
 
         /// <summary>
+        /// Unsubscribes session-level events and nulls the session.
+        /// Optionally disconnects the socket if still connected.
+        /// </summary>
+        private void TeardownSession(bool disconnect = false)
+        {
+            if (session == null) return;
+
+            session.MessageLog.OnMessageReceived -= Session_OnMessageReceived;
+            session.Socket.SocketClosed -= Session_SocketClosed;
+            session.Socket.ErrorReceived -= Socket_ErrorReceived;
+            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
+
+            if (disconnect && session.Socket.Connected)
+            {
+                session.Socket.DisconnectAsync();
+            }
+
+            session = null;
+            Deathlinkhandler = null;
+            deathLinkService = null;
+            hasCachedRunState = false;
+        }
+
+        /// <summary>
         /// Full teardown: per-run state + session-level state.
         /// Only called on intentional disconnect or unrecoverable error.
         /// </summary>
         public void Dispose()
         {
             CleanupRun();
-
-            if (session != null)
-            {
-                session.MessageLog.OnMessageReceived -= Session_OnMessageReceived;
-                session.Socket.SocketClosed -= Session_SocketClosed;
-                session.Socket.ErrorReceived -= Socket_ErrorReceived;
-
-                if (session.Socket.Connected)
-                {
-                    session.Socket.DisconnectAsync();
-                }
-
-                session = null;
-            }
-
-            Deathlinkhandler = null;
-            deathLinkService = null;
+            TeardownSession(disconnect: true);
         }
 
         private void HookGame()
@@ -454,7 +472,6 @@ namespace Archipelago.RiskOfRain2
             shrineChanceHelper?.Hook();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
-            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter += PortalDialerPreDialState_OnEnter;
         }
 
@@ -481,7 +498,6 @@ namespace Archipelago.RiskOfRain2
             shrineChanceHelper?.UnHook();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
-            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter -= PortalDialerPreDialState_OnEnter;
         }
 
@@ -531,7 +547,7 @@ namespace Archipelago.RiskOfRain2
 
         private void ArchipelagoChatMessage_OnChatReceivedFromClient(string message)
         {
-            if (session != null && session.Socket.Connected && !string.IsNullOrEmpty(message))
+            if (IsConnected && !string.IsNullOrEmpty(message))
             {
                 var sayPacket = new SayPacket();
                 sayPacket.Text = message;
@@ -567,7 +583,7 @@ namespace Archipelago.RiskOfRain2
         private void ChatBox_SubmitChat(On.RoR2.UI.ChatBox.orig_SubmitChat orig, ChatBox self)
         {
             var text = self.inputField.text;
-            if (session != null && session.Socket.Connected && !string.IsNullOrEmpty(text))
+            if (IsConnected && !string.IsNullOrEmpty(text))
             {
                 var sayPacket = new SayPacket();
                 sayPacket.Text = text;
@@ -592,18 +608,7 @@ namespace Archipelago.RiskOfRain2
         private void Session_SocketClosed(string reason)
         {
             CleanupRun();
-
-            // Session is dead, clean up session-level state
-            if (session != null)
-            {
-                session.MessageLog.OnMessageReceived -= Session_OnMessageReceived;
-                session.Socket.SocketClosed -= Session_SocketClosed;
-                session.Socket.ErrorReceived -= Socket_ErrorReceived;
-                session = null;
-            }
-
-            Deathlinkhandler = null;
-            deathLinkService = null;
+            TeardownSession();
 
             new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
             OnClientDisconnect?.Invoke(reason);
@@ -703,7 +708,7 @@ namespace Archipelago.RiskOfRain2
 
         public void Disconnect()
         {
-            if (session != null && session.Socket.Connected)
+            if (IsConnected)
             {
                 ArchipelagoConnectButtonController.ChangeButtonWhenDisconnected();
                 session.Socket.DisconnectAsync();
