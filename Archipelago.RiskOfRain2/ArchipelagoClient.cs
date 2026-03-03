@@ -117,9 +117,15 @@ namespace Archipelago.RiskOfRain2
                 return;
             }
 
-            // Reset item index on fresh connect only — on session reuse (handled above),
-            // we intentionally preserve it to avoid re-processing already-received items.
-            lastReceivedItemindex = 0;
+            // On fresh connect (not reconnecting), reset item index and cached run state
+            // so we don't replay already-received items or restore stale progress.
+            // During reconnection, preserve both so AttemptReconnection can restore
+            // the player's progress after the session is re-established.
+            if (!reconnecting)
+            {
+                lastReceivedItemindex = 0;
+                hasCachedRunState = false;
+            }
 
             var result = session.TryConnectAndLogin("Risk of Rain 2", slotName, ItemsHandlingFlags.AllItems, new Version(0, 6, 4), password: password);
 
@@ -441,7 +447,10 @@ namespace Archipelago.RiskOfRain2
             session = null;
             Deathlinkhandler = null;
             deathLinkService = null;
-            hasCachedRunState = false;
+            // NOTE: hasCachedRunState is intentionally NOT cleared here.
+            // On dirty disconnect → reconnect, CleanupRun caches state before
+            // TeardownSession runs. Clearing here would lose that cached state.
+            // It is cleared on fresh connect (when !reconnecting) in Connect().
         }
 
         /// <summary>
@@ -639,7 +648,9 @@ namespace Archipelago.RiskOfRain2
                 if (IsConnected)
                 {
                     ChatMessage.SendColored("Reconnected to Archipelago.", Color.green);
-                    if (Locationhandler != null && isInGame)
+                    // Guard with Run.instance: if the run ended while we were
+                    // disconnected, isInGame may be stale (true) but the run is gone.
+                    if (Locationhandler != null && isInGame && Run.instance != null)
                     {
                         Locationhandler.CatchUpSceneLocations(LocationHandler.sceneDef.cachedName);
                         Locationhandler.LoadItemPickupHooks();
@@ -706,13 +717,18 @@ namespace Archipelago.RiskOfRain2
             CleanupRun();
         }
 
+        /// <summary>
+        /// Intentional disconnect initiated by the user (e.g. console command).
+        /// Performs synchronous full cleanup so callers don't need to wait for
+        /// the async SocketClosed callback.
+        /// </summary>
         public void Disconnect()
         {
-            if (IsConnected)
-            {
-                ArchipelagoConnectButtonController.ChangeButtonWhenDisconnected();
-                session.Socket.DisconnectAsync();
-            }
+            if (session == null) return;
+            ArchipelagoConnectButtonController.ChangeButtonWhenDisconnected();
+            Dispose();
+            new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+            OnClientDisconnect?.Invoke("Disconnected.");
         }
 
         private void GameEndReportPanelController_Awake(On.RoR2.UI.GameEndReportPanelController.orig_Awake orig, GameEndReportPanelController self)

@@ -191,6 +191,9 @@ namespace Archipelago.RiskOfRain2
         {
             if (!NetworkServer.active)
             {
+                // Clean up previous handler to prevent hook leaks on session reuse
+                // or reconnection (ArchipelagoStartMessage can be received multiple times).
+                ClientItems?.UnHook();
                 ClientItems = new ClientItemsHandler();
                 ClientItems?.Hook();
                 isPlayingAP = true;
