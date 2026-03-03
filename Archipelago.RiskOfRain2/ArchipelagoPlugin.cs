@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Archipelago.RiskOfRain2.Console;
 using Archipelago.RiskOfRain2.Net;
@@ -43,6 +44,7 @@ namespace Archipelago.RiskOfRain2
         internal static int apServerPort = 38281;
         private bool willConnectToAP = true;
         private bool isPlayingAP = false;
+        private bool isReconnecting = false;
         internal static string apSlotName = "";
         //private string apSlotName;
         internal static string apPassword;
@@ -142,17 +144,20 @@ namespace Archipelago.RiskOfRain2
 
         private void AP_OnClientDisconnect(string reason)
         {
-            Log.LogWarning($"Archipelago client was disconnected from the server because `{reason}`");
+            Log.LogWarning($"Archipelago client was disconnected from the server: {reason}");
             ChatMessage.SendColored($"Archipelago client was disconnected from the server. {reason}", Color.red);
-            var isHost = NetworkServer.active && RoR2Application.isInMultiPlayer;
-            if (isPlayingAP && (isHost || RoR2Application.isInSinglePlayer))
+
+            if (isPlayingAP && !isReconnecting && AP.reconnecting)
             {
-                //StartCoroutine(AP.AttemptConnection());
+                isReconnecting = true;
+                StartCoroutine(ReconnectAndReset());
             }
-            if (AP.reconnecting)
-            {
-                StartCoroutine(AP.AttemptReconnection());
-            }
+        }
+
+        private System.Collections.IEnumerator ReconnectAndReset()
+        {
+            yield return StartCoroutine(AP.AttemptReconnection());
+            isReconnecting = false;
         }
         public void OnClick_ConnectToArchipelagoWithButton()
         {

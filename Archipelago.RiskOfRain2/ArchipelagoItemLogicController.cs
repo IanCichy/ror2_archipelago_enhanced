@@ -319,6 +319,9 @@ namespace Archipelago.RiskOfRain2
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -= PickupDropletController_CreatePickupDroplet_CreatePickupInfo;
             On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop;
             On.RoR2.RoR2Application.Update -= RoR2Application_Update;
+            On.RoR2.SceneDirector.Start -= SceneDirector_Start;
+            On.RoR2.CombatDirector.Awake -= CombatDirector_Awake;
+            On.RoR2.SurvivorPodController.OnPassengerExit -= SurvivorPodController_OnPassengerExit;
 
             if (session != null)
             {
