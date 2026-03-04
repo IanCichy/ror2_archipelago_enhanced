@@ -281,6 +281,7 @@ namespace Archipelago.RiskOfRain2
             session.Socket.SocketClosed += Session_SocketClosed;
             session.Socket.ErrorReceived += Socket_ErrorReceived;
             ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
+            Run.onRunStartGlobal += Run_onRunStartGlobal;
 
             // Stage unlock initialization (one-time, session-level)
             // Needed for backwards compatability
@@ -351,13 +352,19 @@ namespace Archipelago.RiskOfRain2
 
             itemCheckBar.ItemPickupStep = (int)cachedItemPickupStep;
 
-            // Restore cached ItemLogic state for session reuse (run 2+)
+            // Initialize ItemLogic location tracking from session state.
+            // On first connect, Session_PacketReceived won't fire because ItemLogic
+            // is created after TryConnectAndLogin. On session reuse, restore cached state.
             if (hasCachedRunState)
             {
                 ItemLogic.ItemPickupStep = cachedItemLogicPickupStep;
                 ItemLogic.TotalChecks = cachedItemLogicTotalChecks;
                 ItemLogic.CurrentChecks = cachedItemLogicCurrentChecks;
                 ItemLogic.PickedUpItemCount = cachedItemLogicPickedUpItemCount;
+            }
+            else
+            {
+                ItemLogic.InitializeFromConnectionState(!cachedGoalIsExplore, (int)cachedItemPickupStep);
             }
 
             ItemLogic.OnItemDropProcessed += ItemLogicHandler_ItemDropProcessed;
@@ -378,6 +385,10 @@ namespace Archipelago.RiskOfRain2
                 new ArchipelagoStartExplore().Send(NetworkDestination.Clients);
             }
 
+            // Enqueue all received items for this run. Handles both first connect
+            // (items missed during login) and session reuse (re-granting items
+            // for the new run since the player's inventory is empty).
+            ItemLogic.ProcessAllReceivedItems();
             ItemLogic.Precollect();
         }
 
@@ -438,6 +449,7 @@ namespace Archipelago.RiskOfRain2
             session.Socket.SocketClosed -= Session_SocketClosed;
             session.Socket.ErrorReceived -= Socket_ErrorReceived;
             ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
+            Run.onRunStartGlobal -= Run_onRunStartGlobal;
 
             if (disconnect && session.Socket.Connected)
             {
@@ -708,6 +720,18 @@ namespace Archipelago.RiskOfRain2
             return acceptableEndings.Contains(gameEndingDef) ||
                 (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.StandardLoss) && (acceptableLosses.Contains(Stage.instance.sceneDef.cachedName)) ||
                 (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.ObliterationEnding) && (acceptableLosses.Contains(Stage.instance.sceneDef.cachedName));
+        }
+
+        // Session-level: automatically set up a new run when the session persists across runs.
+        // After a run ends, CleanupRun() tears down per-run state but the AP session stays
+        // alive. When the player starts a new run, this fires and re-creates per-run state.
+        private void Run_onRunStartGlobal(Run obj)
+        {
+            if (IsConnected && ItemLogic == null)
+            {
+                Log.LogDebug("Session alive, auto-setting up new run.");
+                SetupRun();
+            }
         }
 
         // When exiting to menu/game this will run — only cleans up the run, session stays alive

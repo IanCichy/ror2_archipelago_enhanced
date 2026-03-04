@@ -14,6 +14,7 @@ using R2API.Utils;
 using RoR2;
 using RoR2.Networking;
 using UnityEngine;
+using RoR2.UI;
 using UnityEngine.Networking;
 
 namespace Archipelago.RiskOfRain2
@@ -92,6 +93,7 @@ namespace Archipelago.RiskOfRain2
             NetworkingAPI.RegisterMessageType<ArchipelagoTeleportClient>();
             NetworkingAPI.RegisterMessageType<SyncShrineCheckProgress>();
             NetworkingAPI.RegisterMessageType<ArchipelagoStartExplore>();
+            NetworkingAPI.RegisterMessageType<ArchipelagoStartClassic>();
 
             CommandHelper.AddToConsoleWhenReady();
         }
@@ -100,8 +102,22 @@ namespace Archipelago.RiskOfRain2
         {
             var connectButton = new GameObject("ArchipelagoConnectButtonController");
             connectButton.AddComponent<ArchipelagoConnectButtonController>();
-            
-            
+
+            // Register AFTER the controller so this hook wraps it.
+            // When CharacterSelectController.Awake fires, the controller's
+            // hook creates the button first, then ours updates it.
+            On.RoR2.UI.CharacterSelectController.Awake += CharacterSelectController_Awake;
+        }
+
+        private void CharacterSelectController_Awake(On.RoR2.UI.CharacterSelectController.orig_Awake orig, CharacterSelectController self)
+        {
+            orig(self);
+            // If the AP session survived from a previous run, update the
+            // button to show "Disconnect" so the player knows they're still connected.
+            if (AP.IsConnected)
+            {
+                ArchipelagoConnectButtonController.ChangeButtonWhenConnected();
+            }
         }
 
         private void GameNetworkManager_onStopClientGlobal()
@@ -161,14 +177,20 @@ namespace Archipelago.RiskOfRain2
         }
         public void OnClick_ConnectToArchipelagoWithButton()
         {
-            
+            // Toggle: if already connected, disconnect instead
+            if (AP.IsConnected)
+            {
+                AP.Disconnect();
+                isPlayingAP = false;
+                return;
+            }
+
             isPlayingAP = true;
             string url = apServerUri + ":" + apServerPort;
 
             Log.LogDebug($"Server {apServerUri} Port: {apServerPort} Slot: {apSlotName} Password: {apPassword}");
 
             AP.Connect(url, apSlotName, apPassword);
-            //Log.LogDebug("On Click Connect");
             SlotNameEntry.Value = apSlotName;
         }
         private void ArchipelagoConsoleCommand_ArchipelagoCommandCalled(string url, int port, string slot, string password)
