@@ -5,17 +5,18 @@
     <LangVersion>preview</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <VersionPrefix>1.5.3</VersionPrefix>
-    <RiskOfRain2Refs>$(UserProfile)\AppData\Roaming\r2modmanPlus-local\RiskOfRain2\profiles\Archip\BepInEx\plugins\Sneaki-Archipelago\</RiskOfRain2Refs>
     <OutputPath>bin\$(Configuration)</OutputPath>
   </PropertyGroup>
+  <!-- Local deploy path: create Archipelago.RiskOfRain2/local.props to set RiskOfRain2Refs -->
+  <Import Project="local.props" Condition="Exists('local.props')" />
   <Target Name="CopyMod" AfterTargets="PostBuildEvent">
     <MakeDir Directories="bin/zip/" />
     <Copy SourceFiles="$(TargetPath);$(TargetDir)/$(TargetName).pdb; $(TargetDir)/$(TargetName).deps.json" DestinationFolder="bin/Build/" />
     <Copy SourceFiles="$(OutputPath)/Archipelago.MultiClient.Net.dll;$(OutputPath)/Newtonsoft.Json.dll;" DestinationFolder="bin/Build/" />
     <Copy SourceFiles="../README.md;./connectbundle;../manifest.json;../icon.png;../CHANGELOG.md" DestinationFolder="bin/Build/" />
-    <Copy SourceFiles="$(TargetPath);$(TargetDir)/$(TargetName).pdb; $(TargetDir)/$(TargetName).deps.json" DestinationFolder="$(RiskOfRain2Refs)" />
-    <Copy SourceFiles="$(OutputPath)/Archipelago.MultiClient.Net.dll;$(OutputPath)/Newtonsoft.Json.dll;" DestinationFolder="$(RiskOfRain2Refs)" />
-    <Copy SourceFiles="../README.md;./connectbundle;../manifest.json;../icon.png" DestinationFolder="$(RiskOfRain2Refs)" />
+    <Copy Condition="'$(RiskOfRain2Refs)' != ''" SourceFiles="$(TargetPath);$(TargetDir)/$(TargetName).pdb; $(TargetDir)/$(TargetName).deps.json" DestinationFolder="$(RiskOfRain2Refs)" />
+    <Copy Condition="'$(RiskOfRain2Refs)' != ''" SourceFiles="$(OutputPath)/Archipelago.MultiClient.Net.dll;$(OutputPath)/Newtonsoft.Json.dll;" DestinationFolder="$(RiskOfRain2Refs)" />
+    <Copy Condition="'$(RiskOfRain2Refs)' != ''" SourceFiles="../README.md;./connectbundle;../manifest.json;../icon.png" DestinationFolder="$(RiskOfRain2Refs)" />
     <ZipDirectory SourceDirectory="bin/Build" DestinationFile="bin/zip/Sneaki-Archipelago-$(VersionPrefix).zip" Overwrite="true" />
   </Target>
   <ItemGroup>

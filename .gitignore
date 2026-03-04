@@ -387,5 +387,11 @@ FodyWeavers.xsd
 
 Archipelago.RiskOfRain2/DLLs/**
 
+# AP world build artifact (regenerate with: cd worlds && zip -r ../ror2.apworld ror2/)
+*.apworld
+
+# Local build config (contains user-specific deploy paths)
+local.props
+
 # Claude Code
 .claude/
