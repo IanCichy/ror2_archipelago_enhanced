@@ -228,7 +228,10 @@ namespace Archipelago.RiskOfRain2.Handlers
             currentlocations.Add(ironalluvium,      locationstemplate); // Iron Alluvium
             currentlocations.Add(ironalluvium2,     locationstemplate); // Iron Auroras
             currentlocations.Add(repurposedcrater,  locationstemplate); // Repurposed Crater
-            currentlocations.Add(conduitcanyon,     locationstemplate); // Conduit Canyon
+            // Conduit Canyon has no Newt Altar spawns — use a modified template with 0 altars
+            var conduitTemplate = locationstemplate.copy();
+            conduitTemplate[LocationTypes.newt_altar] = 0;
+            currentlocations.Add(conduitcanyon,     conduitTemplate); // Conduit Canyon
             // NOTE: Solutional Haunt (61) and Neural Sanctum (62) are excluded — boss/victory stages with no standard checks
             // TODO separate out the DLC locations
         }

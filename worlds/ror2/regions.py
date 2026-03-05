@@ -51,14 +51,14 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         "Golden Dieback":                       RoRRegionData([], ["OrderedStage_4"]),
         "Helminth Hatchery":                    RoRRegionData([], ["Hidden Realm: Bulwark's Ambry", "OrderedStage_5"]),
     }
-    # AC Regions
+    # AC Regions (stages with standard location checks)
     ac_regions: Dict[str, RoRRegionData] = {
         "Pretender's Precipice":                RoRRegionData([], ["OrderedStage_1"]),
         "Iron Alluvium":                        RoRRegionData([], ["OrderedStage_2"]),
         "Iron Auroras":                         RoRRegionData([], ["OrderedStage_2"]),
         "Repurposed Crater":                    RoRRegionData([], ["OrderedStage_3"]),
         "Conduit Canyon":                       RoRRegionData([], ["OrderedStage_4"]),
-        "Solutional Haunt":                     RoRRegionData([], ["Hidden Realm: Bulwark's Ambry", "OrderedStage_5"]),
+        # Solutional Haunt is in ac_other_regions — boss-only stage with no standard interactables
     }
     other_regions: Dict[str, RoRRegionData] = {
         "Commencement":                         RoRRegionData(None, ["Victory", "Petrichor V"]),
@@ -88,6 +88,8 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         "Prime Meridian":                       RoRRegionData(None, ["Victory", "Petrichor V"]),
     }
     ac_other_regions: Dict[str, RoRRegionData] = {
+        "Solutional Haunt":                     RoRRegionData(None, ["Hidden Realm: Bulwark's Ambry",
+                                                                     "Neural Sanctum"]),
         "Neural Sanctum":                       RoRRegionData(None, ["Victory", "Petrichor V"]),
     }
     # Totals of each item
@@ -122,8 +124,8 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         if scanners > 0:
             for i in range(0, scanners):
                 all_location_regions[key].locations.append(f"{key}: Radio Scanner {i + 1}")
-        # Newt Altars
-        if newt > 0:
+        # Newt Altars (Conduit Canyon has no Newt Altar spawns)
+        if newt > 0 and key != "Conduit Canyon":
             for i in range(0, newt):
                 all_location_regions[key].locations.append(f"{key}: Newt Altar {i + 1}")
     regions_pool: Dict = {**all_location_regions, **other_regions}

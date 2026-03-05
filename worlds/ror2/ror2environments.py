@@ -92,11 +92,12 @@ environment_ac_orderedstage_4_table: Dict[str, int] = {
     "Conduit Canyon":                          60,  # conduitcanyon
 }
 environment_ac_orderedstage_5_table: Dict[str, int] = {
-    "Solutional Haunt":                        61,  # solutionalhaunt
+    # Solutional Haunt moved to special table — boss-only stage with no standard interactables
 }
 
 environment_ac_special_table: Dict[str, int] = {
-    "Neural Sanctum":                          62,  # solusweb
+    "Solutional Haunt":                        61,  # solutionalhaunt (boss-only, no standard checks)
+    "Neural Sanctum":                          62,  # solusweb (victory stage only)
 }
 
 X = TypeVar("X")
