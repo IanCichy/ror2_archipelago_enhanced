@@ -12,11 +12,11 @@ namespace Archipelago.RiskOfRain2.Handlers
 {
     class StageBlockerHandler : IHandler
     {
-        // setup all scene indexes as magic numbers
-        // scenes from https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Developer-Reference/Scene-Names/
-        // main scenes
+        // Python/AP IDs from worlds/ror2/ror2environments.py.
+        // For vanilla and SOTV, these match C# SceneCatalog indices.
+        // For SOTS and AC, Python uses sequential IDs (48+) that differ from SceneCatalog.
+        // Vanilla
         public const int arena = 4;             // Void Fields
-        public const int lakes = 28;            // Verdant Falls
         public const int blackbeach = 7;        // Distant Roost
         public const int blackbeach2 = 8;       // Distant Roost
         public const int dampcavesimple = 10;   // Abyssal Depths
@@ -25,33 +25,42 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int golemplains = 15;      // Titanic Plains
         public const int golemplains2 = 16;     // Titanic Plains
         public const int goolake = 17;          // Abandoned Aqueduct
+        public const int lakes = 28;            // Verdant Falls
         public const int moon2 = 32;            // Commencement
         public const int rootjungle = 35;       // Sundered Grove
         public const int shipgraveyard = 37;    // Siren's Call
         public const int skymeadow = 38;        // Sky Meadow
         public const int wispgraveyard = 47;    // Scorched Acres
-        // Survivors of the Void
-        public const int snowyforest = 39;      // Siphoned Forest
+        // SOTV
         public const int ancientloft = 3;       // Aphelian Sanctuary
+        public const int snowyforest = 39;      // Siphoned Forest
         public const int sulfurpools = 41;      // Sulfur Pools
-        public const int voidstage = 46;        // Void Locus
         public const int voidraid = 45;         // The Planetarium
-        // Seekers of the Storm
-        public const int lakesnight = 34;       // Viscous Falls - Alternate stage to Verdant Falls
-        public const int village = 54;          // Shattered Abodes
-        public const int villagenight = 55;     // Disturbed Impact - Alternate stage to Shattered Abodes
-        public const int lemuriantemple = 36;   // Reformed Altar
-        public const int habitat = 21;          // Treeborn Colony
-        public const int habitatfall = 22;      // Golden Dieback - Alternate stage to Treeborn Colony
-        public const int helminthroost = 23;    // Helminhe Hatchery
-        public const int meridian = 40;         // Prime Meridian
-        // hidden realms
+        public const int voidstage = 46;        // Void Locus
+        // SOTS (Python IDs, NOT C# SceneCatalog indices)
+        public const int village = 48;          // Shattered Abodes (C# scene index: 54)
+        public const int villagenight = 49;     // Disturbed Impact (C# scene index: 55)
+        public const int lakesnight = 50;       // Viscous Falls (C# scene index: 34)
+        public const int lemuriantemple = 51;   // Reformed Altar (C# scene index: 36)
+        public const int habitat = 52;          // Treeborn Colony (C# scene index: 21)
+        public const int habitatfall = 53;      // Golden Dieback (C# scene index: 22)
+        public const int helminthroost = 54;    // Helminth Hatchery (C# scene index: 23)
+        public const int meridian = 55;         // Prime Meridian (C# scene index: 40)
+        // AC (Python IDs)
+        public const int nest = 56;             // Pretender's Precipice
+        public const int ironalluvium = 57;     // Iron Alluvium
+        public const int ironalluvium2 = 58;    // Iron Auroras
+        public const int repurposedcrater = 59; // Repurposed Crater
+        public const int conduitcanyon = 60;    // Conduit Canyon
+        public const int solutionalhaunt = 61;  // Solutional Haunt (boss-only, no standard checks)
+        public const int solusweb = 62;         // Neural Sanctum (victory stage only)
+        // Hidden realms
         public const int artifactworld = 5;     // Hidden Realm: Bulwark's Ambry
         public const int bazaar = 6;            // Hidden Realm: Bazaar Between Time
         public const int goldshores = 14;       // Hidden Realm: Gilded Coast
         public const int limbo = 27;            // Hidden Realm: A Moment, Whole
         public const int mysteryspace = 33;     // Hidden Realm: A Moment, Fractured
-                                                // TODO these should probably go somewhere else to better keep track of them since they are used in several places
+        // TODO these should probably go somewhere else to better keep track of them since they are used in several places
 
         public LocationNames locationsNames = new LocationNames();
         public int mostRecentStageGroup = 0;
@@ -66,43 +75,64 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         };
         public static int amountOfStages = 0;
+        // Stage group mapping: scene name → AP stage group (1-4).
+        // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
+        // Starting stages (game ordered stage 1) are not in this lookup.
         public readonly Dictionary<string, int> stageLookup = new()
         {
+            // Vanilla + SOTV
             { "ancientloft", 1 },
-            { "dampcavesimple", 3 },
             { "foggyswamp", 1 },
-            { "frozenwall", 2 },
             { "goolake", 1 },
+            { "frozenwall", 2 },
+            { "sulfurpools", 2 },
+            { "wispgraveyard", 2 },
+            { "dampcavesimple", 3 },
             { "rootjungle", 3 },
             { "shipgraveyard", 3 },
             { "skymeadow", 4 },
-            { "sulfurpools", 2 },
-            { "wispgraveyard", 2 },
+            // SOTS
             { "lemuriantemple", 1 },
             { "habitat", 2 },
             { "habitatfall", 2 },
             { "helminthroost", 4 },
             { "meridian", 3 },
+            // AC
+            // NOTE: "nest" (Pretender's Precipice) is orderedstage_1 per Python — not in stageLookup.
+            // TODO: Verify in-game — sprint doc suggests it may actually be Stage 2 (group 1).
+            { "ironalluvium", 1 },
+            { "ironalluvium2", 1 },
+            { "repurposedcrater", 2 },
+            { "conduitcanyon", 3 },
+            { "solutionalhaunt", 4 },
         };
 
         // Used to display the full location names in chat when a stage is needed to progress
         public readonly Dictionary<string, string> locationNames = new()
         {
+            // Vanilla + SOTV
             { "ancientloft", "Aphelian Sanctuary" },
-            { "dampcavesimple", "Abyssal Depths" },
             { "foggyswamp", "Wetland Aspect" },
-            { "frozenwall", "Rallypoint Delta" },
             { "goolake", "Abandoned Aqueduct" },
+            { "frozenwall", "Rallypoint Delta" },
+            { "sulfurpools", "Sulfur Pools" },
+            { "wispgraveyard", "Scorched Acres" },
+            { "dampcavesimple", "Abyssal Depths" },
             { "rootjungle", "Sundered Grove" },
             { "shipgraveyard", "Siren's Call" },
             { "skymeadow", "Sky Meadow" },
-            { "sulfurpools", "Sulfur Pools" },
-            { "wispgraveyard", "Scorched Acres" },
+            // SOTS
             { "lemuriantemple", "Reformed Altar" },
             { "habitat", "Treeborn Colony" },
             { "habitatfall", "Golden Dieback" },
-            { "helminthroost", "Helminhe Hatchery" },
+            { "helminthroost", "Helminth Hatchery" },
             { "meridian", "Prime Meridian" },
+            // AC
+            { "ironalluvium", "Iron Alluvium" },
+            { "ironalluvium2", "Iron Auroras" },
+            { "repurposedcrater", "Repurposed Crater" },
+            { "conduitcanyon", "Conduit Canyon" },
+            { "solutionalhaunt", "Solutional Haunt" },
         };
         // End Stage Progression system
 
