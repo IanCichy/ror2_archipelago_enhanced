@@ -54,6 +54,9 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int conduitcanyon = 60;    // Conduit Canyon
         public const int solutionalhaunt = 61;  // Solutional Haunt (boss-only, no standard checks)
         public const int solusweb = 62;         // Neural Sanctum (victory stage only)
+        // TODO: Add AC-specific portal blocking hooks once portal mechanism is identified at runtime.
+        // AC likely uses a special portal (similar to SOTS colossus portal) to reach Neural Sanctum.
+        // Need to verify: what interaction/portal takes the player from Solutional Haunt to Neural Sanctum?
         // Hidden realms
         public const int artifactworld = 5;     // Hidden Realm: Bulwark's Ambry
         public const int bazaar = 6;            // Hidden Realm: Bazaar Between Time

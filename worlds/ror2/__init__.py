@@ -245,7 +245,7 @@ class RiskOfRainWorld(World):
                                             "chests_per_stage", "shrines_per_stage", "scavengers_per_stage",
                                             "scanner_per_stage", "altars_per_stage", "total_revivals",
                                             "start_with_revive", "final_stage_death", "death_link", "require_stages",
-                                            "progressive_stages", "dlc_sots", "dlc_ac", casing="camel")
+                                            "progressive_stages", "dlc_sotv", "dlc_sots", "dlc_ac", casing="camel")
         return {
             **options_dict,
             "seed": "".join(self.random.choice(string.digits) for _ in range(16)),
@@ -279,8 +279,8 @@ class RiskOfRainWorld(World):
             stage_5_environments = ["Sky Meadow"]
             if self.options.dlc_sots:
                 stage_5_environments.append("Helminth Hatchery")
-            if self.options.dlc_ac:
-                stage_5_environments.append("Solutional Haunt")
+            # Solutional Haunt is a boss-only stage that routes from OrderedStage_4 directly
+            # to Neural Sanctum — it does NOT connect to OrderedStage_5.
             event_loc.access_rule = \
                 lambda state, envs=stage_5_environments: any(state.has(env, self.player) for env in envs)
 

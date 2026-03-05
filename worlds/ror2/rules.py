@@ -165,7 +165,8 @@ def set_rules(ror2_world: "RiskOfRainWorld") -> None:
                         has_location_access_rule(multiworld, environment_name, player, chest, "Chest")
                     for shrine in range(1, shrines + 1):
                         has_location_access_rule(multiworld, environment_name, player, shrine, "Shrine")
-                    if newts > 0:
+                    # Conduit Canyon has no Newt Altar spawns
+                    if newts > 0 and environment_name != "Conduit Canyon":
                         for newt in range(1, newts + 1):
                             has_location_access_rule(multiworld, environment_name, player, newt, "Newt Altar")
                     if i > 0:
