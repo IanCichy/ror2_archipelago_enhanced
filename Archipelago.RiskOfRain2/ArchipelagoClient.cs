@@ -218,10 +218,19 @@ namespace Archipelago.RiskOfRain2
                         acceptableLosses = new[] { "mysteryspace", "limbo" };
                         victoryCondition = "Limbo";
                         break;
+                    // False Son (Rebirth)
                     case "4":
                         acceptableEndings = new[] { DLC2Content.GameEndings.RebirthEndingDef };
+                        acceptableLosses = new[] { "meridian" };
                         victoryCondition = "Rebirth";
                         break;
+                    // Solus Heart / Neural Sanctum
+                    // TODO: Verify DLC3 GameEndingDef at runtime — field name may differ
+                    // case "5":
+                    //     acceptableEndings = new[] { DLC3Content.GameEndings.??? };
+                    //     acceptableLosses = new[] { "solusweb" };
+                    //     victoryCondition = "Solus Wing";
+                    //     break;
                     default:
                         victoryCondition = "any";
                         acceptableEndings = new[] {
@@ -229,7 +238,8 @@ namespace Archipelago.RiskOfRain2
                             //RoR2Content.GameEndings.ObliterationEnding,
                             RoR2Content.GameEndings.LimboEnding,
                             DLC1Content.GameEndings.VoidEnding,
-                            DLC2Content.GameEndings.RebirthEndingDef
+                            DLC2Content.GameEndings.RebirthEndingDef,
+                            // TODO: Add DLC3 GameEndingDef once verified at runtime
                         };
                         acceptableLosses = new[] {
                             "moon",
@@ -237,7 +247,8 @@ namespace Archipelago.RiskOfRain2
                             "voidraid",
                             "mysteryspace",
                             "limbo",
-                            "meridian"
+                            "meridian",
+                            "solusweb",
                         };
                         break;
 
@@ -251,7 +262,8 @@ namespace Archipelago.RiskOfRain2
                     //RoR2Content.GameEndings.ObliterationEnding,
                     RoR2Content.GameEndings.LimboEnding,
                     DLC1Content.GameEndings.VoidEnding,
-                    DLC2Content.GameEndings.RebirthEndingDef
+                    DLC2Content.GameEndings.RebirthEndingDef,
+                    // TODO: Add DLC3 GameEndingDef once verified at runtime
                 };
                 acceptableLosses = new[] {
                     "moon",
@@ -259,7 +271,8 @@ namespace Archipelago.RiskOfRain2
                     "voidraid",
                     "mysteryspace",
                     "limbo",
-                    "meridian"
+                    "meridian",
+                    "solusweb",
                 };
             }
 
