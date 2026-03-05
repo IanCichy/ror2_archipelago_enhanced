@@ -88,8 +88,7 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         "Prime Meridian":                       RoRRegionData(None, ["Victory", "Petrichor V"]),
     }
     ac_other_regions: Dict[str, RoRRegionData] = {
-        "Solutional Haunt":                     RoRRegionData(None, ["Hidden Realm: Bulwark's Ambry",
-                                                                     "Neural Sanctum"]),
+        "Solutional Haunt":                     RoRRegionData(None, ["Neural Sanctum"]),
         "Neural Sanctum":                       RoRRegionData(None, ["Victory", "Petrichor V"]),
     }
     # Totals of each item
@@ -187,7 +186,7 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
             dlc_other_regions["The Planetarium"].region_exits.pop(0)
         if ror2_options.dlc_ac:
             ac_other_regions["Neural Sanctum"].region_exits.pop(0)
-    elif ror2_options.victory == "solus_wing":
+    elif ror2_options.victory == "solus_heart":
         other_regions["Commencement"].region_exits.pop(0)
         other_regions["Hidden Realm: A Moment, Whole"].region_exits.pop(0)
         if ror2_options.dlc_sotv:

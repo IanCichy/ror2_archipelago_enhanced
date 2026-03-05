@@ -66,6 +66,8 @@ namespace Archipelago.RiskOfRain2
         private GameEndingDef[] acceptableEndings;
         // Acceptable stages to die on
         private string[] acceptableLosses;
+        // Boss-kill victory detection: set when boss group defeated on a victory-eligible stage
+        private bool bossDefeatedOnVictoryStage;
 
         // Cached slot data for session reuse across runs
         private bool cachedGoalIsExplore;
@@ -224,13 +226,14 @@ namespace Archipelago.RiskOfRain2
                         acceptableLosses = new[] { "meridian" };
                         victoryCondition = "Rebirth";
                         break;
-                    // Solus Heart / Neural Sanctum
-                    // TODO: Verify DLC3 GameEndingDef at runtime — field name may differ
-                    // case "5":
-                    //     acceptableEndings = new[] { DLC3Content.GameEndings.??? };
-                    //     acceptableLosses = new[] { "solusweb" };
-                    //     victoryCondition = "Solus Wing";
-                    //     break;
+                    // Solus Heart — defeat Solus Heart in Neural Sanctum (scene: solusweb)
+                    // Path: Solutional Haunt (Solus Wing) → Computational Exchange → Neural Sanctum (Solus Heart)
+                    // No standard GameEndingDef — detected via boss-kill + scene-transition hook.
+                    case "5":
+                        acceptableEndings = new GameEndingDef[] { };
+                        acceptableLosses = new[] { "solusweb" };
+                        victoryCondition = "Solus Heart";
+                        break;
                     default:
                         victoryCondition = "any";
                         acceptableEndings = new[] {
@@ -239,7 +242,7 @@ namespace Archipelago.RiskOfRain2
                             RoR2Content.GameEndings.LimboEnding,
                             DLC1Content.GameEndings.VoidEnding,
                             DLC2Content.GameEndings.RebirthEndingDef,
-                            // TODO: Add DLC3 GameEndingDef once verified at runtime
+                            // Solus Heart has no GameEndingDef — handled via boss-kill hook
                         };
                         acceptableLosses = new[] {
                             "moon",
@@ -263,7 +266,7 @@ namespace Archipelago.RiskOfRain2
                     RoR2Content.GameEndings.LimboEnding,
                     DLC1Content.GameEndings.VoidEnding,
                     DLC2Content.GameEndings.RebirthEndingDef,
-                    // TODO: Add DLC3 GameEndingDef once verified at runtime
+                    // Solus Heart has no GameEndingDef — handled via boss-kill hook
                 };
                 acceptableLosses = new[] {
                     "moon",
@@ -448,6 +451,7 @@ namespace Archipelago.RiskOfRain2
             Stageblockerhandler = null;
             Locationhandler = null;
             shrineChanceHelper = null;
+            bossDefeatedOnVictoryStage = false;
         }
 
         /// <summary>
@@ -507,11 +511,13 @@ namespace Archipelago.RiskOfRain2
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter += PortalDialerPreDialState_OnEnter;
+            On.RoR2.BossGroup.OnDefeatedServer += BossGroup_OnDefeatedServer;
+            RoR2.Stage.onStageStartGlobal += Stage_onStageStartGlobal_VictoryCheck;
         }
 
         private void PortalDialerPreDialState_OnEnter(On.RoR2.PortalDialerController.PortalDialerPreDialState.orig_OnEnter orig, PortalDialerController.PortalDialerPreDialState self)
         {
-            ChatMessage.SendColored($"Victory conditon is {ArchipelagoClient.victoryCondition}.", Color.magenta);
+            ChatMessage.SendColored($"Victory condition is {ArchipelagoClient.victoryCondition}.", Color.magenta);
             orig(self);
         }
 
@@ -533,6 +539,8 @@ namespace Archipelago.RiskOfRain2
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter -= PortalDialerPreDialState_OnEnter;
+            On.RoR2.BossGroup.OnDefeatedServer -= BossGroup_OnDefeatedServer;
+            RoR2.Stage.onStageStartGlobal -= Stage_onStageStartGlobal_VictoryCheck;
         }
 
         private void SceneObjectToggleGroup_Awake(On.RoR2.SceneObjectToggleGroup.orig_Awake orig, SceneObjectToggleGroup self)
@@ -610,8 +618,8 @@ namespace Archipelago.RiskOfRain2
                 {
                     itemCheckBar.CurrentItemCount = itemCheckBar.CurrentItemCount % ItemLogic.ItemPickupStep;
                 }
+                new SyncLocationCheckProgress(itemCheckBar.CurrentItemCount, itemCheckBar.ItemPickupStep).Send(NetworkDestination.Clients);
             }
-            new SyncLocationCheckProgress(itemCheckBar.CurrentItemCount, itemCheckBar.ItemPickupStep).Send(NetworkDestination.Clients);
         }
 
         private void ChatBox_SubmitChat(On.RoR2.UI.ChatBox.orig_SubmitChat orig, ChatBox self)
@@ -731,8 +739,54 @@ namespace Archipelago.RiskOfRain2
         {
             Log.LogDebug($"ending stage is {Stage.instance.sceneDef.cachedName}");
             return acceptableEndings.Contains(gameEndingDef) ||
-                (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.StandardLoss) && (acceptableLosses.Contains(Stage.instance.sceneDef.cachedName)) ||
-                (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.ObliterationEnding) && (acceptableLosses.Contains(Stage.instance.sceneDef.cachedName));
+                (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.StandardLoss && acceptableLosses.Contains(Stage.instance.sceneDef.cachedName)) ||
+                (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.ObliterationEnding && acceptableLosses.Contains(Stage.instance.sceneDef.cachedName));
+        }
+
+        // Boss-kill victory detection for encounters that don't trigger a standard GameEndingDef.
+        // Step 1: Flag when boss group is defeated on a victory-eligible stage.
+        private void BossGroup_OnDefeatedServer(On.RoR2.BossGroup.orig_OnDefeatedServer orig, BossGroup self)
+        {
+            orig(self);
+            if (Stage.instance == null) return;
+            var sceneName = Stage.instance.sceneDef.cachedName;
+            if (IsVictoryStageForBossKill(sceneName))
+            {
+                bossDefeatedOnVictoryStage = true;
+                Log.LogDebug($"Boss defeated on victory stage: {sceneName}");
+                ChatMessage.SendColored("Boss defeated! Complete the stage to claim victory.", Color.green);
+            }
+        }
+
+        // Step 2: When the next stage loads, check if we left a victory stage after a boss kill.
+        // The isEndingAcceptable guard prevents double-sending if Run_BeginGameOver already handled it
+        // (e.g. False Son via Rebirth ending).
+        private void Stage_onStageStartGlobal_VictoryCheck(Stage stage)
+        {
+            if (!bossDefeatedOnVictoryStage || isEndingAcceptable) return;
+            if (session == null || !session.Socket.Connected) return;
+            bossDefeatedOnVictoryStage = false;
+
+            Log.LogInfo($"Victory achieved via boss kill on victory stage (now on {stage.sceneDef.cachedName}).");
+            isEndingAcceptable = true;
+
+            var packet = new StatusUpdatePacket();
+            packet.Status = ArchipelagoClientState.ClientGoal;
+            session.Socket.SendPacketAsync(packet);
+
+            new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+        }
+
+        // Which stages count for boss-kill victory detection, based on the current victory condition.
+        private bool IsVictoryStageForBossKill(string sceneName)
+        {
+            // False Son on Prime Meridian
+            if ((victoryCondition == "Rebirth" || victoryCondition == "any") && sceneName == "meridian")
+                return true;
+            // Solus Heart on Neural Sanctum
+            if ((victoryCondition == "Solus Heart" || victoryCondition == "any") && sceneName == "solusweb")
+                return true;
+            return false;
         }
 
         // Session-level: automatically set up a new run when the session persists across runs.

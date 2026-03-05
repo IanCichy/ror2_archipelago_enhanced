@@ -25,7 +25,7 @@ class Victory(Choice):
     Voidling: Defeat the Voidling in The Planetarium (DLC required! Will select any if not enabled.)
     Limbo: Defeat the Scavenger in Hidden Realm: A Moment, Whole
     False Son: Defeat the False Son in Prime Meridian (DLC required! Will select any if not enabled.)
-    Solus Wing: Defeat the Solus Wing in Neural Sanctum (DLC required! Will select any if not enabled.)
+    Solus Heart: Defeat the Solus Heart in Neural Sanctum (DLC required! Will select any if not enabled.)
     Any: Any victory in the game will count. See Final Stage Death for additional ways.
     """
     display_name = "Victory Condition"
@@ -34,7 +34,7 @@ class Victory(Choice):
     option_voidling = 2
     option_limbo = 3
     option_false_son = 4
-    option_solus_wing = 5
+    option_solus_heart = 5
     default = 0
 
 

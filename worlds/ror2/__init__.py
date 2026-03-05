@@ -78,7 +78,7 @@ class RiskOfRainWorld(World):
             self.options.victory.value = self.options.victory.option_any
         if self.options.victory == "false_son" and not self.options.dlc_sots:
             self.options.victory.value = self.options.victory.option_any
-        if self.options.victory == "solus_wing" and not self.options.dlc_ac:
+        if self.options.victory == "solus_heart" and not self.options.dlc_ac:
             self.options.victory.value = self.options.victory.option_any
 
     def create_regions(self) -> None:

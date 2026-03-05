@@ -1,10 +1,10 @@
 from . import RoR2TestBase
 
 
-class SolusWingGoalTest(RoR2TestBase):
+class SolusHeartGoalTest(RoR2TestBase):
     options = {
         "dlc_ac": "true",
-        "victory": "solus_wing"
+        "victory": "solus_heart"
     }
 
     def test_neural_sanctum(self) -> None:

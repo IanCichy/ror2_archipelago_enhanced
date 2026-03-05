@@ -189,7 +189,7 @@ def set_rules(ror2_world: "RiskOfRainWorld") -> None:
                 has_all_items(multiworld, {"Stage 5", "Prime Meridian"}, "Commencement", player)
         if ror2_options.dlc_ac:
             has_entrance_access_rule(multiworld, "Stage 5", "Neural Sanctum", player)
-            if ror2_options.victory == "solus_wing":
+            if ror2_options.victory == "solus_heart":
                 has_all_items(multiworld, {"Stage 5", "Neural Sanctum"}, "Commencement", player)
 
     # Win Condition
