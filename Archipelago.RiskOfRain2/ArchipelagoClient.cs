@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections;
 using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
@@ -73,6 +74,10 @@ namespace Archipelago.RiskOfRain2
         private uint cachedItemPickupStep = 3;
         private uint cachedShrineUseStep = 3;
         private Dictionary<string, object> cachedSlotData;
+
+        // Pending location checks that failed to send during disconnect.
+        // Held at the client level so they survive LocationHandler recreation.
+        private readonly List<long> cachedPendingChecks = new List<long>();
 
         // Cached ItemLogic state for restoring across runs
         private bool hasCachedRunState;
@@ -277,11 +282,7 @@ namespace Archipelago.RiskOfRain2
             genericMenuButton = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/UI/GenericMenuButton.prefab").WaitForCompletion();
 
             // Subscribe session-level events
-            session.MessageLog.OnMessageReceived += Session_OnMessageReceived;
-            session.Socket.SocketClosed += Session_SocketClosed;
-            session.Socket.ErrorReceived += Socket_ErrorReceived;
-            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
-            Run.onRunStartGlobal += Run_onRunStartGlobal;
+            SubscribeSessionEvents();
 
             // Stage unlock initialization (one-time, session-level)
             // Needed for backwards compatability
@@ -308,7 +309,7 @@ namespace Archipelago.RiskOfRain2
         /// Creates per-run state: ItemLogic, handlers, UI bars, game hooks.
         /// Called on first connect and on session reuse for subsequent runs.
         /// </summary>
-        public void SetupRun()
+        public void SetupRun(bool midRunReconnect = false)
         {
             isEndingAcceptable = false;
 
@@ -323,6 +324,12 @@ namespace Archipelago.RiskOfRain2
                 ItemLogic.Stageblockerhandler = Stageblockerhandler;
                 Stageblockerhandler.BlockAll();
                 Locationhandler = new LocationHandler(session, LocationHandler.buildTemplateFromSlotData(cachedSlotData));
+                // Restore any pending checks from a prior handler (saved in CleanupRun)
+                if (cachedPendingChecks.Count > 0)
+                {
+                    Locationhandler.AddPendingChecks(cachedPendingChecks);
+                    cachedPendingChecks.Clear();
+                }
                 shrineChanceHelper = new ShrineChanceHandler();
 
                 itemCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(-40, 0), Vector2.zero, "Item Check Progress:");
@@ -385,10 +392,17 @@ namespace Archipelago.RiskOfRain2
                 new ArchipelagoStartExplore().Send(NetworkDestination.Clients);
             }
 
-            // Enqueue all received items for this run. Handles both first connect
-            // (items missed during login) and session reuse (re-granting items
-            // for the new run since the player's inventory is empty).
-            ItemLogic.ProcessAllReceivedItems();
+            // Enqueue received items. On mid-run reconnect, only process items
+            // received since the last known index to avoid duplicating items
+            // the player already has. On fresh connect/new run, process all.
+            if (midRunReconnect)
+            {
+                ItemLogic.ProcessItemsSinceIndex(lastReceivedItemindex);
+            }
+            else
+            {
+                ItemLogic.ProcessAllReceivedItems();
+            }
             ItemLogic.Precollect();
         }
 
@@ -430,11 +444,42 @@ namespace Archipelago.RiskOfRain2
                 shrineCheckBar = null;
             }
 
+            // Save any pending checks before destroying the handler
+            if (Locationhandler != null)
+            {
+                cachedPendingChecks.AddRange(Locationhandler.GetPendingChecks());
+            }
+
             // In the case the player joins a lobby that uses different settings, the previous objects may still exist and may be called again when hooks are started.
             // To prevent this, the old objects will be thrown away when cleaning up.
             Stageblockerhandler = null;
             Locationhandler = null;
             shrineChanceHelper = null;
+        }
+
+        /// <summary>
+        /// Subscribes session-level events on the current session.
+        /// </summary>
+        private void SubscribeSessionEvents()
+        {
+            session.MessageLog.OnMessageReceived += Session_OnMessageReceived;
+            session.Socket.SocketClosed += Session_SocketClosed;
+            session.Socket.ErrorReceived += Socket_ErrorReceived;
+            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
+            Run.onRunStartGlobal += Run_onRunStartGlobal;
+        }
+
+        /// <summary>
+        /// Unsubscribes session-level events from the current session.
+        /// </summary>
+        private void UnsubscribeSessionEvents()
+        {
+            if (session == null) return;
+            session.MessageLog.OnMessageReceived -= Session_OnMessageReceived;
+            session.Socket.SocketClosed -= Session_SocketClosed;
+            session.Socket.ErrorReceived -= Socket_ErrorReceived;
+            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
+            Run.onRunStartGlobal -= Run_onRunStartGlobal;
         }
 
         /// <summary>
@@ -445,11 +490,7 @@ namespace Archipelago.RiskOfRain2
         {
             if (session == null) return;
 
-            session.MessageLog.OnMessageReceived -= Session_OnMessageReceived;
-            session.Socket.SocketClosed -= Session_SocketClosed;
-            session.Socket.ErrorReceived -= Socket_ErrorReceived;
-            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
-            Run.onRunStartGlobal -= Run_onRunStartGlobal;
+            UnsubscribeSessionEvents();
 
             if (disconnect && session.Socket.Connected)
             {
@@ -635,7 +676,7 @@ namespace Archipelago.RiskOfRain2
             OnClientDisconnect?.Invoke(reason);
         }
 
-        public IEnumerator<WaitForSeconds> AttemptReconnection()
+        public System.Collections.IEnumerator AttemptReconnection()
         {
             Log.LogDebug("Attempting to reconnect!");
             if (!isInGame)
@@ -648,22 +689,86 @@ namespace Archipelago.RiskOfRain2
                 ChatMessage.Send($"Reconnection attempt #{attempt}");
                 yield return new WaitForSeconds(3f);
 
+                // Only run the blocking network I/O on a background thread.
+                // Connect() touches Unity APIs and shared state, so we can't
+                // call it wholesale off the main thread.
+                var url = lastServerUrl;
+                var slot = lastSlotName;
+                var pass = lastPassword;
+                ArchipelagoSession bgSession = null;
+                LoginResult bgResult = null;
+                Exception bgError = null;
+
+                var connectTask = Task.Run(() =>
+                {
+                    try
+                    {
+                        bgSession = ArchipelagoSessionFactory.CreateSession(url);
+                        bgResult = bgSession.TryConnectAndLogin(
+                            "Risk of Rain 2", slot, ItemsHandlingFlags.AllItems,
+                            new Version(0, 6, 4), password: pass);
+                    }
+                    catch (Exception ex)
+                    {
+                        bgError = ex;
+                    }
+                });
+
+                // Poll until the background task completes (0.5s for responsiveness)
+                float elapsed = 0f;
+                const float timeout = 30f;
+                while (!connectTask.IsCompleted && elapsed < timeout)
+                {
+                    yield return new WaitForSeconds(0.5f);
+                    elapsed += 0.5f;
+                }
+
+                // Handle timeout — abandon this attempt
+                if (!connectTask.IsCompleted)
+                {
+                    Log.LogWarning($"Reconnection attempt {attempt} timed out after {timeout}s");
+                    continue;
+                }
+
+                if (bgError != null)
+                {
+                    Log.LogWarning($"Reconnection attempt {attempt} failed: {bgError.Message}");
+                    continue;
+                }
+
+                if (bgResult == null || !bgResult.Successful)
+                {
+                    if (bgResult is LoginFailure failure)
+                    {
+                        foreach (var err in failure.Errors)
+                            Log.LogWarning($"Reconnection attempt {attempt}: {err}");
+                    }
+                    continue;
+                }
+
+                // Network succeeded — set up on the main thread.
+                // Don't call Connect() (which would call SetupRun with ProcessAllReceivedItems
+                // and duplicate every item the player already has). Instead, subscribe events
+                // on the new session and call SetupRun with midRunReconnect=true.
+                session = bgSession;
                 try
                 {
-                    Connect(lastServerUrl, lastSlotName, lastPassword);
+                    SubscribeSessionEvents();
+                    bool isMidRun = isInGame && Run.instance != null;
+                    SetupRun(midRunReconnect: isMidRun);
                 }
                 catch (Exception ex)
                 {
-                    Log.LogWarning($"Reconnection attempt {attempt} failed: {ex.Message}");
+                    Log.LogWarning($"Reconnection attempt {attempt} setup failed: {ex.Message}");
+                    continue;
                 }
 
                 if (IsConnected)
                 {
                     ChatMessage.SendColored("Reconnected to Archipelago.", Color.green);
-                    // Guard with Run.instance: if the run ended while we were
-                    // disconnected, isInGame may be stale (true) but the run is gone.
                     if (Locationhandler != null && isInGame && Run.instance != null)
                     {
+                        Locationhandler.FlushPendingChecks();
                         Locationhandler.CatchUpSceneLocations(LocationHandler.sceneDef.cachedName);
                         Locationhandler.LoadItemPickupHooks();
                     }

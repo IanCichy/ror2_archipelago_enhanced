@@ -411,6 +411,26 @@ namespace Archipelago.RiskOfRain2
             while (helper.DequeueItem() != null) { }
         }
 
+        /// <summary>
+        /// Enqueues only items received after the given index. Used during mid-run
+        /// reconnection to avoid re-granting items the player already has.
+        /// </summary>
+        public void ProcessItemsSinceIndex(int startIndex)
+        {
+            var helper = session.Items;
+            var allItems = helper.AllItemsReceived;
+            int newItems = allItems.Count - startIndex;
+            Log.LogDebug($"ProcessItemsSinceIndex: {newItems} new items (from {startIndex} to {allItems.Count})");
+
+            for (int i = startIndex; i < allItems.Count; i++)
+            {
+                EnqueueItem(allItems[i].ItemId);
+            }
+            ArchipelagoClient.lastReceivedItemindex = allItems.Count;
+
+            while (helper.DequeueItem() != null) { }
+        }
+
         /**
          * At the start of a run, we need to precollect all environments before environments are picked for stages.
          */

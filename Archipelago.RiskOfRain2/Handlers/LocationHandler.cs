@@ -439,14 +439,55 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
         }
 
+        private readonly List<long> pendingChecks = new List<long>();
+
         private void sendLocation(int id)
         {
+            if (session?.Socket?.Connected == true)
+            {
+                LocationChecksPacket packet = new LocationChecksPacket();
+                packet.Locations = new List<long> { id }.ToArray();
+                Log.LogDebug($"Sending location {id}");
+                session.Socket.SendPacketAsync(packet);
+            }
+            else
+            {
+                Log.LogWarning($"Socket not connected, queueing location {id} for retry");
+                pendingChecks.Add(id);
+            }
+        }
+
+        /// <summary>
+        /// Returns the current pending checks list (for saving before handler disposal).
+        /// </summary>
+        public List<long> GetPendingChecks() => new List<long>(pendingChecks);
+
+        /// <summary>
+        /// Adds previously cached pending checks (from a prior handler instance).
+        /// </summary>
+        public void AddPendingChecks(List<long> checks)
+        {
+            pendingChecks.AddRange(checks);
+        }
+
+        /// <summary>
+        /// Re-sends any location checks that failed during a disconnect.
+        /// Called after a successful reconnection.
+        /// </summary>
+        public void FlushPendingChecks()
+        {
+            if (pendingChecks.Count == 0) return;
+            if (session?.Socket?.Connected != true)
+            {
+                Log.LogWarning($"FlushPendingChecks: socket still not connected, {pendingChecks.Count} checks remain queued");
+                return;
+            }
+
+            Log.LogDebug($"Flushing {pendingChecks.Count} pending location checks");
             LocationChecksPacket packet = new LocationChecksPacket();
-            packet.Locations = new List<long> { id }.ToArray();
-            Log.LogDebug($"planning to send location {id}"); // XXX
-            // Changed to Async.. lets see if it breaks something else
+            packet.Locations = pendingChecks.ToArray();
             session.Socket.SendPacketAsync(packet);
-            
+            pendingChecks.Clear();
         }
 
         /// <summary>
