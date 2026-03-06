@@ -203,24 +203,46 @@ namespace Archipelago.RiskOfRain2.UI
             var unlocked = StageBlockerHandler.UnlockedEnvironments;
             var allEnvs = StageBlockerHandler.AllSessionEnvironments;
 
-            for (int group = 1; group <= 4; group++)
+            // Build lists per stage group
+            var columns = new List<string>[4];
+            for (int g = 0; g < 4; g++)
             {
-                var envs = StageGroups
+                int group = g + 1;
+                columns[g] = StageGroups
                     .Where(e => e.Value == group && allEnvs.Contains(e.Key))
+                    .Select(e =>
+                    {
+                        var name = DisplayNames.TryGetValue(e.Key, out string dn) ? dn : e.Key;
+                        return unlocked.Contains(e.Key)
+                            ? $"<style=cIsHealing>\u2713 {name}</style>"
+                            : $"<style=cDeath>\u2717 {name}</style>";
+                    })
                     .ToList();
+            }
 
-                if (envs.Count == 0) continue;
+            // Column positions (px) within the 600px panel
+            const int col0 = 0, col1 = 145, col2 = 290, col3 = 435;
+            int[] positions = { col0, col1, col2, col3 };
 
-                sb.AppendLine($"<style=cIsUtility>Stage {group}:</style>");
+            // Header row
+            sb.Append($"<pos={col0}>Stage 1");
+            sb.Append($"<pos={col1}>Stage 2");
+            sb.Append($"<pos={col2}>Stage 3");
+            sb.AppendLine($"<pos={col3}>Stage 4");
 
-                foreach (var env in envs)
+            // Data rows
+            int maxRows = 0;
+            for (int g = 0; g < 4; g++)
+                maxRows = Math.Max(maxRows, columns[g].Count);
+
+            for (int row = 0; row < maxRows; row++)
+            {
+                for (int g = 0; g < 4; g++)
                 {
-                    var displayName = DisplayNames.TryGetValue(env.Key, out string dn) ? dn : env.Key;
-                    if (unlocked.Contains(env.Key))
-                        sb.AppendLine($"  <style=cIsHealing>\u2713 {displayName}</style>");
-                    else
-                        sb.AppendLine($"  <style=cDeath>\u2717 {displayName}</style>");
+                    if (row < columns[g].Count)
+                        sb.Append($"<pos={positions[g]}>{columns[g][row]}");
                 }
+                sb.AppendLine();
             }
         }
     }

@@ -154,7 +154,7 @@ namespace Archipelago.RiskOfRain2.UI
             }
             else
             {
-                minimizeText = isConnected ? "<color=#00FF00>AP Connected</color>" : "Archipelago";
+                minimizeText = isConnected ? "<color=#00FF00>AP Connected</color> <color=#AAAAAA>[click to expand]</color>" : "Archipelago";
             }
             MinimizePanel.GetComponentInChildren<TextMeshProUGUI>().text = minimizeText;
         }
@@ -169,13 +169,11 @@ namespace Archipelago.RiskOfRain2.UI
                 var text = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel/Button/Text (TMP)").gameObject;
                 text.GetComponent<TextMeshProUGUI>().text = "Disconnect";
 
-                // Update minimize label if panel is currently minimized
+                // Auto-minimize the panel on successful connect
                 var panel = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel").gameObject;
-                if (!panel.activeSelf)
-                {
-                    var minimize = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Hide").gameObject;
-                    minimize.GetComponentInChildren<TextMeshProUGUI>().text = "<color=#00FF00>AP Connected</color>";
-                }
+                panel.SetActive(false);
+                var minimize = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Hide").gameObject;
+                minimize.GetComponentInChildren<TextMeshProUGUI>().text = "<color=#00FF00>AP Connected</color> <color=#AAAAAA>[click to expand]</color>";
             }
         }
         public static void ChangeButtonWhenDisconnected()
