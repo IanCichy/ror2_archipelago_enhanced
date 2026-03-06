@@ -100,13 +100,12 @@ namespace Archipelago.RiskOfRain2.Handlers
             { "helminthroost", 4 },
             { "meridian", 3 },
             // AC
-            // NOTE: "nest" (Pretender's Precipice) is orderedstage_1 per Python — not in stageLookup.
-            // TODO: Verify in-game — sprint doc suggests it may actually be Stage 2 (group 1).
-            { "ironalluvium", 1 },
-            { "ironalluvium2", 1 },
-            { "repurposedcrater", 2 },
-            { "conduitcanyon", 3 },
-            { "solutionalhaunt", 4 },
+            { "nest", 1 },            // Pretender's Precipice (game Stage 2)
+            { "ironalluvium", 2 },     // Iron Alluvium (game Stage 3)
+            { "ironalluvium2", 2 },    // Iron Auroras (game Stage 3)
+            { "repurposedcrater", 3 }, // Repurposed Crater (game Stage 4)
+            { "conduitcanyon", 3 },    // Conduit Canyon (game Stage 4)
+            { "solutionalhaunt", 4 },  // Solutional Haunt (game Stage 5)
         };
 
         // Used to display the full location names in chat when a stage is needed to progress
@@ -130,6 +129,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             { "helminthroost", "Helminth Hatchery" },
             { "meridian", "Prime Meridian" },
             // AC
+            { "nest", "Pretender's Precipice" },
             { "ironalluvium", "Iron Alluvium" },
             { "ironalluvium2", "Iron Auroras" },
             { "repurposedcrater", "Repurposed Crater" },

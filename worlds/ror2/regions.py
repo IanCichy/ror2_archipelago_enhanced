@@ -45,18 +45,18 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
     sots_regions: Dict[str, RoRRegionData] = {
         "Shattered Abodes":                     RoRRegionData([], ["OrderedStage_1"]),
         "Disturbed Impact":                     RoRRegionData([], ["OrderedStage_1"]),
-        "Viscous Falls":                        RoRRegionData([], ["OrderedStage_2"]),
-        "Reformed Altar":                       RoRRegionData([], ["OrderedStage_3"]),
-        "Treeborn Colony":                      RoRRegionData([], ["OrderedStage_4"]),
-        "Golden Dieback":                       RoRRegionData([], ["OrderedStage_4"]),
+        "Viscous Falls":                        RoRRegionData([], ["OrderedStage_1"]),
+        "Reformed Altar":                       RoRRegionData([], ["OrderedStage_2"]),
+        "Treeborn Colony":                      RoRRegionData([], ["OrderedStage_3"]),
+        "Golden Dieback":                       RoRRegionData([], ["OrderedStage_3"]),
         "Helminth Hatchery":                    RoRRegionData([], ["Hidden Realm: Bulwark's Ambry", "OrderedStage_5"]),
     }
     # AC Regions (stages with standard location checks)
     ac_regions: Dict[str, RoRRegionData] = {
-        "Pretender's Precipice":                RoRRegionData([], ["OrderedStage_1"]),
-        "Iron Alluvium":                        RoRRegionData([], ["OrderedStage_2"]),
-        "Iron Auroras":                         RoRRegionData([], ["OrderedStage_2"]),
-        "Repurposed Crater":                    RoRRegionData([], ["OrderedStage_3"]),
+        "Pretender's Precipice":                RoRRegionData([], ["OrderedStage_2"]),
+        "Iron Alluvium":                        RoRRegionData([], ["OrderedStage_3"]),
+        "Iron Auroras":                         RoRRegionData([], ["OrderedStage_3"]),
+        "Repurposed Crater":                    RoRRegionData([], ["OrderedStage_4"]),
         "Conduit Canyon":                       RoRRegionData([], ["OrderedStage_4"]),
         # Solutional Haunt is in ac_other_regions — boss-only stage with no standard interactables
     }
@@ -138,18 +138,16 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         other_regions["Commencement"].region_exits.append("The Planetarium")
         regions_pool: Dict = {**all_location_regions, **other_regions, **dlc_other_regions}
     if ror2_options.dlc_sots:
-        non_dlc_regions["Menu"].region_exits.extend(["Shattered Abodes", "Disturbed Impact"])
-        other_regions["OrderedStage_1"].region_exits.append("Viscous Falls")
-        other_regions["OrderedStage_2"].region_exits.append("Reformed Altar")
-        other_regions["OrderedStage_3"].region_exits.extend(["Treeborn Colony", "Golden Dieback"])
+        non_dlc_regions["Menu"].region_exits.extend(["Shattered Abodes", "Disturbed Impact", "Viscous Falls"])
+        other_regions["OrderedStage_1"].region_exits.append("Reformed Altar")
+        other_regions["OrderedStage_2"].region_exits.extend(["Treeborn Colony", "Golden Dieback"])
         other_regions["OrderedStage_4"].region_exits.append("Helminth Hatchery")
         other_regions["OrderedStage_5"].region_exits.append("Prime Meridian")
         regions_pool.update(sots_other_regions)
     if ror2_options.dlc_ac:
-        non_dlc_regions["Menu"].region_exits.append("Pretender's Precipice")
-        other_regions["OrderedStage_1"].region_exits.extend(["Iron Alluvium", "Iron Auroras"])
-        other_regions["OrderedStage_2"].region_exits.append("Repurposed Crater")
-        other_regions["OrderedStage_3"].region_exits.append("Conduit Canyon")
+        other_regions["OrderedStage_1"].region_exits.append("Pretender's Precipice")
+        other_regions["OrderedStage_2"].region_exits.extend(["Iron Alluvium", "Iron Auroras"])
+        other_regions["OrderedStage_3"].region_exits.extend(["Repurposed Crater", "Conduit Canyon"])
         other_regions["OrderedStage_4"].region_exits.append("Solutional Haunt")
         other_regions["OrderedStage_5"].region_exits.append("Neural Sanctum")
         regions_pool.update(ac_other_regions)
