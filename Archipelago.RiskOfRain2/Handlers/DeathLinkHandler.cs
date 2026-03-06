@@ -21,6 +21,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             Log.LogDebug($"DeathLink handler constructor.");
             this.deathLink = deathLink;
         }
+
         public void Hook()
         {
             if (!deathLinkActive)
@@ -39,6 +40,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.SceneExitController.Begin -= SceneExitController_Begin;
             deathLinkActive = false;
         }
+
         private void SceneInfo_Awake(On.RoR2.SceneInfo.orig_Awake orig, SceneInfo self)
         {
             orig(self);
@@ -49,12 +51,14 @@ namespace Archipelago.RiskOfRain2.Handlers
                 recievedDeath = false;
             }
         }
+
         private void SceneExitController_Begin(On.RoR2.SceneExitController.orig_Begin orig, SceneExitController self)
         {
             orig(self);
             deathLink.OnDeathLinkReceived -= DeathLink_OnDeathLinkReceived;
             On.RoR2.CharacterMaster.OnBodyDeath -= CharacterMaster_OnBodyDeath;
         }
+
         private void CharacterMaster_OnBodyDeath(On.RoR2.CharacterMaster.orig_OnBodyDeath orig, CharacterMaster self, CharacterBody body)
         {
             try
@@ -66,12 +70,13 @@ namespace Archipelago.RiskOfRain2.Handlers
                     string playerName = "";
                     if (self.playerCharacterMasterController.GetDisplayName() == "")
                     {
-                        playerName = ArchipelagoClient.connectedPlayerName;
+                        playerName = ArchipelagoClient.ConnectedPlayerName;
                     }
                     else
                     {
                         playerName = self.playerCharacterMasterController.GetDisplayName();
                     }
+
                     Log.LogDebug($"Player OnBodyDeath of {playerName}.");
                     if (!recievedDeath) // if this client just recieved a death, don't send it cyclically
                     {
@@ -91,6 +96,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                             Log.LogDebug("Deathlink failed to send because socket was closed.");
                         }
                     }
+
                     if (thread == null)
                     {
                         thread = new Thread(() => Prevent_Deathlink_Thread());
@@ -104,8 +110,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                             thread.Start();
                         }
                     }
-
-
                 }
 
                 orig(self, body);
@@ -117,6 +121,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 orig(self, body);
             }
         }
+
         private void Prevent_Deathlink_Thread()
         {
             Thread.Sleep(10000);
@@ -131,6 +136,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             {
                 return;
             }
+
             recievedDeath = true;
             if (deathLinkThread != null && deathLinkThread.IsAlive)
             {
@@ -138,11 +144,12 @@ namespace Archipelago.RiskOfRain2.Handlers
                 deathLinkThread.Abort();
                 deathLinkThread = null;
             }
-            deathLinkThread = new Thread(() => classicDeathLink(deathLink));
+
+            deathLinkThread = new Thread(() => ClassicDeathLink(deathLink));
             deathLinkThread.Start();
         }
 
-        private void classicDeathLink(DeathLink dl)
+        private void ClassicDeathLink(DeathLink dl)
         {
             Log.LogDebug("Running classic DeathLink");
             System.Collections.ObjectModel.ReadOnlyCollection<PlayerCharacterMasterController> players = PlayerCharacterMasterController.instances;
@@ -150,8 +157,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             // TODO it does not make sense for multiplayer to kill all players, each players client should suicide independently if deathlink is enabled
             foreach (PlayerCharacterMasterController player in players)
             {
-                
-                if (player.master != null && player.master.GetBody() != null && player.master.GetBody().healthComponent != null) 
+                if (player.master != null && player.master.GetBody() != null && player.master.GetBody().healthComponent != null)
                 {
                     Log.LogDebug($"Selected player {player.GetDisplayName()} to die. NetID: {player.netId}");
                     try
@@ -163,7 +169,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                         Log.LogDebug("Something went wrong on killing the player");
                         Log.LogError(e);
                     }
-                } 
+                }
                 else
                 {
                     Log.LogError($"Selected player's body not found.");

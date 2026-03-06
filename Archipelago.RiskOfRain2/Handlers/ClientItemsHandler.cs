@@ -8,19 +8,19 @@ namespace Archipelago.RiskOfRain2.Handlers
 {
     class ClientItemsHandler : IHandler
     {
-
-        public static ArchipelagoLocationCheckProgressBarUI itemCheckBar;
-        public static ArchipelagoLocationCheckProgressBarUI shrineCheckBar;
+        public static ArchipelagoLocationCheckProgressBarUI ItemCheckBar;
+        public static ArchipelagoLocationCheckProgressBarUI ShrineCheckBar;
 
         public ClientItemsHandler()
         {
-            itemCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(-40, 0), Vector2.zero, "Item Check Progress:");
-            shrineCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(0, 170), new Vector2(50, -50), "Shrine Check Progress:");
+            ItemCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(-40, 0), Vector2.zero, "Item Check Progress:");
+            ShrineCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(0, 170), new Vector2(50, -50), "Shrine Check Progress:");
         }
+
         public void Hook()
         {
             Log.LogDebug("Client Items Started");
-            SyncLocationCheckProgress.OnLocationSynced += itemCheckBar.UpdateCheckProgress;
+            SyncLocationCheckProgress.OnLocationSynced += ItemCheckBar.UpdateCheckProgress;
             ArchipelagoStartExplore.OnArchipelagoStartExplore += ArchipelagoStartExplore_OnArchipelagoStartExplore;
             ArchipelagoStartClassic.OnArchipelagoStartClassic += ArchipelagoStartClassic_OnArchipelagoStartClassic;
             ArchipelagoTeleportClient.OnArchipelagoTeleportClient += ArchipelagoTeleportClient_OnArchipelagoTeleportClient;
@@ -30,35 +30,22 @@ namespace Archipelago.RiskOfRain2.Handlers
         public void UnHook()
         {
             ArchipelagoTeleportClient.OnArchipelagoTeleportClient -= ArchipelagoTeleportClient_OnArchipelagoTeleportClient;
-            if (itemCheckBar != null)
-            {
-                itemCheckBar.Dispose();
-            }
-            if (shrineCheckBar != null)
-            {
-                shrineCheckBar.Dispose();
-            }
+            ItemCheckBar?.Dispose();
+            ShrineCheckBar?.Dispose();
             ArchipelagoStartExplore.OnArchipelagoStartExplore -= ArchipelagoStartExplore_OnArchipelagoStartExplore;
             Run.onRunDestroyGlobal -= Run_onRunDestroyGlobal;
-
-
         }
 
         private void ArchipelagoStartClassic_OnArchipelagoStartClassic()
         {
             Log.LogDebug("Client Classic Started");
-            if (shrineCheckBar != null)
-            {
-                shrineCheckBar.Dispose();
-            }
+            ShrineCheckBar?.Dispose();
         }
 
         private void ArchipelagoStartExplore_OnArchipelagoStartExplore()
         {
             Log.LogDebug("Client Explore Started");
-            SyncShrineCheckProgress.OnShrineSynced += shrineCheckBar.UpdateCheckProgress;
-
-
+            SyncShrineCheckProgress.OnShrineSynced += ShrineCheckBar.UpdateCheckProgress;
         }
 
         private void ArchipelagoTeleportClient_OnArchipelagoTeleportClient()
@@ -69,14 +56,15 @@ namespace Archipelago.RiskOfRain2.Handlers
                 {
                     SpawnCard spawnCard = ScriptableObject.CreateInstance<SpawnCard>();
                     spawnCard = LegacyResourcesAPI.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscBarrel1");
+                    Xoroshiro128Plus xoroshiro128PlusRadioScanner = new(RoR2Application.rng);
 
-                    Xoroshiro128Plus xoroshiro128PlusRadioScanner = new Xoroshiro128Plus(RoR2Application.rng);
                     if (DirectorCore.instance != null)
                     {
                         var card = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(spawnCard, new DirectorPlacementRule
                         {
                             placementMode = DirectorPlacementRule.PlacementMode.Random
                         }, xoroshiro128PlusRadioScanner));
+
                         var position = card.transform.position;
                         Log.LogDebug($"teleport position {position + new Vector3(0, 10, 0)}");
                         var body = local.master.GetBody();

@@ -125,7 +125,7 @@ namespace Archipelago.RiskOfRain2
         {
             orig(self);
             exitedPod = true;
-            ArchipelagoClient.isInGame = true;
+            ArchipelagoClient.IsInGame = true;
         }
 
         private void SurvivorPodController_OnPassengerExit(On.RoR2.SurvivorPodController.orig_OnPassengerExit orig, SurvivorPodController self, GameObject passenger)
@@ -136,7 +136,7 @@ namespace Archipelago.RiskOfRain2
             thread.Start();
             teleportedRecently = true;
             exitedPod = true;
-            ArchipelagoClient.isInGame = true;
+            ArchipelagoClient.IsInGame = true;
         }
 
         private void CombatDirector_Awake(On.RoR2.CombatDirector.orig_Awake orig, CombatDirector self)
@@ -148,10 +148,10 @@ namespace Archipelago.RiskOfRain2
         private void Items_ItemReceived(ReceivedItemsHelper helper)
         {
             var newItem = helper.DequeueItem();
-            if (ArchipelagoClient.lastReceivedItemindex < helper.AllItemsReceived.Count)
+            if (ArchipelagoClient.LastReceivedItemIndex < helper.AllItemsReceived.Count)
             {
                 EnqueueItem(newItem.ItemId);
-                ArchipelagoClient.lastReceivedItemindex = helper.AllItemsReceived.Count;
+                ArchipelagoClient.LastReceivedItemIndex = helper.AllItemsReceived.Count;
             }
             else if (environmentRangeLower <= newItem.ItemId && newItem.ItemId <= environmentRangeUpper)
             {
@@ -404,7 +404,7 @@ namespace Archipelago.RiskOfRain2
             {
                 EnqueueItem(allItems[i].ItemId);
             }
-            ArchipelagoClient.lastReceivedItemindex = allItems.Count;
+            ArchipelagoClient.LastReceivedItemIndex = allItems.Count;
 
             // Drain the library's internal queue so future ItemReceived events
             // don't return stale items that we've already processed above.
@@ -426,7 +426,7 @@ namespace Archipelago.RiskOfRain2
             {
                 EnqueueItem(allItems[i].ItemId);
             }
-            ArchipelagoClient.lastReceivedItemindex = allItems.Count;
+            ArchipelagoClient.LastReceivedItemIndex = allItems.Count;
 
             while (helper.DequeueItem() != null) { }
         }
@@ -551,12 +551,12 @@ namespace Archipelago.RiskOfRain2
             string itemNameReceived = itemReceived.Value;
             if (itemIdRecieved == 37505)
             {
-                StageBlockerHandler.amountOfStages += 1;
-                ChatMessage.SendColored($"Received {itemNameReceived} #{StageBlockerHandler.amountOfStages}!", Color.magenta);
+                StageBlockerHandler.AmountOfStages += 1;
+                ChatMessage.SendColored($"Received {itemNameReceived} #{StageBlockerHandler.AmountOfStages}!", Color.magenta);
             } 
             else
             {
-                StageBlockerHandler.stageUnlocks[itemNameReceived] = true;
+                StageBlockerHandler.StageUnlocks[itemNameReceived] = true;
                 ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
             }
             

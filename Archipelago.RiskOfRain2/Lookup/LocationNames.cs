@@ -1,13 +1,10 @@
-﻿using Archipelago.RiskOfRain2.Handlers;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Archipelago.RiskOfRain2.Lookup
 {
     public class LocationNames
     {
-        public static readonly Dictionary<int, string> locationsNames = new()
+        public static readonly Dictionary<int, string> LocationsNames = new()
         {
             { 3, "Aphelian Sanctuary" },
             { 7, "Distant Roost" },
@@ -44,7 +41,7 @@ namespace Archipelago.RiskOfRain2.Lookup
             { 40, "Prime Meridian" }
         };
 
-        public static readonly Dictionary<int, string> cachedLocationsNames = new()
+        public static readonly Dictionary<int, string> CachedLocationsNames = new()
         {
             { 3, "ancientloft" },
             { 4, "arena" },
@@ -84,51 +81,54 @@ namespace Archipelago.RiskOfRain2.Lookup
         public string GetLocationName(string cachedName)
         {
             int sceneIndex = GetSceneIndex(cachedName);
-            if (locationsNames.TryGetValue(sceneIndex, out string locationName))
+            if (LocationsNames.TryGetValue(sceneIndex, out string locationName))
             {
                 return locationName;
             }
+
             return "";
         }
 
         public string GetLocationNameByIndex(int index)
         {
-            if (locationsNames.TryGetValue(index, out string locationName))
+            if (LocationsNames.TryGetValue(index, out string locationName))
             {
                 return locationName;
             }
+
             return "";
         }
         public string GetCachedLocationNameByIndex(int index)
         {
-            if (cachedLocationsNames.TryGetValue(index, out string cachedName))
+            if (CachedLocationsNames.TryGetValue(index, out string cachedName))
             {
                 return cachedName;
             }
+
             return "";
         }
 
         public bool LocationNamesContains(string sceneName)
         {
-            return locationsNames.ContainsValue(sceneName);
+            return LocationsNames.ContainsValue(sceneName);
         }
 
         public bool CachedLocationNamesContains(string cachedName)
         {
-            return cachedLocationsNames.ContainsValue(cachedName);
+            return CachedLocationsNames.ContainsValue(cachedName);
         }
 
         public int GetSceneIndex(string cachedName)
         {
-            foreach (var scene in cachedLocationsNames)
+            foreach (var scene in CachedLocationsNames)
             {
                 if (scene.Value == cachedName)
                 {
                     return scene.Key;
                 }
             }
+
             return 0;
         }
-
     }
 }

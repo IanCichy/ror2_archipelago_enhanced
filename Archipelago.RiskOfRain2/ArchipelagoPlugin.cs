@@ -1,11 +1,8 @@
-using System;
-using System.Collections;
 using Archipelago.RiskOfRain2.Console;
 using Archipelago.RiskOfRain2.Handlers;
 using Archipelago.RiskOfRain2.Net;
 using Archipelago.RiskOfRain2.UI;
 using BepInEx;
-using R2API;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
@@ -111,9 +108,9 @@ namespace Archipelago.RiskOfRain2
         {
             if (!NetworkServer.active && isPlayingAP)
             {
-                if (AP.itemCheckBar != null)
+                if (AP.ItemCheckBar != null)
                 {
-                    AP.itemCheckBar.Dispose();
+                    AP.ItemCheckBar.Dispose();
                 }
             }
         }
@@ -138,9 +135,9 @@ namespace Archipelago.RiskOfRain2
             // They end up with multiple bars if they join multiple sessions otherwise.
             if (!NetworkServer.active && isPlayingAP)
             {
-                if (AP.itemCheckBar != null)
+                if (AP.ItemCheckBar != null)
                 {
-                    AP.itemCheckBar.Dispose();
+                    AP.ItemCheckBar.Dispose();
                 }
             }
         }
@@ -150,7 +147,7 @@ namespace Archipelago.RiskOfRain2
             Log.LogWarning($"Archipelago client was disconnected from the server: {reason}");
             ChatMessage.SendColored($"Archipelago client was disconnected from the server. {reason}", Color.red);
 
-            if (isPlayingAP && !isReconnecting && AP.reconnecting)
+            if (isPlayingAP && !isReconnecting && AP.Reconnecting)
             {
                 isReconnecting = true;
                 StartCoroutine(ReconnectAndReset());
