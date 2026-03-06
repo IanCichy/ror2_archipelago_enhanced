@@ -110,7 +110,19 @@ namespace Archipelago.RiskOfRain2.Lookup
             { 62, "solusweb" },
         };
 
-        public string GetLocationName(string cachedName)
+        // Reverse lookup: scene cached name → Python/AP ID (built once, O(1) lookups)
+        private static readonly Dictionary<string, int> cachedNameToIndex;
+
+        static LocationNames()
+        {
+            cachedNameToIndex = new Dictionary<string, int>(cachedLocationsNames.Count);
+            foreach (var kvp in cachedLocationsNames)
+            {
+                cachedNameToIndex[kvp.Value] = kvp.Key;
+            }
+        }
+
+        public static string GetLocationName(string cachedName)
         {
             int sceneIndex = GetSceneIndex(cachedName);
             if (locationsNames.TryGetValue(sceneIndex, out string locationName))
@@ -120,7 +132,7 @@ namespace Archipelago.RiskOfRain2.Lookup
             return "";
         }
 
-        public string GetLocationNameByIndex(int index)
+        public static string GetLocationNameByIndex(int index)
         {
             if (locationsNames.TryGetValue(index, out string locationName))
             {
@@ -128,7 +140,8 @@ namespace Archipelago.RiskOfRain2.Lookup
             }
             return "";
         }
-        public string GetCachedLocationNameByIndex(int index)
+
+        public static string GetCachedLocationNameByIndex(int index)
         {
             if (cachedLocationsNames.TryGetValue(index, out string cachedName))
             {
@@ -142,21 +155,14 @@ namespace Archipelago.RiskOfRain2.Lookup
             return locationsNames.ContainsValue(sceneName);
         }
 
-        public bool CachedLocationNamesContains(string cachedName)
+        public static bool CachedLocationNamesContains(string cachedName)
         {
-            return cachedLocationsNames.ContainsValue(cachedName);
+            return cachedNameToIndex.ContainsKey(cachedName);
         }
 
-        public int GetSceneIndex(string cachedName)
+        public static int GetSceneIndex(string cachedName)
         {
-            foreach (var scene in cachedLocationsNames)
-            {
-                if (scene.Value == cachedName)
-                {
-                    return scene.Key;
-                }
-            }
-            return 0;
+            return cachedNameToIndex.TryGetValue(cachedName, out int index) ? index : 0;
         }
 
     }

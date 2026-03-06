@@ -243,10 +243,11 @@ namespace Archipelago.RiskOfRain2.Handlers
         public void CatchUpSceneLocations(string sceneName)
         {
             int index = GetSceneIndex(sceneName);
-            Dictionary<int, LocationInformationTemplate> locationscopy = currentlocations.ToDictionary(k => k.Key, k => k.Value.copy());
-            if (!locationscopy.TryGetValue(index, out LocationInformationTemplate location)) {
+            if (!currentlocations.TryGetValue(index, out LocationInformationTemplate original))
+            {
                 return;
             }
+            LocationInformationTemplate location = original.copy();
 
             ReadOnlyCollection<long> completedchecks = session.Locations.AllLocationsChecked;
             int environment_start_id = index * ArchipelagoLocationOffsets.allocation + ArchipelagoLocationOffsets.ror2_locations_start_orderedstage;
@@ -416,16 +417,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
             sceneIndex = 100;
         }
-        public int GetSceneIndex(string sceneName)
+        public static int GetSceneIndex(string sceneName)
         {
-            foreach (var scene in LocationNames.cachedLocationsNames)
-            {
-                if (scene.Value == sceneName)
-                {
-                    return scene.Key;
-                }
-            }
-            return 0;
+            return LocationNames.GetSceneIndex(sceneName);
         }
         private void updateBar(LocationTypes loctype)
         {

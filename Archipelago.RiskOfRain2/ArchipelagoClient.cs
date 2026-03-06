@@ -235,48 +235,14 @@ namespace Archipelago.RiskOfRain2
                         victoryCondition = "Solus Heart";
                         break;
                     default:
-                        victoryCondition = "any";
-                        acceptableEndings = new[] {
-                            RoR2Content.GameEndings.MainEnding,
-                            //RoR2Content.GameEndings.ObliterationEnding,
-                            RoR2Content.GameEndings.LimboEnding,
-                            DLC1Content.GameEndings.VoidEnding,
-                            DLC2Content.GameEndings.RebirthEndingDef,
-                            // Solus Heart has no GameEndingDef — handled via boss-kill hook
-                        };
-                        acceptableLosses = new[] {
-                            "moon",
-                            "moon2",
-                            "voidraid",
-                            "mysteryspace",
-                            "limbo",
-                            "meridian",
-                            "solusweb",
-                        };
+                        SetAnyVictoryCondition();
                         break;
 
                 }
             }
             else
             {
-                victoryCondition = "any";
-                acceptableEndings = new[] {
-                    RoR2Content.GameEndings.MainEnding,
-                    //RoR2Content.GameEndings.ObliterationEnding,
-                    RoR2Content.GameEndings.LimboEnding,
-                    DLC1Content.GameEndings.VoidEnding,
-                    DLC2Content.GameEndings.RebirthEndingDef,
-                    // Solus Heart has no GameEndingDef — handled via boss-kill hook
-                };
-                acceptableLosses = new[] {
-                    "moon",
-                    "moon2",
-                    "voidraid",
-                    "mysteryspace",
-                    "limbo",
-                    "meridian",
-                    "solusweb",
-                };
+                SetAnyVictoryCondition();
             }
 
             // Progressive stages and seer portals (session-level, static fields)
@@ -726,13 +692,39 @@ namespace Archipelago.RiskOfRain2
                 // Auto-complete all remaining locations. Substitute for deprecated forced_auto_forfeit.
                 //session.Locations.CompleteLocationChecks(session.Locations.AllMissingLocations.ToArray());
 
-                var packet = new StatusUpdatePacket();
-                packet.Status = ArchipelagoClientState.ClientGoal;
-                session.Socket.SendPacketAsync(packet);
-
-                new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+                SendVictoryAndEnd();
             }
             orig(self, gameEndingDef);
+        }
+
+        private void SendVictoryAndEnd()
+        {
+            var packet = new StatusUpdatePacket();
+            packet.Status = ArchipelagoClientState.ClientGoal;
+            session.Socket.SendPacketAsync(packet);
+
+            new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+        }
+
+        private void SetAnyVictoryCondition()
+        {
+            victoryCondition = "any";
+            acceptableEndings = new[] {
+                RoR2Content.GameEndings.MainEnding,
+                RoR2Content.GameEndings.LimboEnding,
+                DLC1Content.GameEndings.VoidEnding,
+                DLC2Content.GameEndings.RebirthEndingDef,
+                // Solus Heart has no GameEndingDef — handled via boss-kill hook
+            };
+            acceptableLosses = new[] {
+                "moon",
+                "moon2",
+                "voidraid",
+                "mysteryspace",
+                "limbo",
+                "meridian",
+                "solusweb",
+            };
         }
 
         private bool IsEndingAcceptable(GameEndingDef gameEndingDef)
@@ -764,17 +756,13 @@ namespace Archipelago.RiskOfRain2
         private void Stage_onStageStartGlobal_VictoryCheck(Stage stage)
         {
             if (!bossDefeatedOnVictoryStage || isEndingAcceptable) return;
-            if (session == null || !session.Socket.Connected) return;
+            if (!IsConnected) return;
             bossDefeatedOnVictoryStage = false;
 
             Log.LogInfo($"Victory achieved via boss kill on victory stage (now on {stage.sceneDef.cachedName}).");
             isEndingAcceptable = true;
 
-            var packet = new StatusUpdatePacket();
-            packet.Status = ArchipelagoClientState.ClientGoal;
-            session.Socket.SendPacketAsync(packet);
-
-            new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+            SendVictoryAndEnd();
         }
 
         // Which stages count for boss-kill victory detection, based on the current victory condition.

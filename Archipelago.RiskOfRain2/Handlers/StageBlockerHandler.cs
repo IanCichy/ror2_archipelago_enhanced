@@ -65,7 +65,6 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int mysteryspace = 33;     // Hidden Realm: A Moment, Fractured
         // TODO these should probably go somewhere else to better keep track of them since they are used in several places
 
-        public LocationNames locationsNames = new LocationNames();
         public int mostRecentStageGroup = 0;
 
         // Stage Progression system
