@@ -699,6 +699,8 @@ namespace Archipelago.RiskOfRain2
 
         private void SendVictoryAndEnd()
         {
+            if (!IsConnected) return;
+
             var packet = new StatusUpdatePacket();
             packet.Status = ArchipelagoClientState.ClientGoal;
             session.Socket.SendPacketAsync(packet);
@@ -766,12 +768,11 @@ namespace Archipelago.RiskOfRain2
         }
 
         // Which stages count for boss-kill victory detection, based on the current victory condition.
+        // Only includes encounters that lack a standard GameEndingDef.
+        // False Son/Rebirth is excluded because it has RebirthEndingDef and is handled by Run_BeginGameOver.
         private bool IsVictoryStageForBossKill(string sceneName)
         {
-            // False Son on Prime Meridian
-            if ((victoryCondition == "Rebirth" || victoryCondition == "any") && sceneName == "meridian")
-                return true;
-            // Solus Heart on Neural Sanctum
+            // Solus Heart on Neural Sanctum (no GameEndingDef exists for this encounter)
             if ((victoryCondition == "Solus Heart" || victoryCondition == "any") && sceneName == "solusweb")
                 return true;
             return false;
