@@ -369,9 +369,6 @@ namespace Archipelago.RiskOfRain2.Handlers
             
         }
 
-        public ArchipelagoLocationCheckProgressBarUI itemBar = null;
-        public ArchipelagoLocationCheckProgressBarUI shrineBar = null;
-
         // NOTE the counters are not used to store the actual count, they used for detecting when to send locations
         private uint chestitemsPickedUp = 0; // is used to count the number of items
         private uint shrinesUsed = 0; // is used to count the number of items
@@ -429,30 +426,22 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
         private void updateBar(LocationTypes loctype)
         {
-            ArchipelagoLocationCheckProgressBarUI bar = null;
             int amount = 0;
             int step = 1;
             switch (loctype)
             {
                 case LocationTypes.chest:
-                    bar = itemBar;
                     amount = (int) chestitemsPickedUp;
                     step = (int) itemPickupStep;
+                    ArchipelagoCheckCountdownController.UpdateItemCountdown(amount % step, step);
                     new SyncLocationCheckProgress(amount % step, step).Send(NetworkDestination.Clients);
                     break;
                 case LocationTypes.shrine:
-                    bar = shrineBar;
                     amount = (int) shrinesUsed;
                     step = (int) shrineUseStep;
+                    ArchipelagoCheckCountdownController.UpdateShrineCountdown(amount % step, step);
                     new SyncShrineCheckProgress(amount % step, step).Send(NetworkDestination.Clients);
                     break;
-            }
-
-            if (null != bar)
-            {
-                bar.UpdateCheckProgress(amount % step, step);
-                // use the default color with checks, use the alt color when out of checks
-                bar.ChangeBarColor(0 < checkAvailable(loctype) ? ArchipelagoLocationCheckProgressBarUI.defaultColor : ArchipelagoLocationCheckProgressBarUI.altColor);
             }
         }
 

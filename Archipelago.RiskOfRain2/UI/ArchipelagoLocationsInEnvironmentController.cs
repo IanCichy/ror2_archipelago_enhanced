@@ -15,7 +15,17 @@ namespace Archipelago.RiskOfRain2.UI
         {
             public override string GenerateString()
             {
-                return $"{CurrentScene}: {CurrentChests}/{CurrentShrines}/{CurrentScavangers}/{CurrentScanners}/{CurrentNewts}";
+                var lines = new List<string>();
+                if (CurrentChests > 0)     lines.Add($"  <style=cIsHealing>Chests: {CurrentChests} remaining</style>");
+                if (CurrentShrines > 0)    lines.Add($"  <style=cShrine>Shrines: {CurrentShrines} remaining</style>");
+                if (CurrentScavangers > 0) lines.Add($"  <style=cIsDamage>Scav: {CurrentScavangers} remaining</style>");
+                if (CurrentScanners > 0)   lines.Add($"  <style=cIsUtility>Scanner: {CurrentScanners} remaining</style>");
+                if (CurrentNewts > 0)      lines.Add($"  <style=cKeywordName>Altar: {CurrentNewts} remaining</style>");
+
+                if (lines.Count == 0)
+                    return $"{CurrentScene}\n  <style=cIsHealing>All checks complete!</style>";
+
+                return $"{CurrentScene}\n{string.Join("\n", lines)}";
             }
 
             public override bool IsDirty()

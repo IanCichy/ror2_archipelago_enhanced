@@ -8,57 +8,42 @@ namespace Archipelago.RiskOfRain2.Handlers
 {
     class ClientItemsHandler : IHandler
     {
-
-        public static ArchipelagoLocationCheckProgressBarUI itemCheckBar;
-        public static ArchipelagoLocationCheckProgressBarUI shrineCheckBar;
-
         public ClientItemsHandler()
         {
-            itemCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(-40, 0), Vector2.zero, "Item Check Progress:");
-            shrineCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(0, 170), new Vector2(50, -50), "Shrine Check Progress:");
         }
+
         public void Hook()
         {
             Log.LogDebug("Client Items Started");
-            SyncLocationCheckProgress.OnLocationSynced += itemCheckBar.UpdateCheckProgress;
+            SyncLocationCheckProgress.OnLocationSynced += ArchipelagoCheckCountdownController.UpdateItemCountdown;
+            SyncShrineCheckProgress.OnShrineSynced += ArchipelagoCheckCountdownController.UpdateShrineCountdown;
             ArchipelagoStartExplore.OnArchipelagoStartExplore += ArchipelagoStartExplore_OnArchipelagoStartExplore;
             ArchipelagoStartClassic.OnArchipelagoStartClassic += ArchipelagoStartClassic_OnArchipelagoStartClassic;
             ArchipelagoTeleportClient.OnArchipelagoTeleportClient += ArchipelagoTeleportClient_OnArchipelagoTeleportClient;
             Run.onRunDestroyGlobal += Run_onRunDestroyGlobal;
+            ArchipelagoCheckCountdownController.AddObjective();
         }
 
         public void UnHook()
         {
             ArchipelagoTeleportClient.OnArchipelagoTeleportClient -= ArchipelagoTeleportClient_OnArchipelagoTeleportClient;
-            if (itemCheckBar != null)
-            {
-                itemCheckBar.Dispose();
-            }
-            if (shrineCheckBar != null)
-            {
-                shrineCheckBar.Dispose();
-            }
+            SyncLocationCheckProgress.OnLocationSynced -= ArchipelagoCheckCountdownController.UpdateItemCountdown;
+            SyncShrineCheckProgress.OnShrineSynced -= ArchipelagoCheckCountdownController.UpdateShrineCountdown;
             ArchipelagoStartExplore.OnArchipelagoStartExplore -= ArchipelagoStartExplore_OnArchipelagoStartExplore;
+            ArchipelagoCheckCountdownController.RemoveObjective();
             Run.onRunDestroyGlobal -= Run_onRunDestroyGlobal;
-
-
         }
 
         private void ArchipelagoStartClassic_OnArchipelagoStartClassic()
         {
             Log.LogDebug("Client Classic Started");
-            if (shrineCheckBar != null)
-            {
-                shrineCheckBar.Dispose();
-            }
+            ArchipelagoCheckCountdownController.ShowShrineCountdown = false;
         }
 
         private void ArchipelagoStartExplore_OnArchipelagoStartExplore()
         {
             Log.LogDebug("Client Explore Started");
-            SyncShrineCheckProgress.OnShrineSynced += shrineCheckBar.UpdateCheckProgress;
-
-
+            ArchipelagoCheckCountdownController.ShowShrineCountdown = true;
         }
 
         private void ArchipelagoTeleportClient_OnArchipelagoTeleportClient()

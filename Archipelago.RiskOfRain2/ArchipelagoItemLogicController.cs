@@ -464,10 +464,6 @@ namespace Archipelago.RiskOfRain2
             int pythonId = (int)(itemIdReceived - environmentRangeLower);
             Log.LogDebug($"Handling environment with pythonId {pythonId}, name {itemNameReceived}");
             Stageblockerhandler?.UnBlock(pythonId);
-            if (IsInGame)
-            {
-                ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
-            }
         }
         private void HandleReceivedFillerQueueItem()
         {
@@ -480,14 +476,17 @@ namespace Archipelago.RiskOfRain2
                 // Money
                 case 37301:
                     GiveMoneyToPlayers();
+                    ChatMessage.Send("<style=cIsUtility>[AP]</style> Received: <style=cShrine>Money</style>");
                     break;
                 // Lunar Coin
                 case 37302:
                     GiveLunarCoinToPlayers();
+                    ChatMessage.Send("<style=cIsUtility>[AP]</style> Received: <style=cShrine>Lunar Coin</style>");
                     break;
                 // EXP
                 case 37303:
                     GiveExperienceToPlayers();
+                    ChatMessage.Send("<style=cIsUtility>[AP]</style> Received: <style=cShrine>Experience</style>");
                     break;
             }
         }
@@ -525,12 +524,10 @@ namespace Archipelago.RiskOfRain2
             if (itemIdRecieved == 37505)
             {
                 StageBlockerHandler.amountOfStages += 1;
-                ChatMessage.SendColored($"Received {itemNameReceived} #{StageBlockerHandler.amountOfStages}!", Color.magenta);
-            } 
+            }
             else
             {
                 StageBlockerHandler.stageUnlocks[itemNameReceived] = true;
-                ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
             }
             
         }
@@ -795,7 +792,7 @@ namespace Archipelago.RiskOfRain2
         {
             if (!monsterShrineRecently)
             {
-                ChatMessage.SendColored("<style=cShrine>The Mountain has invited you for a challenge..", Color.yellow);
+                ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cShrine>The Mountain has invited you for a challenge..</style>");
                 TeleporterInteraction.instance.AddShrineStack();
                 monsterShrineRecently = true;
                 Thread thread = new Thread(() => MountainShrineRecently());
@@ -836,7 +833,7 @@ namespace Archipelago.RiskOfRain2
                 combatDirector.monsterCredit = 100f * coefficient;
                 Log.LogDebug($"player position {player.master.GetBody().transform.localPosition} monster credit  100 * {coefficient} =  {100 * coefficient}");
                 combatDirector.SpendAllCreditsOnMapSpawns(player.master.GetBody().transform);
-                ChatMessage.SendColored("Incoming Monsters!!", Color.red);
+                ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cDeath>Incoming Monsters!!</style>");
                 PlayShrineSound();
             }
         }
@@ -895,7 +892,7 @@ namespace Archipelago.RiskOfRain2
             var time = Run.instance.GetRunStopwatch();
             time += 180;
             Run.instance.SetRunStopwatch(time);
-            ChatMessage.SendColored($"Monsters grow stronger with time!", Color.red);
+            ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cDeath>Monsters grow stronger with time!</style>");
             TeamManager.instance.SetTeamLevel(TeamIndex.Monster, 1);
         }
 

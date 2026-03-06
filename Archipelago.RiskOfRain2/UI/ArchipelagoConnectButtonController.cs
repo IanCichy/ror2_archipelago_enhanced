@@ -22,6 +22,7 @@ namespace Archipelago.RiskOfRain2.UI
         public GameObject ConnectPanel;
         public GameObject MinimizePanel;
         private string minimizeText = "-";
+        private static bool isConnected = false;
         private TMP_FontAsset font;
 
         public delegate string SlotChanged(string newValue);
@@ -147,30 +148,54 @@ namespace Archipelago.RiskOfRain2.UI
         private void ButtonPressed()
         {
             ConnectPanel.SetActive(!ConnectPanel.activeSelf);
-            minimizeText = (minimizeText == "-") ? "Archipelago" : "-";
+            if (ConnectPanel.activeSelf)
+            {
+                minimizeText = "-";
+            }
+            else
+            {
+                minimizeText = isConnected ? "<color=#00FF00>AP Connected</color>" : "Archipelago";
+            }
             MinimizePanel.GetComponentInChildren<TextMeshProUGUI>().text = minimizeText;
         }
         public static void ChangeButtonWhenConnected()
         {
             Log.LogDebug("Changing Button after connecting.");
+            isConnected = true;
             if (contr != null)
             {
                 var button = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel/Button").gameObject;
                 button.GetComponent<Image>().color = Color.red;
                 var text = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel/Button/Text (TMP)").gameObject;
                 text.GetComponent<TextMeshProUGUI>().text = "Disconnect";
+
+                // Update minimize label if panel is currently minimized
+                var panel = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel").gameObject;
+                if (!panel.activeSelf)
+                {
+                    var minimize = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Hide").gameObject;
+                    minimize.GetComponentInChildren<TextMeshProUGUI>().text = "<color=#00FF00>AP Connected</color>";
+                }
             }
-            
         }
         public static void ChangeButtonWhenDisconnected()
         {
-            Log.LogDebug("Changing Button after connecting.");
+            Log.LogDebug("Changing Button after disconnecting.");
+            isConnected = false;
             if (contr != null)
             {
                 var button = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel/Button").gameObject;
                 button.GetComponent<Image>().color = new Color(0.0745f, 0.2824f, 0.4392f, 1f);
                 var text = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel/Button/Text (TMP)").gameObject;
                 text.GetComponent<TextMeshProUGUI>().text = "Connect To AP";
+
+                // Update minimize label if panel is currently minimized
+                var panel = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel").gameObject;
+                if (!panel.activeSelf)
+                {
+                    var minimize = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Hide").gameObject;
+                    minimize.GetComponentInChildren<TextMeshProUGUI>().text = "Archipelago";
+                }
             }
         }
         //Creates a 1x1 Outline box inside Connect to AP... pretty useless and I have no idea why it doesnt create it the around it like I can do in game

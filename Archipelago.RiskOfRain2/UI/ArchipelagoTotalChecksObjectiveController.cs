@@ -14,7 +14,7 @@ namespace Archipelago.RiskOfRain2.UI
         {
             public override string GenerateString()
             {
-                return $"Complete location checks: {CurrentChecks}/{TotalChecks}";
+                return $"Complete location checks: <style=cIsUtility>{CurrentChecks}</style>/<style=cIsUtility>{TotalChecks}</style>";
             }
 
             public override bool IsDirty()

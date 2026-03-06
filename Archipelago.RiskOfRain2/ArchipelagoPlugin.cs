@@ -124,10 +124,7 @@ namespace Archipelago.RiskOfRain2
         {
             if (!NetworkServer.active && isPlayingAP)
             {
-                if (AP.itemCheckBar != null)
-                {
-                    AP.itemCheckBar.Dispose();
-                }
+                ArchipelagoCheckCountdownController.RemoveObjective();
             }
         }
 
@@ -148,20 +145,17 @@ namespace Archipelago.RiskOfRain2
         private void ArchipelagoEndMessage_OnArchipelagoSessionEnd()
         {
             // This is for clients that are in a lobby but not the host of the lobby.
-            // They end up with multiple bars if they join multiple sessions otherwise.
+            // Clean up objectives when session ends.
             if (!NetworkServer.active && isPlayingAP)
             {
-                if (AP.itemCheckBar != null)
-                {
-                    AP.itemCheckBar.Dispose();
-                }
+                ArchipelagoCheckCountdownController.RemoveObjective();
             }
         }
 
         private void AP_OnClientDisconnect(string reason)
         {
             Log.LogWarning($"Archipelago client was disconnected from the server: {reason}");
-            ChatMessage.SendColored($"Archipelago client was disconnected from the server. {reason}", Color.red);
+            ChatMessage.Send($"<style=cIsUtility>[AP]</style> <style=cDeath>Archipelago client was disconnected from the server. {reason}</style>");
 
             if (isPlayingAP && !isReconnecting && AP.reconnecting)
             {

@@ -78,6 +78,10 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         };
         public static int amountOfStages = 0;
+
+        // Static tracking for the scoreboard panel
+        public static HashSet<string> AllSessionEnvironments { get; } = new HashSet<string>();
+        public static HashSet<string> UnlockedEnvironments { get; } = new HashSet<string>();
         // Stage group mapping: scene name → AP stage group (1-4).
         // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
         // Starting stages (game ordered stage 1) are not in this lookup.
@@ -165,6 +169,8 @@ namespace Archipelago.RiskOfRain2.Handlers
             unblocked_string_stages = new List<string>();
             stages_available = new List<SceneDef>();
             amountOfStages = 0;
+            AllSessionEnvironments.Clear();
+            UnlockedEnvironments.Clear();
 
             // blocking stages should be down by the owner of this object
         }
@@ -218,6 +224,8 @@ namespace Archipelago.RiskOfRain2.Handlers
             unblocked_string_stages = null;
             seerPortal = null;
             stages_available = null;
+            AllSessionEnvironments.Clear();
+            UnlockedEnvironments.Clear();
             mostRecentStageGroup = 0;
         }
 
@@ -284,6 +292,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
             Log.LogDebug($"Blocking environment: index {stageName}.");
             blocked_string_stages.Add(stageName);
+            AllSessionEnvironments.Add(stageName);
             return true;
         }
 
@@ -296,6 +305,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             string stageName = LocationNames.cachedLocationsNames[index];
             Log.LogDebug($"UnBlocking environment: index {stageName}.");
             unblocked_string_stages.Add(stageName);
+            UnlockedEnvironments.Add(stageName);
             return blocked_string_stages.Remove(stageName);
         }
 

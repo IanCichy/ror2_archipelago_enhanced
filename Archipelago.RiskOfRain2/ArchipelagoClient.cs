@@ -40,8 +40,6 @@ namespace Archipelago.RiskOfRain2
         internal ShrineChanceHandler shrineChanceHelper { get; private set; }
 
         public ArchipelagoItemLogicController ItemLogic;
-        public ArchipelagoLocationCheckProgressBarUI itemCheckBar;
-        public ArchipelagoLocationCheckProgressBarUI shrineCheckBar;
 
         private ArchipelagoSession session;
         private DeathLinkService deathLinkService;
@@ -98,7 +96,7 @@ namespace Archipelago.RiskOfRain2
             // Session reuse: if already connected, just set up a new run
             if (IsConnected)
             {
-                ChatMessage.SendColored("Reusing existing Archipelago session.", Color.green);
+                ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cIsHealing>Reusing existing Archipelago session.</style>");
                 CleanupRun();
                 SetupRun();
                 return;
@@ -107,7 +105,7 @@ namespace Archipelago.RiskOfRain2
             // Stale session: clean up before creating a new one
             TeardownSession();
 
-            ChatMessage.SendColored($"Attempting to connect to Archipelago at {url}.", Color.green);
+            ChatMessage.Send($"<style=cIsUtility>[AP]</style> Attempting to connect to Archipelago at {url}.");
 
             try
             {
@@ -136,7 +134,7 @@ namespace Archipelago.RiskOfRain2
                 LoginFailure failureResult = (LoginFailure)result;
                 foreach (var err in failureResult.Errors)
                 {
-                    ChatMessage.SendColored(err, Color.red);
+                    ChatMessage.Send($"<style=cIsUtility>[AP]</style> <style=cDeath>{err}</style>");
                     Log.LogError(err);
                 }
                 session = null;
@@ -145,7 +143,7 @@ namespace Archipelago.RiskOfRain2
 
             LoginSuccessful successResult = (LoginSuccessful)result;
             ArchipelagoConnectButtonController.ChangeButtonWhenConnected();
-            ChatMessage.SendColored("Connected!", Color.green);
+            ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cIsHealing>Connected!</style>");
 
             // Parse and cache slot data (session-level, survives across runs)
             if (successResult.SlotData.TryGetValue("finalStageDeath", out var stageDeathObject))
@@ -329,8 +327,11 @@ namespace Archipelago.RiskOfRain2
             isEndingAcceptable = false;
 
             ItemLogic = new ArchipelagoItemLogicController(session);
-            itemCheckBar = null;
-            shrineCheckBar = null;
+
+            // Initialize countdown objective for check progress
+            ArchipelagoCheckCountdownController.ItemStep = (int)cachedItemPickupStep;
+            ArchipelagoCheckCountdownController.ItemsPickedUp = 0;
+            ArchipelagoCheckCountdownController.ShowItemCountdown = true;
 
             if (cachedGoalIsExplore)
             {
@@ -341,13 +342,10 @@ namespace Archipelago.RiskOfRain2
                 Locationhandler = new LocationHandler(session, LocationHandler.buildTemplateFromSlotData(cachedSlotData));
                 shrineChanceHelper = new ShrineChanceHandler();
 
-                itemCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(-40, 0), Vector2.zero, "Item Check Progress:");
-                shrineCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(0, 170), new Vector2(50, -50), "Shrine Check Progress:");
+                ArchipelagoCheckCountdownController.ShrineStep = (int)cachedShrineUseStep;
+                ArchipelagoCheckCountdownController.ShrinesUsed = 0;
+                ArchipelagoCheckCountdownController.ShowShrineCountdown = true;
 
-                shrineCheckBar.ItemPickupStep = (int)cachedShrineUseStep;
-
-                Locationhandler.itemBar = itemCheckBar;
-                Locationhandler.shrineBar = shrineCheckBar;
                 Locationhandler.itemPickupStep = cachedItemPickupStep;
                 Locationhandler.shrineUseStep = cachedShrineUseStep;
             }
@@ -355,18 +353,11 @@ namespace Archipelago.RiskOfRain2
             {
                 Log.LogDebug("Setting up classic mode for run");
                 ArchipelagoLocationsInEnvironmentController.RemoveObjective();
+                ArchipelagoCheckCountdownController.ShowShrineCountdown = false;
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
             }
 
-            // Make the bar if it has not been created because classic mode or the slot data was missing
-            if (null == itemCheckBar)
-            {
-                Log.LogDebug("Setting up bar for classic");
-                itemCheckBar = new ArchipelagoLocationCheckProgressBarUI(Vector2.zero, Vector2.zero);
-                SyncLocationCheckProgress.OnLocationSynced += itemCheckBar.UpdateCheckProgress; // the item bar updates from the netcode in classic mode
-            }
-
-            itemCheckBar.ItemPickupStep = (int)cachedItemPickupStep;
+            ArchipelagoCheckCountdownController.AddObjective();
 
             // Initialize ItemLogic location tracking from session state.
             // On first connect, Session_PacketReceived won't fire because ItemLogic
@@ -433,18 +424,7 @@ namespace Archipelago.RiskOfRain2
                 ItemLogic = null;
             }
 
-            if (itemCheckBar != null)
-            {
-                SyncLocationCheckProgress.OnLocationSynced -= itemCheckBar.UpdateCheckProgress;
-                itemCheckBar.Dispose();
-                itemCheckBar = null;
-            }
-
-            if (shrineCheckBar != null)
-            {
-                shrineCheckBar.Dispose();
-                shrineCheckBar = null;
-            }
+            ArchipelagoCheckCountdownController.RemoveObjective();
 
             // In the case the player joins a lobby that uses different settings, the previous objects may still exist and may be called again when hooks are started.
             // To prevent this, the old objects will be thrown away when cleaning up.
@@ -504,6 +484,7 @@ namespace Archipelago.RiskOfRain2
             OnReleaseClick += WillRelease;
             OnCollectClick += WillCollect;
             On.RoR2.SceneObjectToggleGroup.Awake += SceneObjectToggleGroup_Awake;
+            ArchipelagoScoreboardController.Hook();
 
             Stageblockerhandler?.Hook();
             Locationhandler?.Hook();
@@ -517,7 +498,7 @@ namespace Archipelago.RiskOfRain2
 
         private void PortalDialerPreDialState_OnEnter(On.RoR2.PortalDialerController.PortalDialerPreDialState.orig_OnEnter orig, PortalDialerController.PortalDialerPreDialState self)
         {
-            ChatMessage.SendColored($"Victory condition is {ArchipelagoClient.victoryCondition}.", Color.magenta);
+            ChatMessage.Send($"<style=cIsUtility>[AP]</style> Victory condition is <style=cIsUtility>{ArchipelagoClient.victoryCondition}</style>.");
             orig(self);
         }
 
@@ -531,6 +512,7 @@ namespace Archipelago.RiskOfRain2
             OnReleaseClick -= WillRelease;
             OnCollectClick -= WillCollect;
             On.RoR2.SceneObjectToggleGroup.Awake -= SceneObjectToggleGroup_Awake;
+            ArchipelagoScoreboardController.Unhook();
 
             Deathlinkhandler?.UnHook();
             Stageblockerhandler?.UnHook();
@@ -607,19 +589,10 @@ namespace Archipelago.RiskOfRain2
 
         private void ItemLogicHandler_ItemDropProcessed(int pickedUpCount)
         {
-            if (itemCheckBar != null)
-            {
-                itemCheckBar.CurrentItemCount = pickedUpCount;
-                if ((itemCheckBar.CurrentItemCount % ItemLogic.ItemPickupStep) == 0)
-                {
-                    itemCheckBar.CurrentItemCount = 0;
-                }
-                else
-                {
-                    itemCheckBar.CurrentItemCount = itemCheckBar.CurrentItemCount % ItemLogic.ItemPickupStep;
-                }
-                new SyncLocationCheckProgress(itemCheckBar.CurrentItemCount, itemCheckBar.ItemPickupStep).Send(NetworkDestination.Clients);
-            }
+            int step = ItemLogic.ItemPickupStep;
+            int current = pickedUpCount % step;
+            ArchipelagoCheckCountdownController.UpdateItemCountdown(current, step);
+            new SyncLocationCheckProgress(current, step).Send(NetworkDestination.Clients);
         }
 
         private void ChatBox_SubmitChat(On.RoR2.UI.ChatBox.orig_SubmitChat orig, ChatBox self)
@@ -666,7 +639,7 @@ namespace Archipelago.RiskOfRain2
 
             for (int attempt = 1; attempt <= 5; attempt++)
             {
-                ChatMessage.Send($"Reconnection attempt #{attempt}");
+                ChatMessage.Send($"<style=cIsUtility>[AP]</style> Reconnection attempt #{attempt}");
                 yield return new WaitForSeconds(3f);
 
                 try
@@ -680,7 +653,7 @@ namespace Archipelago.RiskOfRain2
 
                 if (IsConnected)
                 {
-                    ChatMessage.SendColored("Reconnected to Archipelago.", Color.green);
+                    ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cIsHealing>Reconnected to Archipelago.</style>");
                     // Guard with Run.instance: if the run ended while we were
                     // disconnected, isInGame may be stale (true) but the run is gone.
                     if (Locationhandler != null && isInGame && Run.instance != null)
@@ -693,7 +666,7 @@ namespace Archipelago.RiskOfRain2
                 }
             }
 
-            ChatMessage.SendColored("Failed to reconnect after 5 attempts.", Color.red);
+            ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cDeath>Failed to reconnect after 5 attempts.</style>");
             Dispose();
             reconnecting = false;
         }
@@ -754,7 +727,7 @@ namespace Archipelago.RiskOfRain2
             {
                 bossDefeatedOnVictoryStage = true;
                 Log.LogDebug($"Boss defeated on victory stage: {sceneName}");
-                ChatMessage.SendColored("Boss defeated! Complete the stage to claim victory.", Color.green);
+                ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cIsHealing>Boss defeated! Complete the stage to claim victory.</style>");
             }
         }
 
