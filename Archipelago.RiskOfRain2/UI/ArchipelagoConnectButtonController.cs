@@ -1,17 +1,12 @@
-﻿using R2API.Utils;
-using RoR2.UI;
+﻿using RoR2.UI;
 using RoR2;
-using System;
-using System.IO;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace Archipelago.RiskOfRain2.UI
 {
-
     public class ArchipelagoConnectButtonController : MonoBehaviour
     {
         public static CharacterSelectController contr { get; private set; }
@@ -39,37 +34,37 @@ namespace Archipelago.RiskOfRain2.UI
         {
             connectPanel = AssetBundleHelper.LoadPrefab("ConnectCanvas");
             On.RoR2.UI.CharacterSelectController.Update += CharacterSelectController_Update;
-
         }
+
         public void OnLoadDone(UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle<GameObject> obj)
         {
-            if(obj.Result == null)
+            if (obj.Result == null)
             {
                 Log.LogDebug("error obj is null");
-            } else
+            }
+            else
             {
                 Log.LogDebug($"obj.Result {obj.Result}");
             }
         }
+
         public void Awake()
         {
             On.RoR2.UI.CharacterSelectController.Awake += CharacterSelectController_Awake;
             OnButtonClick += ButtonPressed;
-            
         }
-
 
         private void CharacterSelectController_Update(On.RoR2.UI.CharacterSelectController.orig_Update orig, CharacterSelectController self)
         {
             orig(self);
             contr = self;
-            
+
             if (chat != null && chat.gameObject.activeSelf == false)
             {
                 chat.gameObject.SetActive(true);
             }
-
         }
+
         //Hook for when the lobby is entered
         //Only show for the Host or Single Player
         internal void CharacterSelectController_Awake(On.RoR2.UI.CharacterSelectController.orig_Awake orig, CharacterSelectController self)
@@ -88,8 +83,8 @@ namespace Archipelago.RiskOfRain2.UI
                 Log.LogDebug("Character Controller Awake()");
                 ConnectPanel = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel").gameObject;
             }
-            
         }
+
         //Create button for the lobby to connect to Archipelago
         private void CreateButton()
         {
@@ -114,9 +109,10 @@ namespace Archipelago.RiskOfRain2.UI
             button.AddComponent<HGGamepadInputEvent>();
             button.GetComponent<Image>().sprite = readyButton.gameObject.GetComponent<Image>().sprite;
             button.GetComponent<HGButton>().onClick.AddListener(() => OnConnectClick());
-            
+
             button.GetComponentInChildren<TextMeshProUGUI>().font = font;
         }
+
         //Listeners for the fields to save Archipelago connection info
         private void CreateFields()
         {
@@ -133,6 +129,7 @@ namespace Archipelago.RiskOfRain2.UI
             inputPort.GetComponent<TMP_InputField>().onValueChanged.AddListener((string value) => { OnPortChanged(value); });
             inputPort.GetComponent<TMP_InputField>().text = string.Concat(ArchipelagoPlugin.apServerPort);
         }
+
         //Create button info to minimize Archipelago Panel
         private void CreateMinimizeButton()
         {
@@ -144,12 +141,14 @@ namespace Archipelago.RiskOfRain2.UI
             button.GetComponent<HGButton>().onClick.AddListener(() => OnButtonClick());
             MinimizePanel = minimizePanel.gameObject;
         }
+
         private void ButtonPressed()
         {
             ConnectPanel.SetActive(!ConnectPanel.activeSelf);
             minimizeText = (minimizeText == "-") ? "Archipelago" : "-";
             MinimizePanel.GetComponentInChildren<TextMeshProUGUI>().text = minimizeText;
         }
+
         public static void ChangeButtonWhenConnected()
         {
             Log.LogDebug("Changing Button after connecting.");
@@ -160,8 +159,8 @@ namespace Archipelago.RiskOfRain2.UI
                 var text = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel/Button/Text (TMP)").gameObject;
                 text.GetComponent<TextMeshProUGUI>().text = "Disconnect";
             }
-            
         }
+
         public static void ChangeButtonWhenDisconnected()
         {
             Log.LogDebug("Changing Button after connecting.");
@@ -173,18 +172,5 @@ namespace Archipelago.RiskOfRain2.UI
                 text.GetComponent<TextMeshProUGUI>().text = "Connect To AP";
             }
         }
-        //Creates a 1x1 Outline box inside Connect to AP... pretty useless and I have no idea why it doesnt create it the around it like I can do in game
-       /* private void CreateOutline()
-        {
-            var readyButton = contr.transform.Find("SafeArea/ReadyPanel/ReadyButton");
-            var baseHoverOutlineSprite = readyButton.Find("HoverOutlineImage").gameObject;
-            var button = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel/Button/").gameObject;
-            var outline = contr.transform.Find("SafeArea/ConnectCanvas(Clone)/Panel/Button/HoverOutlineImage(Clone)").gameObject;
-            outline.transform.SetParent(button.transform);
-            outline.transform.localPosition = new Vector3(4, -4, 0);
-            button.GetComponent<HGButton>().imageOnHover = outline.GetComponent<Image>();
-            button.GetComponent<HGButton>().showImageOnHover = true;
-            button.GetComponent<HGButton>().allowAllEventSystems = true;
-        }*/
     }
 }

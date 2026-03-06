@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Archipelago.RiskOfRain2.UI
 {
@@ -17,6 +14,7 @@ namespace Archipelago.RiskOfRain2.UI
                 return;
             }
         }
+        
         internal static GameObject LoadPrefab(string name)
         {
             return localAssetBundle?.LoadAsset<GameObject>(name);

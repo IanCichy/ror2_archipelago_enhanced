@@ -31,7 +31,7 @@ namespace Archipelago.RiskOfRain2
         public int TotalChecks { get; set; }
         System.Random rnd = new System.Random();
 
-        internal StageBlockerHandler Stageblockerhandler { get; set; }
+        internal StageBlockerHandler StageBlocker { get; set; }
 
         public long[] ChecksTogether { get; set; }
         public long[] MissingChecks { get; set; }
@@ -125,7 +125,7 @@ namespace Archipelago.RiskOfRain2
         {
             orig(self);
             exitedPod = true;
-            ArchipelagoClient.isInGame = true;
+            ArchipelagoClient.IsInGame = true;
         }
 
         private void SurvivorPodController_OnPassengerExit(On.RoR2.SurvivorPodController.orig_OnPassengerExit orig, SurvivorPodController self, GameObject passenger)
@@ -136,7 +136,7 @@ namespace Archipelago.RiskOfRain2
             thread.Start();
             teleportedRecently = true;
             exitedPod = true;
-            ArchipelagoClient.isInGame = true;
+            ArchipelagoClient.IsInGame = true;
         }
 
         private void CombatDirector_Awake(On.RoR2.CombatDirector.orig_Awake orig, CombatDirector self)
@@ -148,10 +148,10 @@ namespace Archipelago.RiskOfRain2
         private void Items_ItemReceived(ReceivedItemsHelper helper)
         {
             var newItem = helper.DequeueItem();
-            if (ArchipelagoClient.lastReceivedItemindex < helper.AllItemsReceived.Count)
+            if (ArchipelagoClient.LastReceivedItemIndex < helper.AllItemsReceived.Count)
             {
                 EnqueueItem(newItem.ItemId);
-                ArchipelagoClient.lastReceivedItemindex = helper.AllItemsReceived.Count;
+                ArchipelagoClient.LastReceivedItemIndex = helper.AllItemsReceived.Count;
             }
             else if (environmentRangeLower <= newItem.ItemId && newItem.ItemId <= environmentRangeUpper)
             {
@@ -188,6 +188,62 @@ namespace Archipelago.RiskOfRain2
             }
             
         }
+        /// <summary>
+        /// Initializes location tracking state from the current session.
+        /// Called from SetupRun() because ItemLogic is created AFTER TryConnectAndLogin(),
+        /// so it misses the Connected packet that Session_PacketReceived would have handled.
+        /// </summary>
+        public void InitializeFromConnectionState(bool isClassic, int itemPickupStep)
+        {
+            Log.LogDebug($"InitializeFromConnectionState classic={isClassic}");
+
+            if (isClassic)
+            {
+                On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_CreatePickupInfo;
+                On.RoR2.ChestBehavior.ItemDrop += ChestBehavior_ItemDrop;
+                session.Locations.CheckedLocationsUpdated += Check_Locations;
+            }
+
+            ItemPickupStep = itemPickupStep;
+
+            var locationsChecked = session.Locations.AllLocationsChecked;
+            var missingLocations = session.Locations.AllMissingLocations;
+            TotalChecks = locationsChecked.Count + missingLocations.Count;
+            ChecksTogether = locationsChecked.Concat(missingLocations).OrderBy(n => n).ToArray();
+            MissingChecks = missingLocations.ToArray();
+            Log.LogDebug($"Missing Checks {missingLocations.Count} totalChecks {TotalChecks} Locations Checked {locationsChecked.Count}");
+
+            if (ItemStartId == -1)
+            {
+                ItemStartId = session.Locations.GetLocationIdFromName("Risk of Rain 2", "ItemPickup1");
+                if (ItemStartId == -1) ItemStartId = 38000;
+            }
+
+            if (missingLocations.Count == 0)
+            {
+                CurrentChecks = TotalChecks;
+                finishedAllChecks = true;
+            }
+            else if (isClassic)
+            {
+                var missingIndex = Array.IndexOf(ChecksTogether, missingLocations[0]);
+                Log.LogInfo($"Missing index is {missingIndex} first missing id is {missingLocations[0]}");
+                ItemStartId = ChecksTogether[0];
+                Log.LogInfo($"ItemStartId {ItemStartId}");
+                CurrentChecks = missingIndex;
+            }
+            else
+            {
+                CurrentChecks = ChecksTogether.Length - missingLocations.Count;
+            }
+
+            ArchipelagoTotalChecksObjectiveController.CurrentChecks = CurrentChecks;
+            ArchipelagoTotalChecksObjectiveController.TotalChecks = TotalChecks;
+
+            new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
+            PickedUpItemCount = CurrentChecks * ItemPickupStep;
+        }
+
         private void Session_PacketReceived(ArchipelagoPacketBase packet)
         {
             switch (packet.PacketType)
@@ -319,6 +375,9 @@ namespace Archipelago.RiskOfRain2
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -= PickupDropletController_CreatePickupDroplet_CreatePickupInfo;
             On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop;
             On.RoR2.RoR2Application.Update -= RoR2Application_Update;
+            On.RoR2.SceneDirector.Start -= SceneDirector_Start;
+            On.RoR2.CombatDirector.Awake -= CombatDirector_Awake;
+            On.RoR2.SurvivorPodController.OnPassengerExit -= SurvivorPodController_OnPassengerExit;
 
             if (session != null)
             {
@@ -326,6 +385,50 @@ namespace Archipelago.RiskOfRain2
                 session.Items.ItemReceived -= Items_ItemReceived;
                 session = null;
             }
+        }
+
+        /// <summary>
+        /// Enqueues all items from the session's AllItemsReceived list and drains
+        /// the library's internal queue. Handles two cases:
+        /// 1. First connect: ItemLogic is created AFTER TryConnectAndLogin, so the
+        ///    initial item burst is in AllItemsReceived but was missed by ItemReceived.
+        /// 2. Session reuse (run 2+): the player's inventory is empty but all items
+        ///    are still in AllItemsReceived and need to be re-granted.
+        /// </summary>
+        public void ProcessAllReceivedItems()
+        {
+            var helper = session.Items;
+            var allItems = helper.AllItemsReceived;
+            Log.LogDebug($"ProcessAllReceivedItems: enqueuing {allItems.Count} items");
+            for (int i = 0; i < allItems.Count; i++)
+            {
+                EnqueueItem(allItems[i].ItemId);
+            }
+            ArchipelagoClient.LastReceivedItemIndex = allItems.Count;
+
+            // Drain the library's internal queue so future ItemReceived events
+            // don't return stale items that we've already processed above.
+            while (helper.DequeueItem() != null) { }
+        }
+
+        /// <summary>
+        /// Enqueues only items received after the given index. Used during mid-run
+        /// reconnection to avoid re-granting items the player already has.
+        /// </summary>
+        public void ProcessItemsSinceIndex(int startIndex)
+        {
+            var helper = session.Items;
+            var allItems = helper.AllItemsReceived;
+            int newItems = allItems.Count - startIndex;
+            Log.LogDebug($"ProcessItemsSinceIndex: {newItems} new items (from {startIndex} to {allItems.Count})");
+
+            for (int i = startIndex; i < allItems.Count; i++)
+            {
+                EnqueueItem(allItems[i].ItemId);
+            }
+            ArchipelagoClient.LastReceivedItemIndex = allItems.Count;
+
+            while (helper.DequeueItem() != null) { }
         }
 
         /**
@@ -387,7 +490,7 @@ namespace Archipelago.RiskOfRain2
                 Log.LogDebug($"Changing id to 46");
             }
             Log.LogDebug($"Handling environment with itemid {itemIdReceived} with name {itemNameReceived}");
-            Stageblockerhandler?.UnBlock((int)(itemIdReceived - environmentRangeLower));
+            StageBlocker?.UnBlock((int)(itemIdReceived - environmentRangeLower));
             if (IsInGame)
             {
                 ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
@@ -448,12 +551,12 @@ namespace Archipelago.RiskOfRain2
             string itemNameReceived = itemReceived.Value;
             if (itemIdRecieved == 37505)
             {
-                StageBlockerHandler.amountOfStages += 1;
-                ChatMessage.SendColored($"Received {itemNameReceived} #{StageBlockerHandler.amountOfStages}!", Color.magenta);
+                StageBlockerHandler.AmountOfStages += 1;
+                ChatMessage.SendColored($"Received {itemNameReceived} #{StageBlockerHandler.AmountOfStages}!", Color.magenta);
             } 
             else
             {
-                StageBlockerHandler.stageUnlocks[itemNameReceived] = true;
+                StageBlockerHandler.StageUnlocks[itemNameReceived] = true;
                 ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
             }
             

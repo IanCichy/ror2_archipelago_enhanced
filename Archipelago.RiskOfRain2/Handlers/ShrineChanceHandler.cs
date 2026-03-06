@@ -4,7 +4,6 @@ namespace Archipelago.RiskOfRain2.Handlers
 {
     class ShrineChanceHandler : IHandler
     {
-
         public void Hook()
         {
             RoR2.SceneDirector.onGenerateInteractableCardSelection += SceneDirector_onGenerateInteractableCardSelection;
@@ -32,7 +31,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                     }
                 }
             }
-
         }
     }
 }

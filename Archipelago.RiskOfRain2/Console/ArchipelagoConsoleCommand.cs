@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Text;
 using R2API.Utils;
 using RoR2;
 
@@ -26,9 +23,9 @@ namespace Archipelago.RiskOfRain2.Console
         public static event OnArchipelagoShowUnlockedStagesCommandHandler OnArchipelagoShowUnlockedStagesCommandCalled;
 
         [ConCommand(
-    commandName = "archipelago_connect",
-    flags = ConVarFlags.SenderMustBeServer,
-    helpText = "Connects to Archipelago. Syntax: archipelago_connect <url> <port> <slot> [password]")]
+            commandName = "archipelago_connect",
+            flags = ConVarFlags.SenderMustBeServer,
+            helpText = "Connects to Archipelago. Syntax: archipelago_connect <url> <port> <slot> [password]")]
         private static void ArchipelagoConCommand(ConCommandArgs args)
         {
             if (args.Count < 3 || args.Count > 4)
@@ -57,10 +54,10 @@ namespace Archipelago.RiskOfRain2.Console
             OnArchipelagoDisconnectCommandCalled();
         }
         
-        [ConCommand(commandName = "archipelago_reconnect", flags = ConVarFlags.SenderMustBeServer, helpText = "Attemps to reconnect to Archipelago.")]
+        [ConCommand(commandName = "archipelago_reconnect", flags = ConVarFlags.SenderMustBeServer, helpText = "Attempts to reconnect to Archipelago.")]
         private static void ArchipelagoReconnect(ConCommandArgs args)
         {
-            OnArchipelagoReconnectCommandCalled();
+            OnArchipelagoReconnectCommandCalled?.Invoke();
         }
 
         [ConCommand(commandName = "archipelago_show_unlocked_stages", flags = ConVarFlags.SenderMustBeServer, helpText = "Shows the current stages unlocked")]
@@ -70,12 +67,11 @@ namespace Archipelago.RiskOfRain2.Console
         }
 
         [ConCommand(commandName = "archipelago_deathlink", flags = ConVarFlags.SenderMustBeServer, helpText = "Change deathlink. Syntax archipelago_deathlink <true/false>.")]
-
         private static void ArchipelagoDeathlink(ConCommandArgs args)
         {
             if (args.Count > 1)
             {
-                ChatMessage.Send("Only accepts one arguement!");
+                ChatMessage.Send("Only accepts one argument!");
             }
             else if(args.GetArgString(0) == "true" || args.GetArgString(0) == "false")
             {
@@ -89,33 +85,31 @@ namespace Archipelago.RiskOfRain2.Console
             }
         }
 
-        [ConCommand(commandName = "archipelago_final_stage_death", flags = ConVarFlags.SenderMustBeServer, helpText = "Change final stage death. Syntax archipelago_deathlink <true/false>.")]
-
+        [ConCommand(commandName = "archipelago_final_stage_death", flags = ConVarFlags.SenderMustBeServer, helpText = "Change final stage death. Syntax archipelago_final_stage_death <true/false>.")]
         private static void ArchipelagoFinalStageDeath(ConCommandArgs args)
         {
             if (args.Count > 1)
             {
-                ChatMessage.Send("Only accepts one arguement!");
+                ChatMessage.Send("Only accepts one argument!");
             }
             else if (args.GetArgString(0) == "true" || args.GetArgString(0) == "false")
             {
                 bool finalstage = Convert.ToBoolean(args.GetArgString(0));
                 OnArchipelagoFinalStageDeathCommandCalled(finalstage);
                 ChatMessage.Send($"FinalStageDeath is now set to {finalstage}");
-
             }
             else
             {
-                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_final_stage_deat true/false");
+                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_final_stage_death true/false");
             }
         }
 
-        [ConCommand(commandName = "archipelago_highlight_satellite", flags =ConVarFlags.SenderMustBeServer, helpText = "Change to highlight the radar satellite <true/false>.")]
+        [ConCommand(commandName = "archipelago_highlight_satellite", flags = ConVarFlags.SenderMustBeServer, helpText = "Change to highlight the radar satellite <true/false>.")]
         private static void ArchipelagoHighlightSatellite(ConCommandArgs args)
         {
             if (args.Count > 1)
             {
-                ChatMessage.Send("Only accepts one arguement!");
+                ChatMessage.Send("Only accepts one argument!");
             }
             else if (args.GetArgString(0) == "true" || args.GetArgString(0) == "false")
             {
@@ -130,7 +124,7 @@ namespace Archipelago.RiskOfRain2.Console
             }
             else
             {
-                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_highlight_satellitek true/false");
+                ChatMessage.Send("Invalid argument. Correct Syntax: archipelago_highlight_satellite true/false");
             }
         }
     }
