@@ -31,7 +31,7 @@ namespace Archipelago.RiskOfRain2
         public int TotalChecks { get; set; }
         System.Random rnd = new System.Random();
 
-        internal StageBlockerHandler Stageblockerhandler { get; set; }
+        internal StageBlockerHandler StageBlocker { get; set; }
 
         public long[] ChecksTogether { get; set; }
         public long[] MissingChecks { get; set; }
@@ -490,7 +490,7 @@ namespace Archipelago.RiskOfRain2
                 Log.LogDebug($"Changing id to 46");
             }
             Log.LogDebug($"Handling environment with itemid {itemIdReceived} with name {itemNameReceived}");
-            Stageblockerhandler?.UnBlock((int)(itemIdReceived - environmentRangeLower));
+            StageBlocker?.UnBlock((int)(itemIdReceived - environmentRangeLower));
             if (IsInGame)
             {
                 ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);

@@ -51,7 +51,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int goldshores = 14;       // Hidden Realm: Gilded Coast
         public const int limbo = 27;            // Hidden Realm: A Moment, Whole
         public const int mysteryspace = 33;     // Hidden Realm: A Moment, Fractured
-                                                // TODO these should probably go somewhere else to better keep track of them since they are used in several places
+        // TODO: scene index constants should probably live in a shared lookup since they are used in several places.
 
         public LocationNames locationsNames = new LocationNames();
         public int mostRecentStageGroup = 0;
@@ -63,7 +63,6 @@ namespace Archipelago.RiskOfRain2.Handlers
             { "Stage 2", false },
             { "Stage 3", false },
             { "Stage 4", false },
-
         };
         public static int amountOfStages = 0;
         public readonly Dictionary<string, int> stageLookup = new()
@@ -104,19 +103,15 @@ namespace Archipelago.RiskOfRain2.Handlers
             { "helminthroost", "Helminhe Hatchery" },
             { "meridian", "Prime Meridian" },
         };
-        // End Stage Progression system
 
-
-        // A list of stages that should be blocked because they are locked by archipelago
-        // uses scene names: https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Developer-Reference/Scene-Names/
-        List<int> blocked_stages;
-        List<int> unblocked_stages;
-        List<string> blocked_string_stages;
-        List<string> unblocked_string_stages;
-        List<SceneDef> stages_available;
-        private bool manuallyPickingStage = false; // used to keep track of when the call to PickNextStageScene is from the StageBlocker
-        private bool voidPortalSpawned = false; // used for the deep void portal in Void Locus.
-        private SceneDef prevOrderedStage = null; // used to keep track of what the scene was before the next scene is selected
+        private List<int> blockedStages;
+        private List<int> unblockedStages;
+        private List<string> blockedStringStages;
+        private List<string> unblockedStringStages;
+        private List<SceneDef> availableStages;
+        private bool manuallyPickingStage = false;
+        private bool voidPortalSpawned = false;
+        private SceneDef prevOrderedStage = null;
         public static bool progressivesStages = false;
         public static bool showSeerPortals = false;
         public static string revertToBeginningMessage = "";
@@ -125,15 +120,13 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         public StageBlockerHandler()
         {
-            Log.LogDebug($"StageBlocker handler constructor.");
-            blocked_stages = new List<int>();
-            unblocked_stages = new List<int>();
-            blocked_string_stages = new List<string>();
-            unblocked_string_stages = new List<string>();
-            stages_available = new List<SceneDef>();
+            Log.LogDebug("StageBlocker handler constructor.");
+            blockedStages = new List<int>();
+            unblockedStages = new List<int>();
+            blockedStringStages = new List<string>();
+            unblockedStringStages = new List<string>();
+            availableStages = new List<SceneDef>();
             amountOfStages = 0;
-
-            // blocking stages should be down by the owner of this object
         }
 
         public void Hook()
@@ -179,12 +172,12 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.PortalSpawner.Start -= PortalSpawner_Start;
 
             // Reset values to prevent issues when restarting a run
-            blocked_stages = null;
-            unblocked_stages = null;
-            blocked_string_stages = null;
-            unblocked_string_stages = null;
+            blockedStages = null;
+            unblockedStages = null;
+            blockedStringStages = null;
+            unblockedStringStages = null;
             seerPortal = null;
-            stages_available = null;
+            availableStages = null;
             mostRecentStageGroup = 0;
         }
 
@@ -229,46 +222,49 @@ namespace Archipelago.RiskOfRain2.Handlers
 
                 }
             }
-
-            // scenes from https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Developer-Reference/Scene-Names/
         }
 
         public void UnBlockAll()
         {
-            blocked_string_stages.Clear();
+            blockedStringStages.Clear();
         }
 
-        /**
-         * Blocks a given environment.
-         * Returns true if the stage was blocked by this call.
-         */
+        /// <summary>
+        /// Blocks a given environment.
+        /// Returns true if the stage was blocked by this call.
+        /// </summary>
         public bool Block(string stageName)
         {
-            if (blocked_string_stages.Contains(stageName))
+            if (blockedStringStages.Contains(stageName))
             {
                 Log.LogDebug($"Environment already blocked: index {stageName}.");
                 return false;
             }
             Log.LogDebug($"Blocking environment: index {stageName}.");
-            blocked_string_stages.Add(stageName);
+            blockedStringStages.Add(stageName);
             return true;
         }
 
-        /**
-         * Unblocks a given environment.
-         * Returns true if the stage was unblocked by this call.
-         */
+        /// <summary>
+        /// Unblocks a given environment.
+        /// Returns true if the stage was unblocked by this call.
+        /// </summary>
         public bool UnBlock(int index)
         {
+            if (!LocationNames.cachedLocationsNames.ContainsKey(index))
+            {
+                Log.LogWarning($"UnBlock: unknown environment index {index}, skipping.");
+                return false;
+            }
             string stageName = LocationNames.cachedLocationsNames[index];
             Log.LogDebug($"UnBlocking environment: index {stageName}.");
-            unblocked_string_stages.Add(stageName);
-            return blocked_string_stages.Remove(stageName);
+            unblockedStringStages.Add(stageName);
+            return blockedStringStages.Remove(stageName);
         }
 
-        /**
-         * Returns true if a stage is blocked.
-         */
+        /// <summary>
+        /// Returns true if a stage is blocked.
+        /// </summary>
         public bool CheckBlocked(string stageName)
         {
             if (Run.instance.nextStageScene != null && stageLookup.ContainsKey(stageName))
@@ -284,15 +280,16 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
             // Checking the list linearly should be fine.
             // Hooking update methods were avoided as much as they could be and the list itself is short.
-            foreach (string block in blocked_string_stages)
+            foreach (string block in blockedStringStages)
             {
                 if (stageName == block) return true;
             }
             return false;
         }
+
         private void ArchipelagoConsoleCommand_OnArchipelagoShowUnlockedStagesCommandCalled()
         {
-            foreach (var scene in unblocked_string_stages)
+            foreach (var scene in unblockedStringStages)
             {
                 if (LocationNames.cachedLocationsNames.ContainsValue(scene))
                 {
@@ -301,9 +298,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
         }
 
-        /**
-         * Unalign the teleporter when Commencement is not unlocked.
-         */
+        /// <summary>
+        /// Unalign the teleporter when Commencement is not unlocked.
+        /// </summary>
         private void Active_OnEnter(On.EntityStates.LunarTeleporter.Active.orig_OnEnter orig, EntityStates.LunarTeleporter.Active self)
         {
             if (CheckBlocked("moon2"))
@@ -315,11 +312,10 @@ namespace Archipelago.RiskOfRain2.Handlers
             orig(self);
         }
 
-        /**
-         * Force the SceneExitController to rereoll the scene before moving to the next scene.
-         * This is to help prevent going into the same environment on the next stage.
-         */
-
+        /// <summary>
+        /// Force the SceneExitController to reroll the scene before moving to the next scene.
+        /// This is to help prevent going into the same environment on the next stage.
+        /// </summary>
         private void SceneExitController_Begin(On.RoR2.SceneExitController.orig_Begin orig, SceneExitController self)
         {
             // Suppose the player(s) enters a scene where they do not have a valid destination currently.
@@ -359,7 +355,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                         runNextStage = CheckBlocked("meridian");
                         break;
                 }
-               
 
                 self.useRunNextStageScene = runNextStage;
             }
@@ -375,9 +370,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             orig(self);
         }
 
-        /**
-         * Block interaction with the Void Fields portal if the environment is not unlocked.
-         */
+        /// <summary>
+        /// Block interaction with the Void Fields portal if the environment is not unlocked.
+        /// </summary>
         private void Interactor_PerformInteraction(On.RoR2.Interactor.orig_PerformInteraction orig, Interactor self, GameObject interactableObject)
         {
             // I settled on hooking this method because I tried all other alternatives I could think of first.
@@ -443,9 +438,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             orig(self, interactableObject);
         }
 
-        /**
-         * Block players from petting the frog and refund them if the Planetarium is not unlocked.
-         */
+        /// <summary>
+        /// Block players from petting the frog and refund them if the Planetarium is not unlocked.
+        /// </summary>
         private void FrogController_Pet(On.RoR2.FrogController.orig_Pet orig, FrogController self, Interactor interactor)
         {
             // We block usage of the frog out of quality of life.
@@ -477,9 +472,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             orig(self, interactor);
         }
 
-        /**
-         * Prevent the dialer from changing states if the Bulwark's Ambry is not unlocked.
-         */
+        /// <summary>
+        /// Prevent the dialer from changing states if the Bulwark's Ambry is not unlocked.
+        /// </summary>
         private bool PortalDialerController_PerformActionServer(On.RoR2.PortalDialerController.orig_PerformActionServer orig, PortalDialerController self, byte[] sequence)
         {
             Log.LogDebug("PortalDialerController_PerformActionServer called.");
@@ -491,9 +486,10 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
             return orig(self, sequence);
         }
-        /**
-         * Block going to A Monument, Whole if the environment is not unlocked.
-         */
+
+        /// <summary>
+        /// Block going to A Monument, Whole if the environment is not unlocked.
+        /// </summary>
         private void TransitionToNextStage_FixedUpdate(On.EntityStates.Interactables.MSObelisk.TransitionToNextStage.orig_FixedUpdate orig, EntityStates.Interactables.MSObelisk.TransitionToNextStage self)
         {
             // If the player decides to commit to Obliterating,
@@ -508,9 +504,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             orig(self);
         }
 
-        /**
-         * Give a warning before attempting to Obliterate while A Monument, Whole is still blocked.
-         */
+        /// <summary>
+        /// Give a warning before attempting to Obliterate while A Monument, Whole is still blocked.
+        /// </summary>
         private void ReadyToEndGame_OnEnter(On.EntityStates.Interactables.MSObelisk.ReadyToEndGame.orig_OnEnter orig, EntityStates.Interactables.MSObelisk.ReadyToEndGame self)
         {
             // Giving this warning is important for fairness.
@@ -533,9 +529,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             orig(self);
         }
 
-        /**
-         * Block shop interation with Bazaar Seers for environments that are blocked.
-         */
+        /// <summary>
+        /// Block shop interaction with Bazaar Seers for environments that are blocked.
+        /// </summary>
         private void SeerStationController_SetTargetScene(On.RoR2.SeerStationController.orig_SetTargetScene orig, SeerStationController self, SceneDef sceneDef)
         {
             // For the seers, we will not change their behavior for how they pick environments.
@@ -565,9 +561,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             seerPortal.Initialize();
         }
 
-        /**
-         * Block portals for blocked environments that would be spawned by the finishing teleporter event.
-         */
+        /// <summary>
+        /// Block portals for blocked environments that would be spawned by the finishing teleporter event.
+        /// </summary>
         private void TeleporterInteraction_AttemptToSpawnAllEligiblePortals1(On.RoR2.TeleporterInteraction.orig_AttemptToSpawnAllEligiblePortals orig, TeleporterInteraction self)
         {
             // If the player unlocks the environments while they have orbs, they can still recieved the portals.
@@ -611,7 +607,6 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         private void PortalSpawner_Start(On.RoR2.PortalSpawner.orig_Start orig, PortalSpawner self)
         {
-
             if (self.bannedEventFlag == "FalseSonBossComplete")
             {
                 self.bannedEventFlag = ""; // this prevents the colossus portal from being blocked after false son has been defeated
@@ -619,9 +614,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             orig(self);
         }
 
-        /**
-         * Forcefully fail to the CanPickStage check for stages that are blocked.
-         */
+        /// <summary>
+        /// Forcefully fail the CanPickStage check for stages that are blocked.
+        /// </summary>
         private bool Run_CanPickStage(On.RoR2.Run.orig_CanPickStage orig, Run self, SceneDef scenedef)
         {
             Log.LogDebug($"Checking CanPickStage for {scenedef.nameToken}...");
@@ -632,7 +627,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 Log.LogDebug("blocking.");
                 return false;
             }
-            stages_available.Add(scenedef);
+            availableStages.Add(scenedef);
             Log.LogDebug("passing through.");
 
             return orig(self, scenedef);
@@ -640,13 +635,13 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         public void GetAvailableStages()
         {
-            stages_available.Clear();
+            availableStages.Clear();
             manuallyPickingStage = true;
             Run.instance.PickNextStageSceneFromCurrentSceneDestinations();
             manuallyPickingStage = false;
-            if (stages_available.Count > 0 && showSeerPortals)
+            if (availableStages.Count > 0 && showSeerPortals)
             {
-                seerPortal.CreatePortal(stages_available);
+                seerPortal.CreatePortal(availableStages);
             }
         }
 
@@ -680,8 +675,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 return;
             }
 
-
-            // 46 = Void Locus and if you are on that stage and you dont have The Planetarium the player will be moved back to orderedstage 1.
+            // Void Locus without The Planetarium — move back to stage 1.
             if (SceneCatalog.mostRecentSceneDef.cachedName == "voidstage" && CheckBlocked("voidraid"))
             {
                 Log.LogDebug("loaded Void Locus without The Planetarium");
@@ -754,7 +748,10 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
 
             orig(self, choices);
-            Log.LogDebug($"next scene {self.nextStageScene.cachedName} in stage {self.nextStageScene.stageOrder}");
+            if (self.nextStageScene != null)
+                Log.LogDebug($"next scene {self.nextStageScene.cachedName} in stage {self.nextStageScene.stageOrder}");
+            else
+                Log.LogWarning("nextStageScene is null after PickNextStageScene — no valid stage could be selected.");
         }
 
         // Checks to see when the Deep Portal spawns and to see if you have The Planetarium to proceed.
@@ -773,7 +770,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 deepPortal.GetComponent<SceneExitController>().useRunNextStageScene = true;
             }
         }
-        // Needed to reset voidPortalSpawned to false for the next time the user is on Void Locus.
+
         private void VoidStageMissionController_OnDisable(On.RoR2.VoidStageMissionController.orig_OnDisable orig, VoidStageMissionController self)
         {
             orig(self);

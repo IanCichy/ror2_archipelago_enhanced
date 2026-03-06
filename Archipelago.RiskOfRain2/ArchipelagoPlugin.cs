@@ -1,27 +1,24 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Archipelago.RiskOfRain2.Console;
+using Archipelago.RiskOfRain2.Handlers;
 using Archipelago.RiskOfRain2.Net;
 using Archipelago.RiskOfRain2.UI;
-using Archipelago.RiskOfRain2.Handlers;
 using BepInEx;
-using BepInEx.Bootstrap;
 using R2API;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
 using RoR2;
 using RoR2.Networking;
-using UnityEngine;
 using RoR2.UI;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Archipelago.RiskOfRain2
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
-    //[BepInDependency("com.KingEnderBrine.InLobbyConfig", BepInDependency.DependencyFlags.HardDependency)]
     public class ArchipelagoPlugin : BaseUnityPlugin
     {
         public const string PluginGUID = "com.Ijwu.Archipelago";
@@ -35,28 +32,18 @@ namespace Archipelago.RiskOfRain2
         public static BepInEx.Configuration.ConfigEntry<int> PortEntry { get; set; }
         public static BepInEx.Configuration.ConfigEntry<string> PasswordEntry { get; set; }
         internal static ArchipelagoPlugin Instance { get; private set; }
-        //public string bundleName = "connectbundle";
-        //public static AssetBundle localAssetBundle { get; private set; }
 
         private ArchipelagoClient AP;
         private ClientItemsHandler ClientItems;
-        //private bool isInLobbyConfigLoaded = false;
         internal static string apServerUri = "archipelago.gg";
         internal static int apServerPort = 38281;
-        private bool willConnectToAP = true;
         private bool isPlayingAP = false;
         private bool isReconnecting = false;
         internal static string apSlotName = "";
-        //private string apSlotName;
         internal static string apPassword;
 
-        public ArchipelagoPlugin()
-        {
-
-        }
         public void Awake()
         {
-
             Log.Init(Logger);
 
             CreateConfigurations();
@@ -175,6 +162,7 @@ namespace Archipelago.RiskOfRain2
             yield return StartCoroutine(AP.AttemptReconnection());
             isReconnecting = false;
         }
+
         public void OnClick_ConnectToArchipelagoWithButton()
         {
             // Toggle: if already connected, disconnect instead
@@ -193,19 +181,20 @@ namespace Archipelago.RiskOfRain2
             AP.Connect(url, apSlotName, apPassword);
             SlotNameEntry.Value = apSlotName;
         }
+
         private void ArchipelagoConsoleCommand_ArchipelagoCommandCalled(string url, int port, string slot, string password)
         {
-            willConnectToAP = true;
             isPlayingAP = true;
             url = url + ":" + port;
 
             AP.Connect(url, slot, password);
-            //StartCoroutine(AP.AttemptConnection());
         }
+
         private void ArchipelagoConsoleCommand_ArchipelagoDisconnectCommandCalled()
         {
             AP.Disconnect();
         }
+
         /// <summary>
         /// Server -> Client packet responder. Should not run on server.
         /// </summary>
@@ -230,6 +219,7 @@ namespace Archipelago.RiskOfRain2
                 ArchipelagoLocationsInEnvironmentController.RemoveObjective();
             }
         }
+
         private void CreateLobbyFields()
         {
             ArchipelagoConnectButtonController.OnSlotChanged = (newValue) => apSlotName = newValue;
@@ -237,6 +227,7 @@ namespace Archipelago.RiskOfRain2
             ArchipelagoConnectButtonController.OnUrlChanged = (newValue) => apServerUri = newValue;
             ArchipelagoConnectButtonController.OnPortChanged = ChangePort;
         }
+
         private void CreateConfigurations()
         {
             SatelliteEntry = Config.Bind<bool>(
@@ -264,8 +255,8 @@ namespace Archipelago.RiskOfRain2
                 "password",
                 "",
                 "Change the default password");
-
         }
+
         private string ChangePort(string newValue)
         {
             apServerPort = int.Parse(newValue);
