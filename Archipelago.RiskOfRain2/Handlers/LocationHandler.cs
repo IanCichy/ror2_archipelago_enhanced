@@ -407,15 +407,8 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
         public void GetCurrentSceneIndex()
         {
-            foreach (var scene in LocationNames.cachedLocationsNames)
-            {
-                if (scene.Value == sceneDef.cachedName)
-                {
-                    sceneIndex = scene.Key;
-                    return;
-                }
-            }
-            sceneIndex = 100;
+            int index = LocationNames.GetSceneIndex(sceneDef.cachedName);
+            sceneIndex = index != 0 ? index : 100;
         }
         public static int GetSceneIndex(string sceneName)
         {
