@@ -403,6 +403,18 @@ namespace Archipelago.RiskOfRain2.Handlers
                 Log.LogDebug("SceneExitController_SetState forcefully reroll next stagescene");
                 manuallyPickingStage = false;
             }
+            // General safety net: prevent any portal (including AC encrypted portals)
+            // from sending the player to a blocked destination.
+            SceneDef finalDest = self.useRunNextStageScene ? Run.instance.nextStageScene : self.destinationScene;
+            if (finalDest != null && CheckBlocked(finalDest.cachedName))
+            {
+                Log.LogDebug($"Safety net: destination {finalDest.cachedName} is blocked, forcing reroll.");
+                self.useRunNextStageScene = true;
+                manuallyPickingStage = true;
+                Run.instance.PickNextStageSceneFromCurrentSceneDestinations();
+                manuallyPickingStage = false;
+            }
+
             mostRecentStageGroup = SceneCatalog.mostRecentSceneDef.stageOrder;
             orig(self);
         }

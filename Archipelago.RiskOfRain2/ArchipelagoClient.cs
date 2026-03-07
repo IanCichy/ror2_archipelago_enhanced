@@ -705,6 +705,13 @@ namespace Archipelago.RiskOfRain2
             packet.Status = ArchipelagoClientState.ClientGoal;
             session.Socket.SendPacketAsync(packet);
 
+            // Mark all checks complete in the UI so the objective panel reflects victory
+            ArchipelagoTotalChecksObjectiveController.CurrentChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
+            new SyncTotalCheckProgress(
+                ArchipelagoTotalChecksObjectiveController.CurrentChecks,
+                ArchipelagoTotalChecksObjectiveController.TotalChecks
+            ).Send(NetworkDestination.Clients);
+
             new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
         }
 

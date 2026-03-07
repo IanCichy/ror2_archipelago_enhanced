@@ -461,8 +461,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         /// <returns>Returns the amount of remaining locations.</returns>
         private int checkAvailable(LocationTypes loctype) // TODO make a method to check the nth location
         {
-            int index = GetSceneIndex(sceneDef.cachedName);
-            if (!currentlocations.TryGetValue(index, out var locationsinenvironment))
+            if (!currentlocations.TryGetValue(sceneIndex, out var locationsinenvironment))
             // prevent KeyNotFoundException by using TryGetValue
             {
                 // if the locations in the environment are not being tracked, there must be 0 locations
@@ -511,7 +510,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
             // update UI to the results of sending the location
             ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
-            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
+            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
             int TotalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
             new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
             if (0 == ArchipelagoLocationsInEnvironmentController.count.total())
@@ -666,7 +665,9 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             bool locationavailable = 0 < checkAvailable(LocationTypes.chest);
             // If no chests we dont need the hooks running.
-            if (!locationavailable)
+            // Only unhook on tracked stages that exhausted all checks — not on untracked stages
+            // (boss/victory stages like Solutional Haunt) where hooks are still needed for later stages.
+            if (!locationavailable && currentlocations.ContainsKey(sceneIndex))
             {
                 On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Chest;
                 On.RoR2.Artifacts.SacrificeArtifactManager.OnServerCharacterDeath -= SacrificeArtifactManager_OnServerCharacterDeath;
