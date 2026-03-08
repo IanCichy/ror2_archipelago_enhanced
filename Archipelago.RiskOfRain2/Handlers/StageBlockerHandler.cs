@@ -6,6 +6,7 @@ using RoR2;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
 
 namespace Archipelago.RiskOfRain2.Handlers
@@ -607,6 +608,32 @@ namespace Archipelago.RiskOfRain2.Handlers
             seerPortal = null;
             seerPortal = new SeerPortal();
             seerPortal.Initialize();
+
+            // Force a Halcyon Shrine (Shrine of Shaping) spawn on every ordered stage.
+            // Path-of-the-Colossus stages (Reformed Altar, Treeborn Colony, Golden Dieback) are only
+            // reachable via green portals from Halcyon Shrines. The AP solver treats them as normal
+            // tier-progression stages, so we must guarantee green portal access to prevent softlocks.
+            // The spawn card will be null if SOTS DLC is not installed, safely skipping.
+            try
+            {
+                var shrineCard = Addressables.LoadAssetAsync<SpawnCard>(
+                    "RoR2/DLC2/iscShrineColossusAccess.asset").WaitForCompletion();
+                if (shrineCard != null && DirectorCore.instance != null)
+                {
+                    DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(
+                        shrineCard,
+                        new DirectorPlacementRule
+                        {
+                            placementMode = DirectorPlacementRule.PlacementMode.Random,
+                        },
+                        new Xoroshiro128Plus(self.rng.nextUlong)));
+                    Log.LogDebug("Forced Halcyon Shrine spawn for guaranteed green portal access.");
+                }
+            }
+            catch (Exception e)
+            {
+                Log.LogDebug($"Halcyon Shrine spawn skipped (SOTS DLC likely not installed): {e.Message}");
+            }
         }
 
         /**
@@ -702,10 +729,20 @@ namespace Archipelago.RiskOfRain2.Handlers
             // The reason for this is if the player is playing with explore mode, the player's next environment could be in a different already unlocked environment.
             // Thus if the next unlock is somewhere, it would be nice to the the player get to that somewhere without restarting the run.
 
+            // 46 = Void Locus and if you are on that stage and you dont have The Planetarium the player will be moved back to orderedstage 1.
+            if (SceneCatalog.mostRecentSceneDef.cachedName == "voidstage" && CheckBlocked("voidraid"))
+            {
+                Log.LogDebug("loaded Void Locus without The Planetarium");
+                SceneCatalog.mostRecentSceneDef.stageOrder = 1;
+                Log.LogDebug("Switching to stage 1");
+                self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
+
+            }
+
             bool hasHabitat = false;
             bool hasHabitatFall = false;
 
-            // Since hatitatfall is a stage you usually cant get to without an initial loop we need to add special handling for it
+            // Since habitatfall is a stage you usually cant get to without an initial loop we need to add special handling for it
             choices.choices.ForEachTry( choice =>
             {
                 if (choice.value.cachedName == "habitat") hasHabitat = true;
@@ -722,17 +759,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                 orig(self, choices);
                 self.startingSceneGroup = originalStartingSceneGroup;
                 return;
-            }
-
-
-            // 46 = Void Locus and if you are on that stage and you dont have The Planetarium the player will be moved back to orderedstage 1.
-            if (SceneCatalog.mostRecentSceneDef.cachedName == "voidstage" && CheckBlocked("voidraid"))
-            {
-                Log.LogDebug("loaded Void Locus without The Planetarium");
-                SceneCatalog.mostRecentSceneDef.stageOrder = 1;
-                Log.LogDebug("Switching to stage 1");
-                self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
-                
             }
 
             // there are 2 conditions when we should mess with this call:
@@ -787,10 +813,33 @@ namespace Archipelago.RiskOfRain2.Handlers
                         }
 
                     }
-                    revertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}!";
 
-                    Log.LogDebug("adding choices for stage 1");
-                    self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
+                    // Instead of only falling back to tier 1, try ALL accessible stages from any tier.
+                    // This prevents stuck loops where the player has unlocked same-tier stages they haven't visited.
+                    string currentScene = SceneCatalog.mostRecentSceneDef.cachedName;
+                    foreach (SceneDef sceneDef in SceneCatalog.allSceneDefs)
+                    {
+                        if (sceneDef.sceneType == SceneType.Stage &&
+                            sceneDef.stageOrder >= 1 && sceneDef.stageOrder <= 5 &&
+                            sceneDef.cachedName != currentScene &&
+                            !CheckBlocked(sceneDef.cachedName))
+                        {
+                            choices.AddChoice(sceneDef, 1f);
+                            Log.LogDebug($"Fallback: adding {sceneDef.cachedName} (stageOrder {sceneDef.stageOrder}) as alternative");
+                        }
+                    }
+
+                    if (choices.Count > 0)
+                    {
+                        revertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}! Routing to an accessible stage instead.";
+                    }
+                    else
+                    {
+                        // Absolute last resort: fall back to starting stages even if blocked
+                        revertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}!";
+                        Log.LogDebug("No accessible stages found anywhere, falling back to starting stages");
+                        self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
+                    }
                 }
                 else Log.LogDebug("there are choices for the next scene; skipping tampering said choices");
 

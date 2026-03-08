@@ -17,9 +17,10 @@ Sprint 1: Full DLC Support               [MUST DO FIRST - all others depend on i
     |
     +---> Sprint 7: Skill Swap Randomizer [Highest complexity, standalone]
     +---> Sprint 11: New Traps           [Medium, standalone, fun factor]
+    +---> Sprint 12: Bazaar Enhancements [Medium, standalone, hub world feel]
 ```
 
-**Recommended order:** 1 → 8 → 10 → 2 → 9 → 5 → 3 → 11 → 4 → 6 → 7
+**Recommended order:** 1 → 8 → 10 → 2 → 9 → 5 → 3 → 11 → 12 → 4 → 6 → 7
 
 ## Sprint Summary
 
@@ -36,6 +37,7 @@ Sprint 1: Full DLC Support               [MUST DO FIRST - all others depend on i
 | 9 | [Guaranteed Interactables](sprint-9-guaranteed-interactables.md) | Low-Medium | 1 | 37150-37169 |
 | 10 | [Money Bank](sprint-10-money-bank.md) | Medium | 0 | None (or 37304) |
 | 11 | [New Traps](sprint-11-new-traps.md) | Medium | 0 | 37405-37410 |
+| 12 | [Bazaar Enhancements](sprint-12-bazaar-enhancements.md) | Medium | 0-1 | None |
 
 ## AP Item ID Range Allocation
 
@@ -61,6 +63,7 @@ Sprint 1: Full DLC Support               [MUST DO FIRST - all others depend on i
 37600-37609  Portal Unlock items            (Sprint 3)
 37610-37699  Reserved for future portals
 38500-38699  Skill Unlock items             (Sprint 7)
+38700-38704  Bazaar Shop location checks    (Sprint 12)
 ```
 
 ### Location ID Ranges (Existing)
