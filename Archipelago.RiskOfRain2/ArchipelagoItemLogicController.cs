@@ -383,6 +383,7 @@ namespace Archipelago.RiskOfRain2
             {
                 session.Socket.PacketReceived -= Session_PacketReceived;
                 session.Items.ItemReceived -= Items_ItemReceived;
+                session.Locations.CheckedLocationsUpdated -= Check_Locations;
                 session = null;
             }
         }

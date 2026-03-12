@@ -20,12 +20,12 @@ namespace Archipelago.RiskOfRain2.Handlers
             if (portalPrefab != null)
             {
                 var teleporterMesh = UnityEngine.GameObject.Find("TeleporterBaseMesh");
-                GameObject teleporterGameObject = teleporterMesh.transform.parent.gameObject;
                 if (teleporterMesh == null)
                 {
                     Log.LogWarning("TeleporterBaseMesh not found!");
                     return;
                 }
+                GameObject teleporterGameObject = teleporterMesh.transform.parent.gameObject;
                 if (teleporterGameObject == null)
                 {
                     Log.LogWarning("Teleporter not found!");

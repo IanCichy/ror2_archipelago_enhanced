@@ -149,7 +149,6 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         other_regions["OrderedStage_2"].region_exits.extend(["Iron Alluvium", "Iron Auroras"])
         other_regions["OrderedStage_3"].region_exits.extend(["Repurposed Crater", "Conduit Canyon"])
         other_regions["OrderedStage_4"].region_exits.append("Solutional Haunt")
-        other_regions["OrderedStage_5"].region_exits.append("Neural Sanctum")
         regions_pool.update(ac_other_regions)
 
     # Check to see if Victory needs to be removed from regions

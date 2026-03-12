@@ -129,7 +129,7 @@ namespace Archipelago.RiskOfRain2.Lookup
             {
                 return locationName;
             }
-            return "";
+            return null;
         }
 
         public static string GetLocationNameByIndex(int index)
@@ -138,7 +138,7 @@ namespace Archipelago.RiskOfRain2.Lookup
             {
                 return locationName;
             }
-            return "";
+            return null;
         }
 
         public static string GetCachedLocationNameByIndex(int index)
@@ -147,7 +147,7 @@ namespace Archipelago.RiskOfRain2.Lookup
             {
                 return cachedName;
             }
-            return "";
+            return null;
         }
 
         public bool LocationNamesContains(string sceneName)

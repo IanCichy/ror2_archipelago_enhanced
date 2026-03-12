@@ -385,19 +385,16 @@ namespace Archipelago.RiskOfRain2
 
             UnhookGame();
 
-            if (ItemLogic != null)
-            {
-                // Cache state before disposing for session reuse
-                hasCachedRunState = true;
-                cachedItemLogicPickupStep = ItemLogic.ItemPickupStep;
-                cachedItemLogicTotalChecks = ItemLogic.TotalChecks;
-                cachedItemLogicCurrentChecks = ItemLogic.CurrentChecks;
-                cachedItemLogicPickedUpItemCount = ItemLogic.PickedUpItemCount;
+            // Cache state before disposing for session reuse
+            hasCachedRunState = true;
+            cachedItemLogicPickupStep = ItemLogic.ItemPickupStep;
+            cachedItemLogicTotalChecks = ItemLogic.TotalChecks;
+            cachedItemLogicCurrentChecks = ItemLogic.CurrentChecks;
+            cachedItemLogicPickedUpItemCount = ItemLogic.PickedUpItemCount;
 
-                ItemLogic.OnItemDropProcessed -= ItemLogicHandler_ItemDropProcessed;
-                ItemLogic.Dispose();
-                ItemLogic = null;
-            }
+            ItemLogic.OnItemDropProcessed -= ItemLogicHandler_ItemDropProcessed;
+            ItemLogic.Dispose();
+            ItemLogic = null;
 
             if (itemCheckBar != null)
             {
@@ -820,6 +817,8 @@ namespace Archipelago.RiskOfRain2
 
         private void GameEndReportPanelController_Awake(On.RoR2.UI.GameEndReportPanelController.orig_Awake orig, GameEndReportPanelController self)
         {
+            if (session == null) { orig(self); return; }
+
             if (isEndingAcceptable && ReleasePromptPanel == null)
             {
                 GameObject menuOutline;
