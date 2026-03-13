@@ -31,7 +31,7 @@ namespace Archipelago.RiskOfRain2
         public int TotalChecks { get; set; }
         System.Random rnd = new System.Random();
 
-        internal StageBlockerHandler Stageblockerhandler { get; set; }
+        internal StageBlockerHandler StageBlocker { get; set; }
 
         public long[] ChecksTogether { get; set; }
         public long[] MissingChecks { get; set; }
@@ -125,7 +125,7 @@ namespace Archipelago.RiskOfRain2
         {
             orig(self);
             exitedPod = true;
-            ArchipelagoClient.isInGame = true;
+            ArchipelagoClient.IsInGame = true;
         }
 
         private void SurvivorPodController_OnPassengerExit(On.RoR2.SurvivorPodController.orig_OnPassengerExit orig, SurvivorPodController self, GameObject passenger)
@@ -136,7 +136,7 @@ namespace Archipelago.RiskOfRain2
             thread.Start();
             teleportedRecently = true;
             exitedPod = true;
-            ArchipelagoClient.isInGame = true;
+            ArchipelagoClient.IsInGame = true;
         }
 
         private void CombatDirector_Awake(On.RoR2.CombatDirector.orig_Awake orig, CombatDirector self)
@@ -148,10 +148,10 @@ namespace Archipelago.RiskOfRain2
         private void Items_ItemReceived(ReceivedItemsHelper helper)
         {
             var newItem = helper.DequeueItem();
-            if (ArchipelagoClient.lastReceivedItemindex < helper.AllItemsReceived.Count)
+            if (ArchipelagoClient.LastReceivedItemIndex < helper.AllItemsReceived.Count)
             {
                 EnqueueItem(newItem.ItemId);
-                ArchipelagoClient.lastReceivedItemindex = helper.AllItemsReceived.Count;
+                ArchipelagoClient.LastReceivedItemIndex = helper.AllItemsReceived.Count;
             }
             else if (environmentRangeLower <= newItem.ItemId && newItem.ItemId <= environmentRangeUpper)
             {
@@ -405,10 +405,30 @@ namespace Archipelago.RiskOfRain2
             {
                 EnqueueItem(allItems[i].ItemId);
             }
-            ArchipelagoClient.lastReceivedItemindex = allItems.Count;
+            ArchipelagoClient.LastReceivedItemIndex = allItems.Count;
 
             // Drain the library's internal queue so future ItemReceived events
             // don't return stale items that we've already processed above.
+            while (helper.DequeueItem() != null) { }
+        }
+
+        /// <summary>
+        /// Enqueues only items received after the given index. Used during mid-run
+        /// reconnection to avoid re-granting items the player already has.
+        /// </summary>
+        public void ProcessItemsSinceIndex(int startIndex)
+        {
+            var helper = session.Items;
+            var allItems = helper.AllItemsReceived;
+            int newItems = allItems.Count - startIndex;
+            Log.LogDebug($"ProcessItemsSinceIndex: {newItems} new items (from {startIndex} to {allItems.Count})");
+
+            for (int i = startIndex; i < allItems.Count; i++)
+            {
+                EnqueueItem(allItems[i].ItemId);
+            }
+            ArchipelagoClient.LastReceivedItemIndex = allItems.Count;
+
             while (helper.DequeueItem() != null) { }
         }
 
@@ -464,7 +484,7 @@ namespace Archipelago.RiskOfRain2
             // cachedLocationsNames is keyed by Python IDs, so this lookup works directly.
             int pythonId = (int)(itemIdReceived - environmentRangeLower);
             Log.LogDebug($"Handling environment with pythonId {pythonId}, name {itemNameReceived}");
-            Stageblockerhandler?.UnBlock(pythonId);
+            StageBlocker?.UnBlock(pythonId);
             if (IsInGame)
             {
                 ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
@@ -525,12 +545,12 @@ namespace Archipelago.RiskOfRain2
             string itemNameReceived = itemReceived.Value;
             if (itemIdRecieved == 37505)
             {
-                StageBlockerHandler.amountOfStages += 1;
-                ChatMessage.SendColored($"Received {itemNameReceived} #{StageBlockerHandler.amountOfStages}!", Color.magenta);
+                StageBlockerHandler.AmountOfStages += 1;
+                ChatMessage.SendColored($"Received {itemNameReceived} #{StageBlockerHandler.AmountOfStages}!", Color.magenta);
             } 
             else
             {
-                StageBlockerHandler.stageUnlocks[itemNameReceived] = true;
+                StageBlockerHandler.StageUnlocks[itemNameReceived] = true;
                 ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
             }
             

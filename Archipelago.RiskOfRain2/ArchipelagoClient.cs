@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Collections;
+using System.Threading.Tasks;
 using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Enums;
@@ -18,30 +18,27 @@ using R2API.Utils;
 using RoR2;
 using RoR2.UI;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.UI;
 
 namespace Archipelago.RiskOfRain2
 {
-    //TODO: perhaps only use particular drops as fodder for item pickups (i.e. only chest drops/interactable drops) then set options based on them maybe
     public class ArchipelagoClient : IDisposable
     {
         public delegate void ClientDisconnected(string reason);
         public event ClientDisconnected OnClientDisconnect;
 
-        public string lastServerUrl { get; set; }
-        public string lastSlotName { get; set; }
-        public string lastPassword { get; set; }
+        public string LastServerUrl { get; set; }
+        public string LastSlotName { get; set; }
+        public string LastPassword { get; set; }
         public bool IsConnected => session != null && session.Socket.Connected;
 
-        internal DeathLinkHandler Deathlinkhandler { get; private set; }
-        internal StageBlockerHandler Stageblockerhandler { get; private set; }
-        internal LocationHandler Locationhandler { get; private set; }
-        internal ShrineChanceHandler shrineChanceHelper { get; private set; }
+        internal DeathLinkHandler DeathLink { get; private set; }
+        internal StageBlockerHandler StageBlocker { get; private set; }
+        internal LocationHandler LocationHandler { get; private set; }
+        internal ShrineChanceHandler ShrineChance { get; private set; }
 
         public ArchipelagoItemLogicController ItemLogic;
-        public ArchipelagoLocationCheckProgressBarUI itemCheckBar;
-        public ArchipelagoLocationCheckProgressBarUI shrineCheckBar;
+        public ArchipelagoLocationCheckProgressBarUI ItemCheckBar;
+        public ArchipelagoLocationCheckProgressBarUI ShrineCheckBar;
 
         private ArchipelagoSession session;
         private DeathLinkService deathLinkService;
@@ -55,13 +52,12 @@ namespace Archipelago.RiskOfRain2
         public static ReleaseClick OnReleaseClick;
         public delegate void CollectClick(bool prompt);
         public static CollectClick OnCollectClick;
-        private GameObject genericMenuButton;
-        public bool reconnecting { get; set; } = false;
-        public static int lastReceivedItemindex { get; set; } = 0;
-        public static bool isInGame { get; set; } = false;
-        //public static ReleaseClick OnButtonClick;
-        public static string connectedPlayerName;
-        public static string victoryCondition;
+
+        public bool Reconnecting { get; set; } = false;
+        public static int LastReceivedItemIndex { get; set; } = 0;
+        public static bool IsInGame { get; set; } = false;
+        public static string ConnectedPlayerName;
+        public static string VictoryCondition;
         // Acceptable ending types
         private GameEndingDef[] acceptableEndings;
         // Acceptable stages to die on
@@ -76,6 +72,10 @@ namespace Archipelago.RiskOfRain2
         private uint cachedShrineUseStep = 3;
         private Dictionary<string, object> cachedSlotData;
 
+        // Pending location checks that failed to send during disconnect.
+        // Held at the client level so they survive LocationHandler recreation.
+        private readonly List<long> cachedPendingChecks = new List<long>();
+
         // Cached ItemLogic state for restoring across runs
         private bool hasCachedRunState;
         private int cachedItemLogicPickupStep;
@@ -85,15 +85,15 @@ namespace Archipelago.RiskOfRain2
 
         public ArchipelagoClient()
         {
-
+            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
         }
 
         public void Connect(string url, string slotName, string password = null)
         {
             // Cache credentials for reconnection
-            lastServerUrl = url;
-            lastSlotName = slotName;
-            lastPassword = password;
+            LastServerUrl = url;
+            LastSlotName = slotName;
+            LastPassword = password;
 
             // Session reuse: if already connected, just set up a new run
             if (IsConnected)
@@ -119,13 +119,13 @@ namespace Archipelago.RiskOfRain2
                 return;
             }
 
-            // On fresh connect (not reconnecting), reset item index and cached run state
+            // On fresh connect (not Reconnecting), reset item index and cached run state
             // so we don't replay already-received items or restore stale progress.
             // During reconnection, preserve both so AttemptReconnection can restore
             // the player's progress after the session is re-established.
-            if (!reconnecting)
+            if (!Reconnecting)
             {
-                lastReceivedItemindex = 0;
+                LastReceivedItemIndex = 0;
                 hasCachedRunState = false;
             }
 
@@ -168,6 +168,7 @@ namespace Archipelago.RiskOfRain2
                 Log.LogDebug($"itemPickupStep from slot data: {cachedItemPickupStep}");
                 cachedItemPickupStep++; // Add 1 because the user's YAML will contain a value equal to "number of pickups before sent location"
             }
+
             if (successResult.SlotData.TryGetValue("shrineUseStep", out var oshrineUseStep))
             {
                 cachedShrineUseStep = Convert.ToUInt32(oshrineUseStep);
@@ -178,7 +179,7 @@ namespace Archipelago.RiskOfRain2
             // DeathLink (session-level)
             deathLinkService = DeathLinkProvider.CreateDeathLinkService(session);
             Log.LogDebug("Starting DeathLink service");
-            Deathlinkhandler = new DeathLinkHandler(deathLinkService);
+            DeathLink = new DeathLinkHandler(deathLinkService);
             cachedDeathLinkEnabled = false;
             if (successResult.SlotData.TryGetValue("deathLink", out var enabledeathlink))
             {
@@ -206,25 +207,25 @@ namespace Archipelago.RiskOfRain2
                     case "1":
                         acceptableEndings = new[] { RoR2Content.GameEndings.MainEnding };
                         acceptableLosses = new[] { "moon", "moon2" };
-                        victoryCondition = "Mithrix";
+                        VictoryCondition = "Mithrix";
                         break;
                     // Voidling
                     case "2":
                         acceptableEndings = new[] { DLC1Content.GameEndings.VoidEnding };
                         acceptableLosses = new[] { "voidraid" };
-                        victoryCondition = "Voidling";
+                        VictoryCondition = "Voidling";
                         break;
                     // Limbo
                     case "3":
                         acceptableEndings = new[] { RoR2Content.GameEndings.LimboEnding };
                         acceptableLosses = new[] { "mysteryspace", "limbo" };
-                        victoryCondition = "Limbo";
+                        VictoryCondition = "Limbo";
                         break;
                     // False Son (Rebirth)
                     case "4":
                         acceptableEndings = new[] { DLC2Content.GameEndings.RebirthEndingDef };
                         acceptableLosses = new[] { "meridian" };
-                        victoryCondition = "Rebirth";
+                        VictoryCondition = "Rebirth";
                         break;
                     // Solus Heart — defeat Solus Heart in Neural Sanctum (scene: solusweb)
                     // Path: Solutional Haunt (Solus Wing) → Computational Exchange → Neural Sanctum (Solus Heart)
@@ -232,12 +233,11 @@ namespace Archipelago.RiskOfRain2
                     case "5":
                         acceptableEndings = new GameEndingDef[] { };
                         acceptableLosses = new[] { "solusweb" };
-                        victoryCondition = "Solus Heart";
+                        VictoryCondition = "Solus Heart";
                         break;
                     default:
                         SetAnyVictoryCondition();
                         break;
-
                 }
             }
             else
@@ -248,38 +248,33 @@ namespace Archipelago.RiskOfRain2
             // Progressive stages and seer portals (session-level, static fields)
             if (successResult.SlotData.TryGetValue("progressiveStages", out var progressive))
             {
-                StageBlockerHandler.progressivesStages = Convert.ToBoolean(progressive);
+                StageBlockerHandler.ProgressiveStages = Convert.ToBoolean(progressive);
             }
+            
             if (successResult.SlotData.TryGetValue("showSeerPortals", out var showSeerPortals))
             {
-                StageBlockerHandler.showSeerPortals = Convert.ToBoolean(showSeerPortals);
+                StageBlockerHandler.ShowSeerPortals = Convert.ToBoolean(showSeerPortals);
             }
 
-            connectedPlayerName = session.Players.GetPlayerName(session.ConnectionInfo.Slot);
-            genericMenuButton = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/UI/GenericMenuButton.prefab").WaitForCompletion();
-
+            ConnectedPlayerName = session.Players.GetPlayerName(session.ConnectionInfo.Slot);
             // Subscribe session-level events
-            session.MessageLog.OnMessageReceived += Session_OnMessageReceived;
-            session.Socket.SocketClosed += Session_SocketClosed;
-            session.Socket.ErrorReceived += Socket_ErrorReceived;
-            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
-            Run.onRunStartGlobal += Run_onRunStartGlobal;
+            SubscribeSessionEvents();
 
             // Stage unlock initialization (one-time, session-level)
             // Needed for backwards compatability
             if (session.Items.GetItemName(37501) == null)
             {
-                StageBlockerHandler.stageUnlocks["Stage 1"] = true;
-                StageBlockerHandler.stageUnlocks["Stage 2"] = true;
-                StageBlockerHandler.stageUnlocks["Stage 3"] = true;
-                StageBlockerHandler.stageUnlocks["Stage 4"] = true;
+                StageBlockerHandler.StageUnlocks["Stage 1"] = true;
+                StageBlockerHandler.StageUnlocks["Stage 2"] = true;
+                StageBlockerHandler.StageUnlocks["Stage 3"] = true;
+                StageBlockerHandler.StageUnlocks["Stage 4"] = true;
             }
-            else if (!isInGame)
+            else if (!IsInGame)
             {
-                StageBlockerHandler.stageUnlocks["Stage 1"] = false;
-                StageBlockerHandler.stageUnlocks["Stage 2"] = false;
-                StageBlockerHandler.stageUnlocks["Stage 3"] = false;
-                StageBlockerHandler.stageUnlocks["Stage 4"] = false;
+                StageBlockerHandler.StageUnlocks["Stage 1"] = false;
+                StageBlockerHandler.StageUnlocks["Stage 2"] = false;
+                StageBlockerHandler.StageUnlocks["Stage 3"] = false;
+                StageBlockerHandler.StageUnlocks["Stage 4"] = false;
             }
 
             // Set up the first run
@@ -290,32 +285,38 @@ namespace Archipelago.RiskOfRain2
         /// Creates per-run state: ItemLogic, handlers, UI bars, game hooks.
         /// Called on first connect and on session reuse for subsequent runs.
         /// </summary>
-        public void SetupRun()
+        public void SetupRun(bool midRunReconnect = false)
         {
             isEndingAcceptable = false;
 
             ItemLogic = new ArchipelagoItemLogicController(session);
-            itemCheckBar = null;
-            shrineCheckBar = null;
+            ItemCheckBar = null;
+            ShrineCheckBar = null;
 
             if (cachedGoalIsExplore)
             {
                 Log.LogDebug("Setting up explore mode for run");
-                Stageblockerhandler = new StageBlockerHandler();
-                ItemLogic.Stageblockerhandler = Stageblockerhandler;
-                Stageblockerhandler.BlockAll();
-                Locationhandler = new LocationHandler(session, LocationHandler.buildTemplateFromSlotData(cachedSlotData));
-                shrineChanceHelper = new ShrineChanceHandler();
+                StageBlocker = new StageBlockerHandler();
+                ItemLogic.StageBlocker = StageBlocker;
+                StageBlocker.BlockAll();
+                LocationHandler = new LocationHandler(session, LocationHandler.BuildTemplateFromSlotData(cachedSlotData));
+                // Restore any pending checks from a prior handler (saved in CleanupRun)
+                if (cachedPendingChecks.Count > 0)
+                {
+                    LocationHandler.AddPendingChecks(cachedPendingChecks);
+                    cachedPendingChecks.Clear();
+                }
+                ShrineChance = new ShrineChanceHandler();
 
-                itemCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(-40, 0), Vector2.zero, "Item Check Progress:");
-                shrineCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(0, 170), new Vector2(50, -50), "Shrine Check Progress:");
+                ItemCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(-40, 0), Vector2.zero, "Item Check Progress:");
+                ShrineCheckBar = new ArchipelagoLocationCheckProgressBarUI(new Vector2(0, 170), new Vector2(50, -50), "Shrine Check Progress:");
 
-                shrineCheckBar.ItemPickupStep = (int)cachedShrineUseStep;
+                ShrineCheckBar.ItemPickupStep = (int)cachedShrineUseStep;
 
-                Locationhandler.itemBar = itemCheckBar;
-                Locationhandler.shrineBar = shrineCheckBar;
-                Locationhandler.itemPickupStep = cachedItemPickupStep;
-                Locationhandler.shrineUseStep = cachedShrineUseStep;
+                LocationHandler.ItemBar = ItemCheckBar;
+                LocationHandler.ShrineBar = ShrineCheckBar;
+                LocationHandler.ItemPickupStep = cachedItemPickupStep;
+                LocationHandler.ShrineUseStep = cachedShrineUseStep;
             }
             else
             {
@@ -325,14 +326,14 @@ namespace Archipelago.RiskOfRain2
             }
 
             // Make the bar if it has not been created because classic mode or the slot data was missing
-            if (null == itemCheckBar)
+            if (null == ItemCheckBar)
             {
                 Log.LogDebug("Setting up bar for classic");
-                itemCheckBar = new ArchipelagoLocationCheckProgressBarUI(Vector2.zero, Vector2.zero);
-                SyncLocationCheckProgress.OnLocationSynced += itemCheckBar.UpdateCheckProgress; // the item bar updates from the netcode in classic mode
+                ItemCheckBar = new ArchipelagoLocationCheckProgressBarUI(Vector2.zero, Vector2.zero);
+                SyncLocationCheckProgress.OnLocationSynced += ItemCheckBar.UpdateCheckProgress; // the item bar updates from the netcode in classic mode
             }
 
-            itemCheckBar.ItemPickupStep = (int)cachedItemPickupStep;
+            ItemCheckBar.ItemPickupStep = (int)cachedItemPickupStep;
 
             // Initialize ItemLogic location tracking from session state.
             // On first connect, Session_PacketReceived won't fire because ItemLogic
@@ -352,7 +353,7 @@ namespace Archipelago.RiskOfRain2
             ItemLogic.OnItemDropProcessed += ItemLogicHandler_ItemDropProcessed;
             if (cachedDeathLinkEnabled)
             {
-                Deathlinkhandler?.Hook();
+                DeathLink?.Hook();
             }
             HookGame();
 
@@ -367,10 +368,17 @@ namespace Archipelago.RiskOfRain2
                 new ArchipelagoStartExplore().Send(NetworkDestination.Clients);
             }
 
-            // Enqueue all received items for this run. Handles both first connect
-            // (items missed during login) and session reuse (re-granting items
-            // for the new run since the player's inventory is empty).
-            ItemLogic.ProcessAllReceivedItems();
+            // Enqueue received items. On mid-run reconnect, only process items
+            // received since the last known index to avoid duplicating items
+            // the player already has. On fresh connect/new run, process all.
+            if (midRunReconnect)
+            {
+                ItemLogic.ProcessItemsSinceIndex(LastReceivedItemIndex);
+            }
+            else
+            {
+                ItemLogic.ProcessAllReceivedItems();
+            }
             ItemLogic.Precollect();
         }
 
@@ -396,25 +404,54 @@ namespace Archipelago.RiskOfRain2
             ItemLogic.Dispose();
             ItemLogic = null;
 
-            if (itemCheckBar != null)
+            if (ItemCheckBar != null)
             {
-                SyncLocationCheckProgress.OnLocationSynced -= itemCheckBar.UpdateCheckProgress;
-                itemCheckBar.Dispose();
-                itemCheckBar = null;
+                SyncLocationCheckProgress.OnLocationSynced -= ItemCheckBar.UpdateCheckProgress;
+                ItemCheckBar.Dispose();
+                ItemCheckBar = null;
             }
 
-            if (shrineCheckBar != null)
+            if (ShrineCheckBar != null)
             {
-                shrineCheckBar.Dispose();
-                shrineCheckBar = null;
+                ShrineCheckBar.Dispose();
+                ShrineCheckBar = null;
+            }
+
+            // Save any pending checks before destroying the handler
+            if (LocationHandler != null)
+            {
+                cachedPendingChecks.AddRange(LocationHandler.GetPendingChecks());
             }
 
             // In the case the player joins a lobby that uses different settings, the previous objects may still exist and may be called again when hooks are started.
             // To prevent this, the old objects will be thrown away when cleaning up.
-            Stageblockerhandler = null;
-            Locationhandler = null;
-            shrineChanceHelper = null;
+            StageBlocker = null;
+            LocationHandler = null;
+            ShrineChance = null;
             bossDefeatedOnVictoryStage = false;
+        }
+
+        /// <summary>
+        /// Subscribes session-level events on the current session.
+        /// </summary>
+        private void SubscribeSessionEvents()
+        {
+            session.MessageLog.OnMessageReceived += Session_OnMessageReceived;
+            session.Socket.SocketClosed += Session_SocketClosed;
+            session.Socket.ErrorReceived += Socket_ErrorReceived;
+            Run.onRunStartGlobal += Run_onRunStartGlobal;
+        }
+
+        /// <summary>
+        /// Unsubscribes session-level events from the current session.
+        /// </summary>
+        private void UnsubscribeSessionEvents()
+        {
+            if (session == null) return;
+            session.MessageLog.OnMessageReceived -= Session_OnMessageReceived;
+            session.Socket.SocketClosed -= Session_SocketClosed;
+            session.Socket.ErrorReceived -= Socket_ErrorReceived;
+            Run.onRunStartGlobal -= Run_onRunStartGlobal;
         }
 
         /// <summary>
@@ -425,11 +462,7 @@ namespace Archipelago.RiskOfRain2
         {
             if (session == null) return;
 
-            session.MessageLog.OnMessageReceived -= Session_OnMessageReceived;
-            session.Socket.SocketClosed -= Session_SocketClosed;
-            session.Socket.ErrorReceived -= Socket_ErrorReceived;
-            ArchipelagoConsoleCommand.OnArchipelagoReconnectCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled;
-            Run.onRunStartGlobal -= Run_onRunStartGlobal;
+            UnsubscribeSessionEvents();
 
             if (disconnect && session.Socket.Connected)
             {
@@ -437,12 +470,12 @@ namespace Archipelago.RiskOfRain2
             }
 
             session = null;
-            Deathlinkhandler = null;
+            DeathLink = null;
             deathLinkService = null;
             // NOTE: hasCachedRunState is intentionally NOT cleared here.
             // On dirty disconnect → reconnect, CleanupRun caches state before
             // TeardownSession runs. Clearing here would lose that cached state.
-            // It is cleared on fresh connect (when !reconnecting) in Connect().
+            // It is cleared on fresh connect (when !Reconnecting) in Connect().
         }
 
         /// <summary>
@@ -468,9 +501,9 @@ namespace Archipelago.RiskOfRain2
             OnCollectClick += WillCollect;
             On.RoR2.SceneObjectToggleGroup.Awake += SceneObjectToggleGroup_Awake;
 
-            Stageblockerhandler?.Hook();
-            Locationhandler?.Hook();
-            shrineChanceHelper?.Hook();
+            StageBlocker?.Hook();
+            LocationHandler?.Hook();
+            ShrineChance?.Hook();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter += PortalDialerPreDialState_OnEnter;
@@ -480,7 +513,7 @@ namespace Archipelago.RiskOfRain2
 
         private void PortalDialerPreDialState_OnEnter(On.RoR2.PortalDialerController.PortalDialerPreDialState.orig_OnEnter orig, PortalDialerController.PortalDialerPreDialState self)
         {
-            ChatMessage.SendColored($"Victory condition is {ArchipelagoClient.victoryCondition}.", Color.magenta);
+            ChatMessage.SendColored($"Victory condition is {ArchipelagoClient.VictoryCondition}.", Color.magenta);
             orig(self);
         }
 
@@ -495,10 +528,10 @@ namespace Archipelago.RiskOfRain2
             OnCollectClick -= WillCollect;
             On.RoR2.SceneObjectToggleGroup.Awake -= SceneObjectToggleGroup_Awake;
 
-            Deathlinkhandler?.UnHook();
-            Stageblockerhandler?.UnHook();
-            Locationhandler?.UnHook();
-            shrineChanceHelper?.UnHook();
+            DeathLink?.UnHook();
+            StageBlocker?.UnHook();
+            LocationHandler?.UnHook();
+            ShrineChance?.UnHook();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter -= PortalDialerPreDialState_OnEnter;
@@ -535,12 +568,12 @@ namespace Archipelago.RiskOfRain2
         {
             if (link)
             {
-                Deathlinkhandler?.Hook();
+                DeathLink?.Hook();
                 deathLinkService.EnableDeathLink();
             }
             else
             {
-                Deathlinkhandler?.UnHook();
+                DeathLink?.UnHook();
                 deathLinkService.DisableDeathLink();
             }
         }
@@ -562,7 +595,7 @@ namespace Archipelago.RiskOfRain2
 
         private void ArchipelagoConsoleCommand_OnArchipelagoReconnectCommandCalled()
         {
-            reconnecting = true;
+            Reconnecting = true;
             Dispose();
             new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
             OnClientDisconnect?.Invoke("Manual reconnect requested.");
@@ -570,18 +603,18 @@ namespace Archipelago.RiskOfRain2
 
         private void ItemLogicHandler_ItemDropProcessed(int pickedUpCount)
         {
-            if (itemCheckBar != null)
+            if (ItemCheckBar != null)
             {
-                itemCheckBar.CurrentItemCount = pickedUpCount;
-                if ((itemCheckBar.CurrentItemCount % ItemLogic.ItemPickupStep) == 0)
+                ItemCheckBar.CurrentItemCount = pickedUpCount;
+                if ((ItemCheckBar.CurrentItemCount % ItemLogic.ItemPickupStep) == 0)
                 {
-                    itemCheckBar.CurrentItemCount = 0;
+                    ItemCheckBar.CurrentItemCount = 0;
                 }
                 else
                 {
-                    itemCheckBar.CurrentItemCount = itemCheckBar.CurrentItemCount % ItemLogic.ItemPickupStep;
+                    ItemCheckBar.CurrentItemCount = ItemCheckBar.CurrentItemCount % ItemLogic.ItemPickupStep;
                 }
-                new SyncLocationCheckProgress(itemCheckBar.CurrentItemCount, itemCheckBar.ItemPickupStep).Send(NetworkDestination.Clients);
+                new SyncLocationCheckProgress(ItemCheckBar.CurrentItemCount, ItemCheckBar.ItemPickupStep).Send(NetworkDestination.Clients);
             }
         }
 
@@ -606,7 +639,7 @@ namespace Archipelago.RiskOfRain2
         private void Socket_ErrorReceived(Exception e, string message)
         {
             Log.LogDebug($"Error received: {e}, message: {message}");
-            reconnecting = true;
+            Reconnecting = true;
             Session_SocketClosed(message);
         }
 
@@ -619,46 +652,112 @@ namespace Archipelago.RiskOfRain2
             OnClientDisconnect?.Invoke(reason);
         }
 
-        public IEnumerator<WaitForSeconds> AttemptReconnection()
+        public System.Collections.IEnumerator AttemptReconnection()
         {
             Log.LogDebug("Attempting to reconnect!");
-            if (!isInGame)
+            if (!IsInGame)
             {
                 ArchipelagoConnectButtonController.ChangeButtonWhenDisconnected();
             }
 
-            for (int attempt = 1; attempt <= 5; attempt++)
+            int attempt = 0;
+            float delay = 5f;
+            const float maxDelay = 30f;
+            while (true)
             {
-                ChatMessage.Send($"Reconnection attempt #{attempt}");
-                yield return new WaitForSeconds(3f);
+                attempt++;
+                ChatMessage.Send($"Reconnection attempt #{attempt} (next retry in {delay}s)");
+                yield return new WaitForSeconds(delay);
+                delay = Mathf.Min(delay + 5f, maxDelay);
 
+                // Only run the blocking network I/O on a background thread.
+                // Connect() touches Unity APIs and shared state, so we can't
+                // call it wholesale off the main thread.
+                var url = LastServerUrl;
+                var slot = LastSlotName;
+                var pass = LastPassword;
+                ArchipelagoSession bgSession = null;
+                LoginResult bgResult = null;
+                Exception bgError = null;
+
+                var connectTask = Task.Run(() =>
+                {
+                    try
+                    {
+                        bgSession = ArchipelagoSessionFactory.CreateSession(url);
+                        bgResult = bgSession.TryConnectAndLogin(
+                            "Risk of Rain 2", slot, ItemsHandlingFlags.AllItems,
+                            new Version(0, 6, 4), password: pass);
+                    }
+                    catch (Exception ex)
+                    {
+                        bgError = ex;
+                    }
+                });
+
+                // Poll until the background task completes (0.5s for responsiveness)
+                float elapsed = 0f;
+                const float timeout = 30f;
+                while (!connectTask.IsCompleted && elapsed < timeout)
+                {
+                    yield return new WaitForSeconds(0.5f);
+                    elapsed += 0.5f;
+                }
+
+                // Handle timeout — abandon this attempt
+                if (!connectTask.IsCompleted)
+                {
+                    Log.LogWarning($"Reconnection attempt {attempt} timed out after {timeout}s");
+                    continue;
+                }
+
+                if (bgError != null)
+                {
+                    Log.LogWarning($"Reconnection attempt {attempt} failed: {bgError.Message}");
+                    continue;
+                }
+
+                if (bgResult == null || !bgResult.Successful)
+                {
+                    if (bgResult is LoginFailure failure)
+                    {
+                        foreach (var err in failure.Errors)
+                            Log.LogWarning($"Reconnection attempt {attempt}: {err}");
+                    }
+                    continue;
+                }
+
+                // Network succeeded — set up on the main thread.
+                // Don't call Connect() (which would call SetupRun with ProcessAllReceivedItems
+                // and duplicate every item the player already has). Instead, subscribe events
+                // on the new session and call SetupRun with midRunReconnect=true.
+                session = bgSession;
                 try
                 {
-                    Connect(lastServerUrl, lastSlotName, lastPassword);
+                    SubscribeSessionEvents();
+                    bool isMidRun = IsInGame && Run.instance != null;
+                    SetupRun(midRunReconnect: isMidRun);
                 }
                 catch (Exception ex)
                 {
-                    Log.LogWarning($"Reconnection attempt {attempt} failed: {ex.Message}");
+                    Log.LogWarning($"Reconnection attempt {attempt} setup failed: {ex.Message}");
+                    continue;
                 }
 
                 if (IsConnected)
                 {
                     ChatMessage.SendColored("Reconnected to Archipelago.", Color.green);
-                    // Guard with Run.instance: if the run ended while we were
-                    // disconnected, isInGame may be stale (true) but the run is gone.
-                    if (Locationhandler != null && isInGame && Run.instance != null)
+                    if (LocationHandler != null && IsInGame && Run.instance != null)
                     {
-                        Locationhandler.CatchUpSceneLocations(LocationHandler.sceneDef.cachedName);
-                        Locationhandler.LoadItemPickupHooks();
+                        LocationHandler.FlushPendingChecks();
+                        LocationHandler.CatchUpSceneLocations(LocationHandler.CurrentSceneDef.cachedName);
+                        LocationHandler.LoadItemPickupHooks();
                     }
-                    reconnecting = false;
+                    Reconnecting = false;
                     yield break;
                 }
             }
 
-            ChatMessage.SendColored("Failed to reconnect after 5 attempts.", Color.red);
-            Dispose();
-            reconnecting = false;
         }
 
         private void Session_OnMessageReceived(LogMessage message)
@@ -686,8 +785,6 @@ namespace Archipelago.RiskOfRain2
             if (IsEndingAcceptable(gameEndingDef))
             {
                 isEndingAcceptable = true;
-                // Auto-complete all remaining locations. Substitute for deprecated forced_auto_forfeit.
-                //session.Locations.CompleteLocationChecks(session.Locations.AllMissingLocations.ToArray());
 
                 SendVictoryAndEnd();
             }
@@ -714,7 +811,7 @@ namespace Archipelago.RiskOfRain2
 
         private void SetAnyVictoryCondition()
         {
-            victoryCondition = "any";
+            VictoryCondition = "any";
             acceptableEndings = new[] {
                 RoR2Content.GameEndings.MainEnding,
                 RoR2Content.GameEndings.LimboEnding,
@@ -777,7 +874,7 @@ namespace Archipelago.RiskOfRain2
         private bool IsVictoryStageForBossKill(string sceneName)
         {
             // Solus Heart on Neural Sanctum (no GameEndingDef exists for this encounter)
-            if ((victoryCondition == "Solus Heart" || victoryCondition == "any") && sceneName == "solusweb")
+            if ((VictoryCondition == "Solus Heart" || VictoryCondition == "any") && sceneName == "solusweb")
                 return true;
             return false;
         }
@@ -797,7 +894,7 @@ namespace Archipelago.RiskOfRain2
         // When exiting to menu/game this will run — only cleans up the run, session stays alive
         private void Run_onRunDestroyGlobal(Run obj)
         {
-            isInGame = false;
+            IsInGame = false;
             CleanupRun();
         }
 
@@ -821,16 +918,6 @@ namespace Archipelago.RiskOfRain2
 
             if (isEndingAcceptable && ReleasePromptPanel == null)
             {
-                GameObject menuOutline;
-                if (genericMenuButton != null)
-                {
-                    menuOutline = genericMenuButton.transform.Find("HoverOutline").gameObject;
-                }
-                else
-                {
-                    menuOutline = null;
-                }
-
                 var releasePermission = Convert.ToString(session.RoomState.ReleasePermissions);
                 var collectPermission = Convert.ToString(session.RoomState.CollectPermissions);
                 bool canRelease = (releasePermission == "Goal" || releasePermission == "Enabled");
@@ -851,20 +938,7 @@ namespace Archipelago.RiskOfRain2
                     release.GetComponent<HGButton>().onClick.AddListener(() => { OnReleaseClick(true); });
                     releaseCancel.GetComponent<HGButton>().onClick.AddListener(() => { OnReleaseClick(false); });
                     ReleasePromptPanel = self.transform.Find("SafeArea (JUICED)/BodyArea/ReleasePrompt(Clone)").gameObject;
-                    // Outline for collect menu buttons
-
-/*                    if (menuOutline != null)
-                    {
-                        GameObject releaseOutline = GameObject.Instantiate(menuOutline);
-                        releaseOutline.transform.SetParent(release.transform, false);
-                        release.GetComponent<HGButton>().imageOnHover = releaseOutline.GetComponent<Image>();
-                        release.GetComponent<HGButton>().showImageOnHover = true;
-                        GameObject releaseCancelOutline = GameObject.Instantiate(menuOutline);
-                        releaseCancelOutline.transform.SetParent(releaseCancel.transform, false);
-                        releaseCancel.GetComponent<HGButton>().imageOnHover = releaseCancelOutline.GetComponent<Image>();
-                        releaseCancel.GetComponent<HGButton>().showImageOnHover = true;
-                    }
-*/                }
+                }
                 if (canCollect)
                 {
                     var cp = GameObject.Instantiate(CollectPanel);
@@ -879,27 +953,11 @@ namespace Archipelago.RiskOfRain2
                     collectCancel.GetComponent<HGButton>().onClick.AddListener(() => { OnCollectClick(false); });
                     CollectPromptPanel = self.transform.Find("SafeArea (JUICED)/BodyArea/CollectPrompt(Clone)").gameObject;
                     CollectPromptPanel.SetActive(false);
-                      //TODO Outline for collect menu buttons do not show up like in the release buttons.. no idea why
-
-/*                    if (menuOutline != null)
-                    {
-                        GameObject collectOutline = GameObject.Instantiate(menuOutline);
-                        collectOutline.transform.SetParent(collect.transform, false);
-                        collect.GetComponent<HGButton>().imageOnHover = collectOutline.GetComponent<Image>();
-                        collect.GetComponent<HGButton>().showImageOnHover = true;
-                        GameObject collectCancelOutline = GameObject.Instantiate(menuOutline);
-                        collectCancelOutline.transform.SetParent(collectCancel.transform, false);
-                        collectCancel.GetComponent<HGButton>().imageOnHover = collectCancelOutline.GetComponent<Image>();
-                        collectCancel.GetComponent<HGButton>().showImageOnHover = true;
-                    }
-*/              }
+                }
                 if (canCollect && !canRelease)
                 {
                     CollectPromptPanel.SetActive(true);
                 }
-
-
-
             }
             orig(self);
         }

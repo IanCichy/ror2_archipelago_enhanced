@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Archipelago.RiskOfRain2.Extensions;
-using Archipelago.RiskOfRain2.Net;
 using RoR2.UI;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Networking;
-using UnityEngine.UI;
 
 namespace Archipelago.RiskOfRain2.UI
 {
@@ -51,18 +45,13 @@ namespace Archipelago.RiskOfRain2.UI
         public void ChangeBarColor(Color newcolor)
         {
             CurrentColor = newcolor;
-
-            if (locationCheckBar != null)
-            {
-                locationCheckBar.color = newcolor;
-            }
+            locationCheckBar?.color = newcolor;
         }
 
         public void Dispose()
         {
             hud = null;
             On.RoR2.UI.HUD.Awake -= HUD_Awake;
-
             GameObject.Destroy(container);
         }
 

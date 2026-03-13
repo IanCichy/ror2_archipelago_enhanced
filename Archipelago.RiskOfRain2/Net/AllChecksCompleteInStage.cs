@@ -13,7 +13,7 @@ namespace Archipelago.RiskOfRain2.Net
 
         public void Deserialize(NetworkReader reader)
         {
-            
+
         }
 
         public void OnReceived()
@@ -27,7 +27,7 @@ namespace Archipelago.RiskOfRain2.Net
 
         public void Serialize(NetworkWriter writer)
         {
-            
+
         }
     }
 }

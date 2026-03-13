@@ -15,6 +15,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             portalPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/bazaar/SeerStation.prefab").WaitForCompletion();
         }
+
         public void CreatePortal(List<SceneDef> sceneDef, float radius = 10f)
         {
             if (portalPrefab != null)
@@ -31,6 +32,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                     Log.LogWarning("Teleporter not found!");
                     return;
                 }
+
                 var center = teleporterMesh.transform.position;
 
                 for (int i = 0; i < sceneDef.Count; i++)
@@ -63,6 +65,5 @@ namespace Archipelago.RiskOfRain2.Handlers
                 }
             }
         }
-
     }
 }
