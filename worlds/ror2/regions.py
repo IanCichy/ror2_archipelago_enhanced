@@ -45,20 +45,20 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
     sots_regions: Dict[str, RoRRegionData] = {
         "Shattered Abodes":                     RoRRegionData([], ["OrderedStage_1"]),
         "Disturbed Impact":                     RoRRegionData([], ["OrderedStage_1"]),
-        "Viscous Falls":                        RoRRegionData([], ["OrderedStage_2"]),
-        "Reformed Altar":                       RoRRegionData([], ["OrderedStage_3"]),
-        "Treeborn Colony":                      RoRRegionData([], ["OrderedStage_4"]),
-        "Golden Dieback":                       RoRRegionData([], ["OrderedStage_4"]),
+        "Viscous Falls":                        RoRRegionData([], ["OrderedStage_1"]),
+        "Reformed Altar":                       RoRRegionData([], ["OrderedStage_2"]),
+        "Treeborn Colony":                      RoRRegionData([], ["OrderedStage_3"]),
+        "Golden Dieback":                       RoRRegionData([], ["OrderedStage_3"]),
         "Helminth Hatchery":                    RoRRegionData([], ["Hidden Realm: Bulwark's Ambry", "OrderedStage_5"]),
     }
-    # AC Regions
+    # AC Regions (stages with standard location checks)
     ac_regions: Dict[str, RoRRegionData] = {
-        "Pretender's Precipice":                RoRRegionData([], ["OrderedStage_1"]),
-        "Iron Alluvium":                        RoRRegionData([], ["OrderedStage_2"]),
-        "Iron Auroras":                         RoRRegionData([], ["OrderedStage_2"]),
-        "Repurposed Crater":                    RoRRegionData([], ["OrderedStage_3"]),
+        "Pretender's Precipice":                RoRRegionData([], ["OrderedStage_2"]),
+        "Iron Alluvium":                        RoRRegionData([], ["OrderedStage_3"]),
+        "Iron Auroras":                         RoRRegionData([], ["OrderedStage_3"]),
+        "Repurposed Crater":                    RoRRegionData([], ["OrderedStage_4"]),
         "Conduit Canyon":                       RoRRegionData([], ["OrderedStage_4"]),
-        "Solutional Haunt":                     RoRRegionData([], ["Hidden Realm: Bulwark's Ambry", "OrderedStage_5"]),
+        # Solutional Haunt is in ac_other_regions — boss-only stage with no standard interactables
     }
     other_regions: Dict[str, RoRRegionData] = {
         "Commencement":                         RoRRegionData(None, ["Victory", "Petrichor V"]),
@@ -88,6 +88,7 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         "Prime Meridian":                       RoRRegionData(None, ["Victory", "Petrichor V"]),
     }
     ac_other_regions: Dict[str, RoRRegionData] = {
+        "Solutional Haunt":                     RoRRegionData(None, ["Neural Sanctum"]),
         "Neural Sanctum":                       RoRRegionData(None, ["Victory", "Petrichor V"]),
     }
     # Totals of each item
@@ -122,8 +123,8 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         if scanners > 0:
             for i in range(0, scanners):
                 all_location_regions[key].locations.append(f"{key}: Radio Scanner {i + 1}")
-        # Newt Altars
-        if newt > 0:
+        # Newt Altars (Conduit Canyon has no Newt Altar spawns)
+        if newt > 0 and key != "Conduit Canyon":
             for i in range(0, newt):
                 all_location_regions[key].locations.append(f"{key}: Newt Altar {i + 1}")
     regions_pool: Dict = {**all_location_regions, **other_regions}
@@ -137,20 +138,17 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
         other_regions["Commencement"].region_exits.append("The Planetarium")
         regions_pool: Dict = {**all_location_regions, **other_regions, **dlc_other_regions}
     if ror2_options.dlc_sots:
-        non_dlc_regions["Menu"].region_exits.extend(["Shattered Abodes", "Disturbed Impact"])
-        other_regions["OrderedStage_1"].region_exits.append("Viscous Falls")
-        other_regions["OrderedStage_2"].region_exits.append("Reformed Altar")
-        other_regions["OrderedStage_3"].region_exits.extend(["Treeborn Colony", "Golden Dieback"])
+        non_dlc_regions["Menu"].region_exits.extend(["Shattered Abodes", "Disturbed Impact", "Viscous Falls"])
+        other_regions["OrderedStage_1"].region_exits.append("Reformed Altar")
+        other_regions["OrderedStage_2"].region_exits.extend(["Treeborn Colony", "Golden Dieback"])
         other_regions["OrderedStage_4"].region_exits.append("Helminth Hatchery")
         other_regions["OrderedStage_5"].region_exits.append("Prime Meridian")
         regions_pool.update(sots_other_regions)
     if ror2_options.dlc_ac:
-        non_dlc_regions["Menu"].region_exits.append("Pretender's Precipice")
-        other_regions["OrderedStage_1"].region_exits.extend(["Iron Alluvium", "Iron Auroras"])
-        other_regions["OrderedStage_2"].region_exits.append("Repurposed Crater")
-        other_regions["OrderedStage_3"].region_exits.append("Conduit Canyon")
+        other_regions["OrderedStage_1"].region_exits.append("Pretender's Precipice")
+        other_regions["OrderedStage_2"].region_exits.extend(["Iron Alluvium", "Iron Auroras"])
+        other_regions["OrderedStage_3"].region_exits.extend(["Repurposed Crater", "Conduit Canyon"])
         other_regions["OrderedStage_4"].region_exits.append("Solutional Haunt")
-        other_regions["OrderedStage_5"].region_exits.append("Neural Sanctum")
         regions_pool.update(ac_other_regions)
 
     # Check to see if Victory needs to be removed from regions
@@ -185,7 +183,7 @@ def create_explore_regions(ror2_world: "RiskOfRainWorld") -> None:
             dlc_other_regions["The Planetarium"].region_exits.pop(0)
         if ror2_options.dlc_ac:
             ac_other_regions["Neural Sanctum"].region_exits.pop(0)
-    elif ror2_options.victory == "solus_wing":
+    elif ror2_options.victory == "solus_heart":
         other_regions["Commencement"].region_exits.pop(0)
         other_regions["Hidden Realm: A Moment, Whole"].region_exits.pop(0)
         if ror2_options.dlc_sotv:

@@ -6,17 +6,18 @@ using RoR2;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
 
 namespace Archipelago.RiskOfRain2.Handlers
 {
     class StageBlockerHandler : IHandler
     {
-        // setup all scene indexes as magic numbers
-        // scenes from https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Developer-Reference/Scene-Names/
-        // main scenes
+        // Python/AP IDs from worlds/ror2/ror2environments.py.
+        // For vanilla and SOTV, these match C# SceneCatalog indices.
+        // For SOTS and AC, Python uses sequential IDs (48+) that differ from SceneCatalog.
+        // Vanilla
         public const int arena = 4;             // Void Fields
-        public const int lakes = 28;            // Verdant Falls
         public const int blackbeach = 7;        // Distant Roost
         public const int blackbeach2 = 8;       // Distant Roost
         public const int dampcavesimple = 10;   // Abyssal Depths
@@ -25,35 +26,46 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int golemplains = 15;      // Titanic Plains
         public const int golemplains2 = 16;     // Titanic Plains
         public const int goolake = 17;          // Abandoned Aqueduct
+        public const int lakes = 28;            // Verdant Falls
         public const int moon2 = 32;            // Commencement
         public const int rootjungle = 35;       // Sundered Grove
         public const int shipgraveyard = 37;    // Siren's Call
         public const int skymeadow = 38;        // Sky Meadow
         public const int wispgraveyard = 47;    // Scorched Acres
-        // Survivors of the Void
-        public const int snowyforest = 39;      // Siphoned Forest
+        // SOTV
         public const int ancientloft = 3;       // Aphelian Sanctuary
+        public const int snowyforest = 39;      // Siphoned Forest
         public const int sulfurpools = 41;      // Sulfur Pools
-        public const int voidstage = 46;        // Void Locus
         public const int voidraid = 45;         // The Planetarium
-        // Seekers of the Storm
-        public const int lakesnight = 34;       // Viscous Falls - Alternate stage to Verdant Falls
-        public const int village = 54;          // Shattered Abodes
-        public const int villagenight = 55;     // Disturbed Impact - Alternate stage to Shattered Abodes
-        public const int lemuriantemple = 36;   // Reformed Altar
-        public const int habitat = 21;          // Treeborn Colony
-        public const int habitatfall = 22;      // Golden Dieback - Alternate stage to Treeborn Colony
-        public const int helminthroost = 23;    // Helminhe Hatchery
-        public const int meridian = 40;         // Prime Meridian
-        // hidden realms
+        public const int voidstage = 46;        // Void Locus
+        // SOTS (Python IDs, NOT C# SceneCatalog indices)
+        public const int village = 48;          // Shattered Abodes (C# scene index: 54)
+        public const int villagenight = 49;     // Disturbed Impact (C# scene index: 55)
+        public const int lakesnight = 50;       // Viscous Falls (C# scene index: 34)
+        public const int lemuriantemple = 51;   // Reformed Altar (C# scene index: 36)
+        public const int habitat = 52;          // Treeborn Colony (C# scene index: 21)
+        public const int habitatfall = 53;      // Golden Dieback (C# scene index: 22)
+        public const int helminthroost = 54;    // Helminth Hatchery (C# scene index: 23)
+        public const int meridian = 55;         // Prime Meridian (C# scene index: 40)
+        // AC (Python IDs)
+        public const int nest = 56;             // Pretender's Precipice
+        public const int ironalluvium = 57;     // Iron Alluvium
+        public const int ironalluvium2 = 58;    // Iron Auroras
+        public const int repurposedcrater = 59; // Repurposed Crater
+        public const int conduitcanyon = 60;    // Conduit Canyon
+        public const int solutionalhaunt = 61;  // Solutional Haunt (boss-only, no standard checks)
+        public const int solusweb = 62;         // Neural Sanctum (victory stage only)
+        // TODO: Add AC-specific portal blocking hooks once portal mechanism is identified at runtime.
+        // AC likely uses a special portal (similar to SOTS colossus portal) to reach Neural Sanctum.
+        // Need to verify: what interaction/portal takes the player from Solutional Haunt to Neural Sanctum?
+        // Hidden realms
         public const int artifactworld = 5;     // Hidden Realm: Bulwark's Ambry
         public const int bazaar = 6;            // Hidden Realm: Bazaar Between Time
         public const int goldshores = 14;       // Hidden Realm: Gilded Coast
         public const int limbo = 27;            // Hidden Realm: A Moment, Whole
         public const int mysteryspace = 33;     // Hidden Realm: A Moment, Fractured
-        // TODO: scene index constants should probably live in a shared lookup since they are used in several places.
+        // TODO these should probably go somewhere else to better keep track of them since they are used in several places
 
-        public LocationNames LocationsNamesLookup = new LocationNames();
         public int MostRecentStageGroup = 0;
 
         // Stage Progression system
@@ -65,43 +77,64 @@ namespace Archipelago.RiskOfRain2.Handlers
             { "Stage 4", false },
         };
         public static int AmountOfStages = 0;
+        // Stage group mapping: scene name → AP stage group (1-4).
+        // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
+        // Starting stages (game ordered stage 1) are not in this lookup.
         public readonly Dictionary<string, int> StageLookup = new()
         {
+            // Vanilla + SOTV
             { "ancientloft", 1 },
-            { "dampcavesimple", 3 },
             { "foggyswamp", 1 },
-            { "frozenwall", 2 },
             { "goolake", 1 },
+            { "frozenwall", 2 },
+            { "sulfurpools", 2 },
+            { "wispgraveyard", 2 },
+            { "dampcavesimple", 3 },
             { "rootjungle", 3 },
             { "shipgraveyard", 3 },
             { "skymeadow", 4 },
-            { "sulfurpools", 2 },
-            { "wispgraveyard", 2 },
+            // SOTS
             { "lemuriantemple", 1 },
             { "habitat", 2 },
             { "habitatfall", 2 },
             { "helminthroost", 4 },
             { "meridian", 3 },
+            // AC
+            { "nest", 1 },            // Pretender's Precipice (game Stage 2)
+            { "ironalluvium", 2 },     // Iron Alluvium (game Stage 3)
+            { "ironalluvium2", 2 },    // Iron Auroras (game Stage 3)
+            { "repurposedcrater", 3 }, // Repurposed Crater (game Stage 4)
+            { "conduitcanyon", 3 },    // Conduit Canyon (game Stage 4)
+            { "solutionalhaunt", 4 },  // Solutional Haunt (game Stage 5)
         };
 
         // Used to display the full location names in chat when a stage is needed to progress
         public readonly Dictionary<string, string> StageDisplayNames = new()
         {
+            // Vanilla + SOTV
             { "ancientloft", "Aphelian Sanctuary" },
-            { "dampcavesimple", "Abyssal Depths" },
             { "foggyswamp", "Wetland Aspect" },
-            { "frozenwall", "Rallypoint Delta" },
             { "goolake", "Abandoned Aqueduct" },
+            { "frozenwall", "Rallypoint Delta" },
+            { "sulfurpools", "Sulfur Pools" },
+            { "wispgraveyard", "Scorched Acres" },
+            { "dampcavesimple", "Abyssal Depths" },
             { "rootjungle", "Sundered Grove" },
             { "shipgraveyard", "Siren's Call" },
             { "skymeadow", "Sky Meadow" },
-            { "sulfurpools", "Sulfur Pools" },
-            { "wispgraveyard", "Scorched Acres" },
+            // SOTS
             { "lemuriantemple", "Reformed Altar" },
             { "habitat", "Treeborn Colony" },
             { "habitatfall", "Golden Dieback" },
-            { "helminthroost", "Helminhe Hatchery" },
+            { "helminthroost", "Helminth Hatchery" },
             { "meridian", "Prime Meridian" },
+            // AC
+            { "nest", "Pretender's Precipice" },
+            { "ironalluvium", "Iron Alluvium" },
+            { "ironalluvium2", "Iron Auroras" },
+            { "repurposedcrater", "Repurposed Crater" },
+            { "conduitcanyon", "Conduit Canyon" },
+            { "solutionalhaunt", "Solutional Haunt" },
         };
 
         private List<int> blockedStages;
@@ -370,6 +403,17 @@ namespace Archipelago.RiskOfRain2.Handlers
                 Log.LogDebug("SceneExitController_SetState forcefully reroll next stagescene");
                 manuallyPickingStage = false;
             }
+            // General safety net: prevent any portal (including AC encrypted portals)
+            // from sending the player to a blocked destination.
+            SceneDef finalDest = self.useRunNextStageScene ? Run.instance.nextStageScene : self.destinationScene;
+            if (finalDest != null && CheckBlocked(finalDest.cachedName))
+            {
+                Log.LogDebug($"Safety net: destination {finalDest.cachedName} is blocked, forcing reroll.");
+                self.useRunNextStageScene = true;
+                manuallyPickingStage = true;
+                Run.instance.PickNextStageSceneFromCurrentSceneDestinations();
+                manuallyPickingStage = false;
+            }
 
             MostRecentStageGroup = SceneCatalog.mostRecentSceneDef.stageOrder;
             orig(self);
@@ -571,6 +615,32 @@ namespace Archipelago.RiskOfRain2.Handlers
             seerPortal = null;
             seerPortal = new SeerPortal();
             seerPortal.Initialize();
+
+            // Force a Halcyon Shrine (Shrine of Shaping) spawn on every ordered stage.
+            // Path-of-the-Colossus stages (Reformed Altar, Treeborn Colony, Golden Dieback) are only
+            // reachable via green portals from Halcyon Shrines. The AP solver treats them as normal
+            // tier-progression stages, so we must guarantee green portal access to prevent softlocks.
+            // The spawn card will be null if SOTS DLC is not installed, safely skipping.
+            try
+            {
+                var shrineCard = Addressables.LoadAssetAsync<SpawnCard>(
+                    "RoR2/DLC2/iscShrineColossusAccess.asset").WaitForCompletion();
+                if (shrineCard != null && DirectorCore.instance != null)
+                {
+                    DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(
+                        shrineCard,
+                        new DirectorPlacementRule
+                        {
+                            placementMode = DirectorPlacementRule.PlacementMode.Random,
+                        },
+                        new Xoroshiro128Plus(self.rng.nextUlong)));
+                    Log.LogDebug("Forced Halcyon Shrine spawn for guaranteed green portal access.");
+                }
+            }
+            catch (Exception e)
+            {
+                Log.LogDebug($"Halcyon Shrine spawn skipped (SOTS DLC likely not installed): {e.Message}");
+            }
         }
 
         /// <summary>
@@ -665,10 +735,20 @@ namespace Archipelago.RiskOfRain2.Handlers
             // The reason for this is if the player is playing with explore mode, the player's next environment could be in a different already unlocked environment.
             // Thus if the next unlock is somewhere, it would be nice to the the player get to that somewhere without restarting the run.
 
+            // 46 = Void Locus and if you are on that stage and you dont have The Planetarium the player will be moved back to orderedstage 1.
+            if (SceneCatalog.mostRecentSceneDef.cachedName == "voidstage" && CheckBlocked("voidraid"))
+            {
+                Log.LogDebug("loaded Void Locus without The Planetarium");
+                SceneCatalog.mostRecentSceneDef.stageOrder = 1;
+                Log.LogDebug("Switching to stage 1");
+                self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
+
+            }
+
             bool hasHabitat = false;
             bool hasHabitatFall = false;
 
-            // Since hatitatfall is a stage you usually cant get to without an initial loop we need to add special handling for it
+            // Since habitatfall is a stage you usually cant get to without an initial loop we need to add special handling for it
             choices.choices.ForEachTry(choice =>
             {
                 if (choice.value.cachedName == "habitat") hasHabitat = true;
@@ -685,16 +765,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                 orig(self, choices);
                 self.startingSceneGroup = originalStartingSceneGroup;
                 return;
-            }
-
-            // Void Locus without The Planetarium — move back to stage 1.
-            if (SceneCatalog.mostRecentSceneDef.cachedName == "voidstage" && CheckBlocked("voidraid"))
-            {
-                Log.LogDebug("loaded Void Locus without The Planetarium");
-                SceneCatalog.mostRecentSceneDef.stageOrder = 1;
-                Log.LogDebug("Switching to stage 1");
-                self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
-
             }
 
             // there are 2 conditions when we should mess with this call:
@@ -752,8 +822,32 @@ namespace Archipelago.RiskOfRain2.Handlers
                     }
                     RevertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}!";
 
-                    Log.LogDebug("adding choices for stage 1");
-                    self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
+                    // Instead of only falling back to tier 1, try ALL accessible stages from any tier.
+                    // This prevents stuck loops where the player has unlocked same-tier stages they haven't visited.
+                    string currentScene = SceneCatalog.mostRecentSceneDef.cachedName;
+                    foreach (SceneDef sceneDef in SceneCatalog.allSceneDefs)
+                    {
+                        if (sceneDef.sceneType == SceneType.Stage &&
+                            sceneDef.stageOrder >= 1 && sceneDef.stageOrder <= 5 &&
+                            sceneDef.cachedName != currentScene &&
+                            !CheckBlocked(sceneDef.cachedName))
+                        {
+                            choices.AddChoice(sceneDef, 1f);
+                            Log.LogDebug($"Fallback: adding {sceneDef.cachedName} (stageOrder {sceneDef.stageOrder}) as alternative");
+                        }
+                    }
+
+                    if (choices.Count > 0)
+                    {
+                        RevertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}! Routing to an accessible stage instead.";
+                    }
+                    else
+                    {
+                        // Absolute last resort: fall back to starting stages even if blocked
+                        RevertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}!";
+                        Log.LogDebug("No accessible stages found anywhere, falling back to starting stages");
+                        self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
+                    }
                 }
                 else Log.LogDebug("there are choices for the next scene; skipping tampering said choices");
 

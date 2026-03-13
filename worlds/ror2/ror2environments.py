@@ -58,16 +58,16 @@ environment_sotv_special_table: Dict[str, int] = {
 environment_sots_orderedstage_1_table: Dict[str, int] = {
     "Shattered Abodes":                        48,  # village
     "Disturbed Impact":                        49,  # villagenight
+    "Viscous Falls":                           50,  # lakesnight (post-loop only)
 }
 environment_sots_orderedstage_2_table: Dict[str, int] = {
-    "Viscous Falls":                           50,  # lakesnight
-}
-environment_sots_orderedstage_3_table: Dict[str, int] = {
     "Reformed Altar":                          51,  # lemuriantemple
 }
-environment_sots_orderedstage_4_table: Dict[str, int] = {
+environment_sots_orderedstage_3_table: Dict[str, int] = {
     "Treeborn Colony":                         52,  # habitat
     "Golden Dieback":                          53,  # habitatfall
+}
+environment_sots_orderedstage_4_table: Dict[str, int] = {
 }
 environment_sots_orderedstage_5_table: Dict[str, int] = {
     "Helminth Hatchery":                       54,  # helminthroost
@@ -79,24 +79,25 @@ environment_sots_special_table: Dict[str, int] = {
 
 # DLC3 - Alloyed Collective (AC)
 environment_ac_orderedstage_1_table: Dict[str, int] = {
-    "Pretender's Precipice":                   56,  # nest
 }
 environment_ac_orderedstage_2_table: Dict[str, int] = {
+    "Pretender's Precipice":                   56,  # nest
+}
+environment_ac_orderedstage_3_table: Dict[str, int] = {
     "Iron Alluvium":                           57,  # ironalluvium
     "Iron Auroras":                            58,  # ironalluvium2
 }
-environment_ac_orderedstage_3_table: Dict[str, int] = {
-    "Repurposed Crater":                       59,  # repurposedcrater
-}
 environment_ac_orderedstage_4_table: Dict[str, int] = {
+    "Repurposed Crater":                       59,  # repurposedcrater
     "Conduit Canyon":                          60,  # conduitcanyon
 }
 environment_ac_orderedstage_5_table: Dict[str, int] = {
-    "Solutional Haunt":                        61,  # solutionalhaunt
+    # Solutional Haunt moved to special table — boss-only stage with no standard interactables
 }
 
 environment_ac_special_table: Dict[str, int] = {
-    "Neural Sanctum":                          62,  # solusweb
+    "Solutional Haunt":                        61,  # solutionalhaunt (boss-only, no standard checks)
+    "Neural Sanctum":                          62,  # solusweb (victory stage only)
 }
 
 X = TypeVar("X")

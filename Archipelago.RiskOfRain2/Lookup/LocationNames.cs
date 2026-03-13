@@ -4,108 +4,147 @@ namespace Archipelago.RiskOfRain2.Lookup
 {
     public class LocationNames
     {
+        // Keys are Python/AP IDs from worlds/ror2/ror2environments.py.
+        // For vanilla and SOTV stages, Python IDs happen to match C# SceneCatalog indices.
+        // For SOTS and AC stages, they differ (Python uses sequential IDs 48+).
+        // These Python IDs are used for AP item/location ID computation, so they MUST match the Python world.
+
         public static readonly Dictionary<int, string> LocationsNames = new()
         {
-            { 3, "Aphelian Sanctuary" },
+            // Vanilla
             { 7, "Distant Roost" },
             { 8, "Distant Roost (2)" },
-            { 28, "Verdant Falls"},
-            { 10, "Abyssal Depths" },
-            { 12, "Wetland Aspect" },
-            { 13, "Rallypoint Delta" },
             { 15, "Titanic Plains" },
             { 16, "Titanic Plains (2)" },
+            { 28, "Verdant Falls" },
             { 17, "Abandoned Aqueduct" },
-            { 35, "Sundered Grove" },
-            { 37, "Siren's Call" },
-            { 38, "Sky Meadow" },
-            { 39, "Siphoned Forest" },
-            { 41, "Sulfur Pools" },
+            { 12, "Wetland Aspect" },
+            { 13, "Rallypoint Delta" },
             { 47, "Scorched Acres" },
-            { 32, "Commencement" },
+            { 10, "Abyssal Depths" },
+            { 37, "Siren's Call" },
+            { 35, "Sundered Grove" },
+            { 38, "Sky Meadow" },
+            // Vanilla special/hidden
             { 4, "Void Fields" },
+            { 32, "Commencement" },
+            { 5, "Hidden Realm: Bulwark's Ambry" },
+            { 6, "Hidden Realm: Bazaar Between Time" },
+            { 14, "Hidden Realm: Gilded Coast" },
+            { 27, "Hidden Realm: A Moment, Whole" },
+            { 33, "Hidden Realm: A Moment, Fractured" },
+            // SOTV
+            { 39, "Siphoned Forest" },
+            { 3, "Aphelian Sanctuary" },
+            { 41, "Sulfur Pools" },
             { 46, "Void Locus" },
             { 45, "The Planetarium" },
-            { 5, "Hidden Realm: Bulwark's Ambry"},
-            { 6, "Hidden Realm: Bazaar Between Time"},
-            { 14, "Hidden Realm: Gilded Coast" },
-            { 27, "Hidden Realm: A Moment, Whole"},
-            { 33, "Hidden Realm: A Moment, Fractured" },
-            { 34, "Viscous Falls" },
-            { 54, "Shattered Abodes" },
-            { 55, "Disturbed Impact" },
-            { 36, "Reformed Altar" },
-            { 21, "Treeborn Colony" },
-            { 22, "Golden Dieback" },
-            { 23, "Helminth Hatchery" },
-            { 40, "Prime Meridian" }
+            // SOTS (Python IDs 48-55, NOT C# SceneCatalog indices)
+            { 48, "Shattered Abodes" },
+            { 49, "Disturbed Impact" },
+            { 50, "Viscous Falls" },
+            { 51, "Reformed Altar" },
+            { 52, "Treeborn Colony" },
+            { 53, "Golden Dieback" },
+            { 54, "Helminth Hatchery" },
+            { 55, "Prime Meridian" },
+            // AC (Python IDs 56-62)
+            { 56, "Pretender's Precipice" },
+            { 57, "Iron Alluvium" },
+            { 58, "Iron Auroras" },
+            { 59, "Repurposed Crater" },
+            { 60, "Conduit Canyon" },
+            { 61, "Solutional Haunt" },
+            { 62, "Neural Sanctum" },
         };
 
         public static readonly Dictionary<int, string> CachedLocationsNames = new()
         {
-            { 3, "ancientloft" },
-            { 4, "arena" },
-            { 5, "artifactworld" },
-            { 6, "bazaar" },
+            // Vanilla
             { 7, "blackbeach" },
             { 8, "blackbeach2" },
-            { 10, "dampcavesimple" },
-            { 12, "foggyswamp" },
-            { 13, "frozenwall" },
-            { 14, "goldshores" },
             { 15, "golemplains" },
             { 16, "golemplains2" },
+            { 28, "lakes" },
             { 17, "goolake" },
-            { 27, "limbo" },
-            { 28, "lakes"},
-            { 32, "moon2" },
-            { 33, "mysteryspace" },
-            { 35, "rootjungle" },
-            { 37, "shipgraveyard" },
-            { 38, "skymeadow" },
-            { 39, "snowyforest" },
-            { 41, "sulfurpools" },
-            { 45, "voidraid" },
-            { 46, "voidstage" },
+            { 12, "foggyswamp" },
+            { 13, "frozenwall" },
             { 47, "wispgraveyard" },
-            { 34, "lakesnight" },
-            { 54, "village" },
-            { 55, "villagenight" },
-            { 36, "lemuriantemple" },
-            { 21, "habitat" },
-            { 22, "habitatfall" },
-            { 23, "helminthroost" },
-            { 40, "meridian" },
+            { 10, "dampcavesimple" },
+            { 37, "shipgraveyard" },
+            { 35, "rootjungle" },
+            { 38, "skymeadow" },
+            // Vanilla special/hidden
+            { 4, "arena" },
+            { 32, "moon2" },
+            { 5, "artifactworld" },
+            { 6, "bazaar" },
+            { 14, "goldshores" },
+            { 27, "limbo" },
+            { 33, "mysteryspace" },
+            // SOTV
+            { 39, "snowyforest" },
+            { 3, "ancientloft" },
+            { 41, "sulfurpools" },
+            { 46, "voidstage" },
+            { 45, "voidraid" },
+            // SOTS (Python IDs 48-55, NOT C# SceneCatalog indices)
+            { 48, "village" },
+            { 49, "villagenight" },
+            { 50, "lakesnight" },
+            { 51, "lemuriantemple" },
+            { 52, "habitat" },
+            { 53, "habitatfall" },
+            { 54, "helminthroost" },
+            { 55, "meridian" },
+            // AC (Python IDs 56-62)
+            { 56, "nest" },
+            { 57, "ironalluvium" },
+            { 58, "ironalluvium2" },
+            { 59, "repurposedcrater" },
+            { 60, "conduitcanyon" },
+            { 61, "solutionalhaunt" },
+            { 62, "solusweb" },
         };
 
-        public string GetLocationName(string cachedName)
+        // Reverse lookup: scene cached name → Python/AP ID (built once, O(1) lookups)
+        private static readonly Dictionary<string, int> cachedNameToIndex;
+
+        static LocationNames()
+        {
+            cachedNameToIndex = new Dictionary<string, int>(CachedLocationsNames.Count);
+            foreach (var kvp in CachedLocationsNames)
+            {
+                cachedNameToIndex[kvp.Value] = kvp.Key;
+            }
+        }
+
+        public static string GetLocationName(string cachedName)
         {
             int sceneIndex = GetSceneIndex(cachedName);
             if (LocationsNames.TryGetValue(sceneIndex, out string locationName))
             {
                 return locationName;
             }
-
-            return "";
+            return null;
         }
 
-        public string GetLocationNameByIndex(int index)
+        public static string GetLocationNameByIndex(int index)
         {
             if (LocationsNames.TryGetValue(index, out string locationName))
             {
                 return locationName;
             }
-
-            return "";
+            return null;
         }
-        public string GetCachedLocationNameByIndex(int index)
+
+        public static string GetCachedLocationNameByIndex(int index)
         {
             if (CachedLocationsNames.TryGetValue(index, out string cachedName))
             {
                 return cachedName;
             }
-
-            return "";
+            return null;
         }
 
         public bool LocationNamesContains(string sceneName)
@@ -113,22 +152,14 @@ namespace Archipelago.RiskOfRain2.Lookup
             return LocationsNames.ContainsValue(sceneName);
         }
 
-        public bool CachedLocationNamesContains(string cachedName)
+        public static bool CachedLocationNamesContains(string cachedName)
         {
-            return CachedLocationsNames.ContainsValue(cachedName);
+            return cachedNameToIndex.ContainsKey(cachedName);
         }
 
-        public int GetSceneIndex(string cachedName)
+        public static int GetSceneIndex(string cachedName)
         {
-            foreach (var scene in CachedLocationsNames)
-            {
-                if (scene.Value == cachedName)
-                {
-                    return scene.Key;
-                }
-            }
-
-            return 0;
+            return cachedNameToIndex.TryGetValue(cachedName, out int index) ? index : 0;
         }
     }
 }

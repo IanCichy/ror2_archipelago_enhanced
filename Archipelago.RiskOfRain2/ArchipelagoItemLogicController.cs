@@ -383,6 +383,7 @@ namespace Archipelago.RiskOfRain2
             {
                 session.Socket.PacketReceived -= Session_PacketReceived;
                 session.Items.ItemReceived -= Items_ItemReceived;
+                session.Locations.CheckedLocationsUpdated -= Check_Locations;
                 session = null;
             }
         }
@@ -479,18 +480,11 @@ namespace Archipelago.RiskOfRain2
 
             long itemIdReceived = itemReceived.Key;
             string itemNameReceived = itemReceived.Value;
-            if (itemIdReceived == environmentRangeLower + 46 && itemNameReceived == "The Planetarium")
-            {
-                itemIdReceived = environmentRangeLower + 45;
-                Log.LogDebug($"Changing id to 45");
-            }
-            else if (itemIdReceived == environmentRangeLower + 45 && itemNameReceived == "Void Locus")
-            {
-                itemIdReceived = environmentRangeLower + 46;
-                Log.LogDebug($"Changing id to 46");
-            }
-            Log.LogDebug($"Handling environment with itemid {itemIdReceived} with name {itemNameReceived}");
-            StageBlocker?.UnBlock((int)(itemIdReceived - environmentRangeLower));
+            // The item ID encodes the Python/AP environment ID as (environmentRangeLower + pythonId).
+            // cachedLocationsNames is keyed by Python IDs, so this lookup works directly.
+            int pythonId = (int)(itemIdReceived - environmentRangeLower);
+            Log.LogDebug($"Handling environment with pythonId {pythonId}, name {itemNameReceived}");
+            StageBlocker?.UnBlock(pythonId);
             if (IsInGame)
             {
                 ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);

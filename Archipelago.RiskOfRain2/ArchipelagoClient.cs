@@ -62,6 +62,8 @@ namespace Archipelago.RiskOfRain2
         private GameEndingDef[] acceptableEndings;
         // Acceptable stages to die on
         private string[] acceptableLosses;
+        // Boss-kill victory detection: set when boss group defeated on a victory-eligible stage
+        private bool bossDefeatedOnVictoryStage;
 
         // Cached slot data for session reuse across runs
         private bool cachedGoalIsExplore;
@@ -219,46 +221,28 @@ namespace Archipelago.RiskOfRain2
                         acceptableLosses = new[] { "mysteryspace", "limbo" };
                         VictoryCondition = "Limbo";
                         break;
+                    // False Son (Rebirth)
                     case "4":
                         acceptableEndings = new[] { DLC2Content.GameEndings.RebirthEndingDef };
+                        acceptableLosses = new[] { "meridian" };
                         VictoryCondition = "Rebirth";
                         break;
+                    // Solus Heart — defeat Solus Heart in Neural Sanctum (scene: solusweb)
+                    // Path: Solutional Haunt (Solus Wing) → Computational Exchange → Neural Sanctum (Solus Heart)
+                    // No standard GameEndingDef — detected via boss-kill + scene-transition hook.
+                    case "5":
+                        acceptableEndings = new GameEndingDef[] { };
+                        acceptableLosses = new[] { "solusweb" };
+                        VictoryCondition = "Solus Heart";
+                        break;
                     default:
-                        VictoryCondition = "any";
-                        acceptableEndings = new[] {
-                            RoR2Content.GameEndings.MainEnding,
-                            RoR2Content.GameEndings.LimboEnding,
-                            DLC1Content.GameEndings.VoidEnding,
-                            DLC2Content.GameEndings.RebirthEndingDef
-                        };
-                        acceptableLosses = new[] {
-                            "moon",
-                            "moon2",
-                            "voidraid",
-                            "mysteryspace",
-                            "limbo",
-                            "meridian"
-                        };
+                        SetAnyVictoryCondition();
                         break;
                 }
             }
             else
             {
-                VictoryCondition = "any";
-                acceptableEndings = new[] {
-                    RoR2Content.GameEndings.MainEnding,
-                    RoR2Content.GameEndings.LimboEnding,
-                    DLC1Content.GameEndings.VoidEnding,
-                    DLC2Content.GameEndings.RebirthEndingDef
-                };
-                acceptableLosses = new[] {
-                    "moon",
-                    "moon2",
-                    "voidraid",
-                    "mysteryspace",
-                    "limbo",
-                    "meridian"
-                };
+                SetAnyVictoryCondition();
             }
 
             // Progressive stages and seer portals (session-level, static fields)
@@ -409,19 +393,16 @@ namespace Archipelago.RiskOfRain2
 
             UnhookGame();
 
-            if (ItemLogic != null)
-            {
-                // Cache state before disposing for session reuse
-                hasCachedRunState = true;
-                cachedItemLogicPickupStep = ItemLogic.ItemPickupStep;
-                cachedItemLogicTotalChecks = ItemLogic.TotalChecks;
-                cachedItemLogicCurrentChecks = ItemLogic.CurrentChecks;
-                cachedItemLogicPickedUpItemCount = ItemLogic.PickedUpItemCount;
+            // Cache state before disposing for session reuse
+            hasCachedRunState = true;
+            cachedItemLogicPickupStep = ItemLogic.ItemPickupStep;
+            cachedItemLogicTotalChecks = ItemLogic.TotalChecks;
+            cachedItemLogicCurrentChecks = ItemLogic.CurrentChecks;
+            cachedItemLogicPickedUpItemCount = ItemLogic.PickedUpItemCount;
 
-                ItemLogic.OnItemDropProcessed -= ItemLogicHandler_ItemDropProcessed;
-                ItemLogic.Dispose();
-                ItemLogic = null;
-            }
+            ItemLogic.OnItemDropProcessed -= ItemLogicHandler_ItemDropProcessed;
+            ItemLogic.Dispose();
+            ItemLogic = null;
 
             if (ItemCheckBar != null)
             {
@@ -447,6 +428,7 @@ namespace Archipelago.RiskOfRain2
             StageBlocker = null;
             LocationHandler = null;
             ShrineChance = null;
+            bossDefeatedOnVictoryStage = false;
         }
 
         /// <summary>
@@ -525,6 +507,8 @@ namespace Archipelago.RiskOfRain2
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter += PortalDialerPreDialState_OnEnter;
+            On.RoR2.BossGroup.OnDefeatedServer += BossGroup_OnDefeatedServer;
+            RoR2.Stage.onStageStartGlobal += Stage_onStageStartGlobal_VictoryCheck;
         }
 
         private void PortalDialerPreDialState_OnEnter(On.RoR2.PortalDialerController.PortalDialerPreDialState.orig_OnEnter orig, PortalDialerController.PortalDialerPreDialState self)
@@ -551,6 +535,8 @@ namespace Archipelago.RiskOfRain2
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter -= PortalDialerPreDialState_OnEnter;
+            On.RoR2.BossGroup.OnDefeatedServer -= BossGroup_OnDefeatedServer;
+            RoR2.Stage.onStageStartGlobal -= Stage_onStageStartGlobal_VictoryCheck;
         }
 
         private void SceneObjectToggleGroup_Awake(On.RoR2.SceneObjectToggleGroup.orig_Awake orig, SceneObjectToggleGroup self)
@@ -628,8 +614,8 @@ namespace Archipelago.RiskOfRain2
                 {
                     ItemCheckBar.CurrentItemCount = ItemCheckBar.CurrentItemCount % ItemLogic.ItemPickupStep;
                 }
+                new SyncLocationCheckProgress(ItemCheckBar.CurrentItemCount, ItemCheckBar.ItemPickupStep).Send(NetworkDestination.Clients);
             }
-            new SyncLocationCheckProgress(ItemCheckBar.CurrentItemCount, ItemCheckBar.ItemPickupStep).Send(NetworkDestination.Clients);
         }
 
         private void ChatBox_SubmitChat(On.RoR2.UI.ChatBox.orig_SubmitChat orig, ChatBox self)
@@ -800,21 +786,97 @@ namespace Archipelago.RiskOfRain2
             {
                 isEndingAcceptable = true;
 
-                var packet = new StatusUpdatePacket();
-                packet.Status = ArchipelagoClientState.ClientGoal;
-                session.Socket.SendPacketAsync(packet);
-
-                new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+                SendVictoryAndEnd();
             }
             orig(self, gameEndingDef);
+        }
+
+        private void SendVictoryAndEnd()
+        {
+            if (!IsConnected) return;
+
+            var packet = new StatusUpdatePacket();
+            packet.Status = ArchipelagoClientState.ClientGoal;
+            session.Socket.SendPacketAsync(packet);
+
+            // Mark all checks complete in the UI so the objective panel reflects victory
+            ArchipelagoTotalChecksObjectiveController.CurrentChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
+            new SyncTotalCheckProgress(
+                ArchipelagoTotalChecksObjectiveController.CurrentChecks,
+                ArchipelagoTotalChecksObjectiveController.TotalChecks
+            ).Send(NetworkDestination.Clients);
+
+            new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+        }
+
+        private void SetAnyVictoryCondition()
+        {
+            VictoryCondition = "any";
+            acceptableEndings = new[] {
+                RoR2Content.GameEndings.MainEnding,
+                RoR2Content.GameEndings.LimboEnding,
+                DLC1Content.GameEndings.VoidEnding,
+                DLC2Content.GameEndings.RebirthEndingDef,
+                // Solus Heart has no GameEndingDef — handled via boss-kill hook
+            };
+            acceptableLosses = new[] {
+                "moon",
+                "moon2",
+                "voidraid",
+                "mysteryspace",
+                "limbo",
+                "meridian",
+                "solusweb",
+            };
         }
 
         private bool IsEndingAcceptable(GameEndingDef gameEndingDef)
         {
             Log.LogDebug($"ending stage is {Stage.instance.sceneDef.cachedName}");
             return acceptableEndings.Contains(gameEndingDef) ||
-                (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.StandardLoss) && (acceptableLosses.Contains(Stage.instance.sceneDef.cachedName)) ||
-                (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.ObliterationEnding) && (acceptableLosses.Contains(Stage.instance.sceneDef.cachedName));
+                (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.StandardLoss && acceptableLosses.Contains(Stage.instance.sceneDef.cachedName)) ||
+                (finalStageDeath && gameEndingDef == RoR2Content.GameEndings.ObliterationEnding && acceptableLosses.Contains(Stage.instance.sceneDef.cachedName));
+        }
+
+        // Boss-kill victory detection for encounters that don't trigger a standard GameEndingDef.
+        // Step 1: Flag when boss group is defeated on a victory-eligible stage.
+        private void BossGroup_OnDefeatedServer(On.RoR2.BossGroup.orig_OnDefeatedServer orig, BossGroup self)
+        {
+            orig(self);
+            if (Stage.instance == null) return;
+            var sceneName = Stage.instance.sceneDef.cachedName;
+            if (IsVictoryStageForBossKill(sceneName))
+            {
+                bossDefeatedOnVictoryStage = true;
+                Log.LogDebug($"Boss defeated on victory stage: {sceneName}");
+                ChatMessage.SendColored("Boss defeated! Complete the stage to claim victory.", Color.green);
+            }
+        }
+
+        // Step 2: When the next stage loads, check if we left a victory stage after a boss kill.
+        // The isEndingAcceptable guard prevents double-sending if Run_BeginGameOver already handled it
+        // (e.g. False Son via Rebirth ending).
+        private void Stage_onStageStartGlobal_VictoryCheck(Stage stage)
+        {
+            if (!bossDefeatedOnVictoryStage || isEndingAcceptable) return;
+            if (!IsConnected) return;
+            bossDefeatedOnVictoryStage = false;
+
+            Log.LogInfo($"Victory achieved via boss kill on victory stage (now on {stage.sceneDef.cachedName}).");
+            isEndingAcceptable = true;
+
+            SendVictoryAndEnd();
+        }
+
+        // Which stages count for boss-kill victory detection, based on the current victory condition.
+        // Only includes encounters that lack a standard GameEndingDef.
+        // False Son/Rebirth is excluded because it has RebirthEndingDef and is handled by Run_BeginGameOver.
+        private bool IsVictoryStageForBossKill(string sceneName)
+        {
+            // Solus Heart on Neural Sanctum (no GameEndingDef exists for this encounter)
+            if ((VictoryCondition == "Solus Heart" || VictoryCondition == "any") && sceneName == "solusweb")
+                return true;
+            return false;
         }
 
         // Session-level: automatically set up a new run when the session persists across runs.
@@ -852,6 +914,8 @@ namespace Archipelago.RiskOfRain2
 
         private void GameEndReportPanelController_Awake(On.RoR2.UI.GameEndReportPanelController.orig_Awake orig, GameEndReportPanelController self)
         {
+            if (session == null) { orig(self); return; }
+
             if (isEndingAcceptable && ReleasePromptPanel == null)
             {
                 var releasePermission = Convert.ToString(session.RoomState.ReleasePermissions);

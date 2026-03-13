@@ -20,35 +20,44 @@ namespace Archipelago.RiskOfRain2.Handlers
     {
         // NOTE every mention of a "location" refers to the archipelago location checks
         // NOTE every mention of a "environment" refers to the risk of rain 2 scenes that are loaded and played
-        // setup all scene indexes as magic numbers
-        // scenes from https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Developer-Reference/Scene-Names/
-        // scene id's will be incorrect when extra maps are included so make sure to call int index = GetSceneIndex(sceneName); when using CurrentSceneIndex
-        // main scenes
-        public const int ancientloft = 3;       // Aphelian Sanctuary
+
+
+        // Python/AP IDs from worlds/ror2/ror2environments.py.
+        // For vanilla and SOTV, these match C# SceneCatalog indices.
+        // For SOTS and AC, Python uses sequential IDs (48+) that differ from SceneCatalog.
+        // These IDs are used for AP location ID computation and must match the Python world.
+        // Vanilla
         public const int blackbeach = 7;        // Distant Roost
         public const int blackbeach2 = 8;       // Distant Roost (2)
-        public const int lakes = 28;            // Verdant Falls
-        public const int dampcavesimple = 10;   // Abyssal Depths
-        public const int foggyswamp = 12;       // Wetland Aspect
-        public const int frozenwall = 13;       // Rallypoint Delta
         public const int golemplains = 15;      // Titanic Plains
         public const int golemplains2 = 16;     // Titanic Plains (2)
+        public const int lakes = 28;            // Verdant Falls
         public const int goolake = 17;          // Abandoned Aqueduct
-        public const int rootjungle = 35;       // Sundered Grove
-        public const int shipgraveyard = 37;    // Siren's Call
-        public const int skymeadow = 38;        // Sky Meadow
-        public const int snowyforest = 39;      // Siphoned Forest
-        public const int sulfurpools = 41;      // Sulfur Pools
+        public const int foggyswamp = 12;       // Wetland Aspect
+        public const int frozenwall = 13;       // Rallypoint Delta
         public const int wispgraveyard = 47;    // Scorched Acres
-        // Seekers of the Storm
-        public const int lakesnight = 34;       // Viscous Falls - Alternate stage to Verdant Falls
-        public const int village = 54;          // Shattered Abodes
-        public const int villagenight = 55;     // Disturbed Impact - Alternate stage to Shattered Abodes
-        public const int lemuriantemple = 36;   // Reformed Altar
-        public const int habitat = 21;          // Treeborn Colony
-        public const int habitatfall = 22;      // Golden Dieback - Alternate stage to Treeborn Colony
-        public const int helminthroost = 23;    // Helminth Hatchery
-        public const int meridian = 40;         // Prime Meridian
+        public const int dampcavesimple = 10;   // Abyssal Depths
+        public const int shipgraveyard = 37;    // Siren's Call
+        public const int rootjungle = 35;       // Sundered Grove
+        public const int skymeadow = 38;        // Sky Meadow
+        // SOTV
+        public const int snowyforest = 39;      // Siphoned Forest
+        public const int ancientloft = 3;       // Aphelian Sanctuary
+        public const int sulfurpools = 41;      // Sulfur Pools
+        // SOTS (Python IDs, NOT C# SceneCatalog indices)
+        public const int village = 48;          // Shattered Abodes (C# scene index: 54)
+        public const int villagenight = 49;     // Disturbed Impact (C# scene index: 55)
+        public const int lakesnight = 50;       // Viscous Falls (C# scene index: 34)
+        public const int lemuriantemple = 51;   // Reformed Altar (C# scene index: 36)
+        public const int habitat = 52;          // Treeborn Colony (C# scene index: 21)
+        public const int habitatfall = 53;      // Golden Dieback (C# scene index: 22)
+        public const int helminthroost = 54;    // Helminth Hatchery (C# scene index: 23)
+        // AC (Python IDs)
+        public const int nest = 56;             // Pretender's Precipice
+        public const int ironalluvium = 57;     // Iron Alluvium
+        public const int ironalluvium2 = 58;    // Iron Auroras
+        public const int repurposedcrater = 59; // Repurposed Crater
+        public const int conduitcanyon = 60;    // Conduit Canyon (no Newt Altar)
 
         public static int CurrentSceneIndex = 0;
         public enum LocationTypes
@@ -207,13 +216,23 @@ namespace Archipelago.RiskOfRain2.Handlers
             currentlocations.Add(sulfurpools, locationstemplate); // Sulfur Pools
             currentlocations.Add(wispgraveyard, locationstemplate); // Scorched Acres
             // Seekers of the Storm
-            currentlocations.Add(lakesnight, locationstemplate); // Viscous Falls
-            currentlocations.Add(village, locationstemplate); // Shattered Abodes
-            currentlocations.Add(villagenight, locationstemplate); // Disturbed Impact
-            currentlocations.Add(lemuriantemple, locationstemplate); // Reformed Altar
-            currentlocations.Add(habitat, locationstemplate); // Treeborn Colony
-            currentlocations.Add(habitatfall, locationstemplate); // Golden Dieback
-            currentlocations.Add(helminthroost, locationstemplate);  // Helminth Hatchery
+            currentlocations.Add(lakesnight,        locationstemplate); // Viscous Falls
+            currentlocations.Add(village,           locationstemplate); // Shattered Abodes
+            currentlocations.Add(villagenight,      locationstemplate); // Disturbed Impact
+            currentlocations.Add(lemuriantemple,    locationstemplate); // Reformed Altar
+            currentlocations.Add(habitat,           locationstemplate); // Treeborn Colony
+            currentlocations.Add(habitatfall,       locationstemplate); // Golden Dieback
+            currentlocations.Add(helminthroost,    locationstemplate);  // Helminth Hatchery
+            // Alloyed Collective
+            currentlocations.Add(nest,              locationstemplate); // Pretender's Precipice
+            currentlocations.Add(ironalluvium,      locationstemplate); // Iron Alluvium
+            currentlocations.Add(ironalluvium2,     locationstemplate); // Iron Auroras
+            currentlocations.Add(repurposedcrater,  locationstemplate); // Repurposed Crater
+            // Conduit Canyon has no Newt Altar spawns — use a modified template with 0 altars
+            var conduitTemplate = locationstemplate.Copy();
+            conduitTemplate[LocationTypes.newt_altar] = 0;
+            currentlocations.Add(conduitcanyon,     conduitTemplate); // Conduit Canyon
+            // NOTE: Solutional Haunt (61) and Neural Sanctum (62) are excluded — boss/victory stages with no standard checks
             // TODO separate out the DLC locations
         }
 
@@ -224,11 +243,11 @@ namespace Archipelago.RiskOfRain2.Handlers
         public void CatchUpSceneLocations(string sceneName)
         {
             int index = GetSceneIndex(sceneName);
-            Dictionary<int, LocationInformationTemplate> locationscopy = currentlocations.ToDictionary(k => k.Key, k => k.Value.Copy());
-            if (!locationscopy.TryGetValue(index, out LocationInformationTemplate location))
+            if (!currentlocations.TryGetValue(index, out LocationInformationTemplate original))
             {
                 return;
             }
+            LocationInformationTemplate location = original.Copy();
 
             ReadOnlyCollection<long> completedchecks = session.Locations.AllLocationsChecked;
             int environment_start_id = index * ArchipelagoLocationOffsets.allocation + ArchipelagoLocationOffsets.ror2_locations_start_orderedstage;
@@ -365,29 +384,12 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         public void GetCurrentSceneIndex()
         {
-            foreach (var scene in LocationNames.CachedLocationsNames)
-            {
-                if (scene.Value == CurrentSceneDef.cachedName)
-                {
-                    CurrentSceneIndex = scene.Key;
-                    return;
-                }
-            }
-
-            CurrentSceneIndex = 100;
+            int index = LocationNames.GetSceneIndex(CurrentSceneDef.cachedName);
+            CurrentSceneIndex = index != 0 ? index : 100;
         }
-
-        public int GetSceneIndex(string sceneName)
+        public static int GetSceneIndex(string sceneName)
         {
-            foreach (var scene in LocationNames.CachedLocationsNames)
-            {
-                if (scene.Value == sceneName)
-                {
-                    return scene.Key;
-                }
-            }
-
-            return 0;
+            return LocationNames.GetSceneIndex(sceneName);
         }
 
         private void updateBar(LocationTypes loctype)
@@ -478,8 +480,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         /// <returns>Returns the amount of remaining locations.</returns>
         private int checkAvailable(LocationTypes loctype) // TODO make a method to check the nth location
         {
-            int index = GetSceneIndex(CurrentSceneDef.cachedName);
-            if (!currentlocations.TryGetValue(index, out var locationsinenvironment))
+            if (!currentlocations.TryGetValue(CurrentSceneIndex, out var locationsinenvironment))
             // prevent KeyNotFoundException by using TryGetValue
             {
                 // if the locations in the environment are not being tracked, there must be 0 locations
@@ -528,7 +529,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
             // update UI to the results of sending the location
             ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
-            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
+            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
             int TotalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
             new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
             if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())
@@ -680,7 +681,9 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             bool locationavailable = 0 < checkAvailable(LocationTypes.chest);
             // If no chests we dont need the hooks running.
-            if (!locationavailable)
+            // Only unhook on tracked stages that exhausted all checks — not on untracked stages
+            // (boss/victory stages like Solutional Haunt) where hooks are still needed for later stages.
+            if (!locationavailable && currentlocations.ContainsKey(CurrentSceneIndex))
             {
                 On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Chest;
                 On.RoR2.Artifacts.SacrificeArtifactManager.OnServerCharacterDeath -= SacrificeArtifactManager_OnServerCharacterDeath;
