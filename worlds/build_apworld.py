@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # ============================================================
 # build_apworld.py
+# Requires: Python 3.6+
 # Usage: python build_apworld.py --world-dir worlds/ror2 --output RiskOfRain2.apworld
 # Or with defaults: python build_apworld.py
 # ============================================================
@@ -14,12 +15,13 @@ from pathlib import Path
 EXCLUDE_DIRS = {"docs", "test"}
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Build an .apworld archive.")
+    parser = argparse.ArgumentParser(description="Build an .apworld file. "
+    "This script should live in the worlds folder to run properly.")
     parser.add_argument(
         "--world-dir",
         type=Path,
         default=Path("ror2"),
-        help="Path to the world folder (default: worlds/ror2)"
+        help="Path to the world folder (default: ror2)"
     )
     parser.add_argument(
         "--output",
