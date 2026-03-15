@@ -1,3 +1,4 @@
+import math
 import string
 
 from .items import RiskOfRainItem, item_table, item_pool_weights, offset, filler_table, environment_offset
@@ -46,6 +47,7 @@ class RiskOfRainWorld(World):
         "Upgrades": {name for name, data in item_table.items() if data.category == "Upgrade"},
         "Fillers": {name for name, data in item_table.items() if data.category == "Filler"},
         "Traps": {name for name, data in item_table.items() if data.category == "Trap"},
+        "Pool": {name for name, data in item_table.items() if data.category == "Pool"},
     }
     location_name_to_id = item_pickups
 
@@ -171,6 +173,35 @@ class RiskOfRainWorld(World):
                     dlc_ac=bool(self.options.dlc_ac.value)
                 )
             )
+        # Add pool expansion items when item pool limiting is enabled
+        if self.options.item_pool_limiting:
+            pool_tiers = [
+                ("White Pool Expansion", 36, self.options.starting_white_pool.value,
+                 self.options.items_per_white_expansion.value),
+                ("Green Pool Expansion", 42, self.options.starting_green_pool.value,
+                 self.options.items_per_green_expansion.value),
+                ("Red Pool Expansion", 36, self.options.starting_red_pool.value,
+                 self.options.items_per_red_expansion.value),
+                ("Boss Pool Expansion", 22, self.options.starting_boss_pool.value,
+                 self.options.items_per_boss_expansion.value),
+                ("Lunar Pool Expansion", 20, self.options.starting_lunar_pool.value,
+                 self.options.items_per_lunar_expansion.value),
+                ("Void Pool Expansion", 14, self.options.starting_void_pool.value,
+                 self.options.items_per_void_expansion.value),
+                ("Equipment Pool Expansion", 34, self.options.starting_equipment_pool.value,
+                 self.options.items_per_equipment_expansion.value),
+            ]
+            for name, total_in_tier, starting, per_expansion in pool_tiers:
+                # Skip disabled tiers
+                if name == "Lunar Pool Expansion" and not self.options.enable_lunar:
+                    continue
+                if name == "Void Pool Expansion" and not self.options.dlc_sotv:
+                    continue
+                remaining = total_in_tier - starting
+                if remaining > 0:
+                    num_expansions = math.ceil(remaining / per_expansion)
+                    itempool += [name] * num_expansions
+
         # Create junk items
         junk_pool = self.create_junk_pool()
         # Fill remaining items with randomly generated junk
@@ -245,7 +276,14 @@ class RiskOfRainWorld(World):
                                             "chests_per_stage", "shrines_per_stage", "scavengers_per_stage",
                                             "scanner_per_stage", "altars_per_stage", "total_revivals",
                                             "start_with_revive", "final_stage_death", "death_link", "require_stages",
-                                            "progressive_stages", "dlc_sotv", "dlc_sots", "dlc_ac", casing="camel")
+                                            "progressive_stages", "dlc_sotv", "dlc_sots", "dlc_ac",
+                                            "item_pool_limiting", "starting_white_pool", "starting_green_pool",
+                                            "starting_red_pool", "starting_boss_pool", "starting_lunar_pool",
+                                            "starting_void_pool", "starting_equipment_pool",
+                                            "items_per_white_expansion", "items_per_green_expansion",
+                                            "items_per_red_expansion", "items_per_boss_expansion",
+                                            "items_per_lunar_expansion", "items_per_void_expansion",
+                                            "items_per_equipment_expansion", casing="camel")
         return {
             **options_dict,
             "seed": "".join(self.random.choice(string.digits) for _ in range(16)),

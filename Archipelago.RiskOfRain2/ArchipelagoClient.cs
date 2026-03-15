@@ -38,6 +38,7 @@ namespace Archipelago.RiskOfRain2
         internal StageBlockerHandler Stageblockerhandler { get; private set; }
         internal LocationHandler Locationhandler { get; private set; }
         internal ShrineChanceHandler shrineChanceHelper { get; private set; }
+        internal ItemPoolHandler ItemPoolHandler { get; private set; }
 
         public ArchipelagoItemLogicController ItemLogic;
 
@@ -68,6 +69,7 @@ namespace Archipelago.RiskOfRain2
         private bool bossDefeatedOnVictoryStage;
 
         // Cached slot data for session reuse across runs
+        private bool cachedItemPoolLimiting;
         private bool cachedGoalIsExplore;
         private bool cachedDeathLinkEnabled;
         private uint cachedItemPickupStep = 3;
@@ -186,6 +188,14 @@ namespace Archipelago.RiskOfRain2
                     deathLinkService.EnableDeathLink(); // deathlink should just be enabled, the DeathLinkHandler assumes it is already enabled
                 }
             }
+
+            // Item pool limiting
+            cachedItemPoolLimiting = false;
+            if (successResult.SlotData.TryGetValue("itemPoolLimiting", out var itemPoolLimitingObj))
+            {
+                cachedItemPoolLimiting = Convert.ToBoolean(itemPoolLimitingObj);
+            }
+            Log.LogDebug($"itemPoolLimiting: {cachedItemPoolLimiting}");
 
             // Cache goal mode and slot data for run reuse
             cachedGoalIsExplore = false;
@@ -325,6 +335,15 @@ namespace Archipelago.RiskOfRain2
 
             ArchipelagoCheckCountdownController.AddObjective();
 
+            // Item pool limiting
+            if (cachedItemPoolLimiting)
+            {
+                ItemPoolHandler = new ItemPoolHandler();
+                ItemPoolHandler.Initialize(cachedSlotData);
+                ItemLogic.ItemPoolHandler = ItemPoolHandler;
+                ArchipelagoItemPoolObjectiveController.AddObjective();
+            }
+
             // Initialize ItemLogic location tracking from session state.
             // On first connect, Session_PacketReceived won't fire because ItemLogic
             // is created after TryConnectAndLogin. On session reuse, restore cached state.
@@ -391,12 +410,14 @@ namespace Archipelago.RiskOfRain2
             }
 
             ArchipelagoCheckCountdownController.RemoveObjective();
+            ArchipelagoItemPoolObjectiveController.RemoveObjective();
 
             // In the case the player joins a lobby that uses different settings, the previous objects may still exist and may be called again when hooks are started.
             // To prevent this, the old objects will be thrown away when cleaning up.
             Stageblockerhandler = null;
             Locationhandler = null;
             shrineChanceHelper = null;
+            ItemPoolHandler = null;
             bossDefeatedOnVictoryStage = false;
         }
 
@@ -455,6 +476,8 @@ namespace Archipelago.RiskOfRain2
             Stageblockerhandler?.Hook();
             Locationhandler?.Hook();
             shrineChanceHelper?.Hook();
+            ItemPoolHandler?.Hook();
+            if (ItemPoolHandler != null) ItemPoolViewerController.Hook();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter += PortalDialerPreDialState_OnEnter;
@@ -484,6 +507,8 @@ namespace Archipelago.RiskOfRain2
             Stageblockerhandler?.UnHook();
             Locationhandler?.UnHook();
             shrineChanceHelper?.UnHook();
+            ItemPoolHandler?.UnHook();
+            ItemPoolViewerController.Unhook();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter -= PortalDialerPreDialState_OnEnter;

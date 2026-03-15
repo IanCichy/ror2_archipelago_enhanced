@@ -32,6 +32,7 @@ namespace Archipelago.RiskOfRain2
         System.Random rnd = new System.Random();
 
         internal StageBlockerHandler Stageblockerhandler { get; set; }
+        internal ItemPoolHandler ItemPoolHandler { get; set; }
 
         public long[] ChecksTogether { get; set; }
         public long[] MissingChecks { get; set; }
@@ -46,6 +47,7 @@ namespace Archipelago.RiskOfRain2
         private Queue<KeyValuePair<long, string>> fillerReceivedQueue = new Queue<KeyValuePair<long, string>>();
         private Queue<KeyValuePair<long, string>> trapReceivedQueue = new Queue<KeyValuePair<long, string>>();
         private Queue<KeyValuePair<long, string>> stageReceivedQueue = new Queue<KeyValuePair<long, string>>();
+        private Queue<KeyValuePair<long, string>> poolReceivedQueue = new Queue<KeyValuePair<long, string>>();
         // TODO get magic numbers from somewhere else (eg move to LocationHandler.cs)
         private const long environmentRangeLower = 37700;
         private const long environmentRangeUpper = 37999;
@@ -53,6 +55,8 @@ namespace Archipelago.RiskOfRain2
         private const long fillerRangeUpper = 37399;
         private const long trapRangeLower = 37400;
         private const long trapRangeUpper = 37499;
+        private const long poolRangeLower = 37100;
+        private const long poolRangeUpper = 37199;
         private const long stageRangeLower = 37500;
         private const long stageRangeUpper = 37599;
         private bool spawnedMonster = false;
@@ -359,6 +363,10 @@ namespace Archipelago.RiskOfRain2
             else if (trapRangeLower <= itemId && itemId <= trapRangeUpper) {
                 trapReceivedQueue.Enqueue(new KeyValuePair<long, string>(itemId, itemName));
             }
+            else if (poolRangeLower <= itemId && itemId <= poolRangeUpper)
+            {
+                poolReceivedQueue.Enqueue(new KeyValuePair<long, string>(itemId, itemName));
+            }
             else if (stageRangeLower <= itemId && itemId <= stageRangeUpper)
             {
                 stageReceivedQueue.Enqueue(new KeyValuePair<long, string>(itemId, itemName));
@@ -432,6 +440,10 @@ namespace Archipelago.RiskOfRain2
             if (stageReceivedQueue.Any())
             {
                 HandleReceivedStageQueueItem();
+            }
+            if (poolReceivedQueue.Any())
+            {
+                HandleReceivedPoolQueueItem();
             }
             if (IsInGame)
             {
@@ -529,7 +541,41 @@ namespace Archipelago.RiskOfRain2
             {
                 StageBlockerHandler.StageUnlocks[itemNameReceived] = true;
             }
-            
+
+        }
+
+        private void HandleReceivedPoolQueueItem()
+        {
+            KeyValuePair<long, string> itemReceived = poolReceivedQueue.Dequeue();
+
+            long itemIdReceived = itemReceived.Key;
+            string itemNameReceived = itemReceived.Value;
+
+            if (ItemPoolHandler == null) return;
+
+            var newItems = ItemPoolHandler.ExpandPool(itemIdReceived);
+            if (newItems.Count > 0)
+            {
+                string tierColor = GetPoolTierColor(itemIdReceived);
+                string tierName = itemNameReceived?.Replace(" Pool Expansion", "") ?? "Unknown";
+                string itemList = string.Join(", ", newItems);
+                ChatMessage.Send($"<style=cIsUtility>[AP]</style> <color={tierColor}>{tierName}</color> pool expanded! Now available: <color={tierColor}>{itemList}</color>");
+            }
+        }
+
+        private static string GetPoolTierColor(long itemId)
+        {
+            switch ((int)(itemId - 37100))
+            {
+                case 1: return "#FFFFFF"; // White
+                case 2: return "#77FF20"; // Green
+                case 3: return "#E5533F"; // Red
+                case 4: return "#FFFF00"; // Boss
+                case 5: return "#307FFF"; // Lunar
+                case 6: return "#C455E0"; // Void
+                case 7: return "#FF8000"; // Equipment
+                default: return "#FFFFFF";
+            }
         }
 
         private void HandleReceivedItemQueueItem()

@@ -19,6 +19,7 @@ offset: int = 37000
 filler_offset: int = offset + 300
 trap_offset: int = offset + 400
 stage_offset: int = offset + 500
+pool_offset: int = offset + 100
 environment_offset: int = offset + 700
 # Upgrade item ids 37002 - 37012
 upgrade_table: Dict[str, RiskOfRainItemData] = {
@@ -62,7 +63,18 @@ stage_table: Dict[str, RiskOfRainItemData] = {
     "Progressive Stage":    RiskOfRainItemData("Stage", 5 + stage_offset, ItemClassification.progression),
 }
 
-item_table = {**upgrade_table, **other_table, **filler_table, **trap_table, **stage_table}
+# Pool expansion item ids 37101 - 37107
+pool_table: Dict[str, RiskOfRainItemData] = {
+    "White Pool Expansion":     RiskOfRainItemData("Pool", 1 + pool_offset, ItemClassification.useful),
+    "Green Pool Expansion":     RiskOfRainItemData("Pool", 2 + pool_offset, ItemClassification.useful),
+    "Red Pool Expansion":       RiskOfRainItemData("Pool", 3 + pool_offset, ItemClassification.progression),
+    "Boss Pool Expansion":      RiskOfRainItemData("Pool", 4 + pool_offset, ItemClassification.useful),
+    "Lunar Pool Expansion":     RiskOfRainItemData("Pool", 5 + pool_offset, ItemClassification.filler),
+    "Void Pool Expansion":      RiskOfRainItemData("Pool", 6 + pool_offset, ItemClassification.useful),
+    "Equipment Pool Expansion": RiskOfRainItemData("Pool", 7 + pool_offset, ItemClassification.useful),
+}
+
+item_table = {**upgrade_table, **other_table, **filler_table, **trap_table, **stage_table, **pool_table}
 # Environment item ids 37700 - 37746
 ##################################################
 # environments

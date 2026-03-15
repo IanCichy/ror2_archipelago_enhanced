@@ -222,6 +222,7 @@ namespace Archipelago.RiskOfRain2
             {
                 ArchipelagoTotalChecksObjectiveController.RemoveObjective();
                 ArchipelagoLocationsInEnvironmentController.RemoveObjective();
+                ArchipelagoItemPoolObjectiveController.RemoveObjective();
             }
         }
         private void CreateLobbyFields()
