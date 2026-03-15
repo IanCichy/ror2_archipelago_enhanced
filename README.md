@@ -40,6 +40,9 @@ Each DLC can be individually toggled in your YAML settings.
 - **Connect Panel** - In-lobby AP connection with auto-minimize on connect
 - **Styled Chat** - AP messages with RoR2 rich text formatting
 
+![Scoreboard - Environments](docs/img/InGameMenu1.png)
+![Scoreboard - Stage Keys & Hidden Realms](docs/img/InGameMenu2.png)
+
 ### Explore Mode Check Rules
 - **Chests**: Opening chests, lunar pods, void cradles. Sacrifice artifact drops count as chests
 - **Shrines**: Blood, Chance (on reward), Combat, Order, Mountain, Woods (last 2 uses), Halcyon/Colossus
