@@ -31,13 +31,13 @@ namespace Archipelago.RiskOfRain2.UI
                         parts.Add($"Next shrine check in <style=cShrine>{remaining}</style> use(s)");
                 }
 
-                if (parts.Count == 0)
-                    return "No checks remaining";
-
                 lastItemsPickedUp = ItemsPickedUp;
                 lastItemStep = ItemStep;
                 lastShrinesUsed = ShrinesUsed;
                 lastShrineStep = ShrineStep;
+
+                if (parts.Count == 0)
+                    return "No checks remaining";
 
                 return string.Join(" | ", parts);
             }

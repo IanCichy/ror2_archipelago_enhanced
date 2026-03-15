@@ -8,14 +8,20 @@ namespace Archipelago.RiskOfRain2.UI
     {
         public class TotalChecksObjectiveTracker : ObjectiveTracker
         {
+            private int lastCurrentChecks = -1;
+            private int lastTotalChecks = -1;
+
             public override string GenerateString()
             {
+                lastCurrentChecks = CurrentChecks;
+                lastTotalChecks = TotalChecks;
                 return $"Complete location checks: <style=cIsUtility>{CurrentChecks}</style>/<style=cIsUtility>{TotalChecks}</style>";
             }
 
             public override bool IsDirty()
             {
-                return true;
+                return CurrentChecks != lastCurrentChecks
+                    || TotalChecks != lastTotalChecks;
             }
         }
 
