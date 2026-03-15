@@ -59,7 +59,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int repurposedcrater = 59; // Repurposed Crater
         public const int conduitcanyon = 60;    // Conduit Canyon (no Newt Altar)
 
-        public static int sceneIndex = 0;
+        public static int CurrentSceneIndex = 0;
         public enum LocationTypes
         {
             chest,
@@ -132,20 +132,20 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
 
             /// <returns>The sum of all locations in the template.</returns>
-            public int total()
+            public int Total()
             {
                 int sum = 0;
                 for (int type = 0; type < (int)LocationTypes.MAX; type++) sum += data[type];
                 return sum;
             }
-            public string scene()
+            public string Scene()
             {
                 SceneDef scene = LocationHandler.GetLocationScene();
                 /*                Log.LogDebug($"{scene.sceneDefIndex} scene this");*/
-                if (LocationNames.locationsNames.ContainsKey(sceneIndex))
+                if (LocationNames.LocationsNames.ContainsKey(CurrentSceneIndex))
                 {
-                    ArchipelagoLocationsInEnvironmentController.CurrentScene = $"{LocationNames.locationsNames[sceneIndex]}";
-                    return $"{LocationNames.locationsNames[sceneIndex]}";
+                    ArchipelagoLocationsInEnvironmentController.CurrentScene = $"{LocationNames.LocationsNames[CurrentSceneIndex]}";
+                    return $"{LocationNames.LocationsNames[CurrentSceneIndex]}";
                 }
                 ArchipelagoLocationsInEnvironmentController.CurrentScene = $"Environment Location";
                 return $"Environment Location";
@@ -153,7 +153,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 
             }
 
-            public LocationInformationTemplate copy()
+            public LocationInformationTemplate Copy()
             {
                 LocationInformationTemplate copy = new LocationInformationTemplate();
                 for (int type = 0; type < (int)LocationTypes.MAX; type++) copy[type] = data[type];
@@ -162,7 +162,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
 
 
-        public static LocationInformationTemplate buildTemplateFromSlotData(Dictionary<string, object> SlotData)
+        public static LocationInformationTemplate BuildTemplateFromSlotData(Dictionary<string, object> SlotData)
         {
             LocationInformationTemplate locationtemplate = new LocationInformationTemplate();
             if (SlotData is not null)
@@ -185,7 +185,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             Log.LogDebug($"Location handler constructor.");
             this.session = session;
-            originallocationstemplate = locationstemplate.copy();
+            originallocationstemplate = locationstemplate.Copy();
             currentlocations = new Dictionary<int, LocationInformationTemplate>();
 
 
@@ -229,7 +229,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             currentlocations.Add(ironalluvium2,     locationstemplate); // Iron Auroras
             currentlocations.Add(repurposedcrater,  locationstemplate); // Repurposed Crater
             // Conduit Canyon has no Newt Altar spawns — use a modified template with 0 altars
-            var conduitTemplate = locationstemplate.copy();
+            var conduitTemplate = locationstemplate.Copy();
             conduitTemplate[LocationTypes.newt_altar] = 0;
             currentlocations.Add(conduitcanyon,     conduitTemplate); // Conduit Canyon
             // NOTE: Solutional Haunt (61) and Neural Sanctum (62) are excluded — boss/victory stages with no standard checks
@@ -243,7 +243,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         public void CatchUpSceneLocations(string sceneName)
         {
             int index = GetSceneIndex(sceneName);
-            Dictionary<int, LocationInformationTemplate> locationscopy = currentlocations.ToDictionary(k => k.Key, k => k.Value.copy());
+            Dictionary<int, LocationInformationTemplate> locationscopy = currentlocations.ToDictionary(k => k.Key, k => k.Value.Copy());
             if (!locationscopy.TryGetValue(index, out LocationInformationTemplate location)) {
                 return;
             }
@@ -375,8 +375,8 @@ namespace Archipelago.RiskOfRain2.Handlers
         private uint chestitemsPickedUp = 0; // is used to count the number of items
         private uint shrinesUsed = 0; // is used to count the number of items
 
-        public uint itemPickupStep = 3; // is the interval at which archipelago locations are sent from chest-like objects; 1 is every, 2 is every other, etc
-        public uint shrineUseStep = 3; // is the interval at which archipelago locations are sent from shrine objects; 1 is every, 2 is every other, etc
+        public uint ItemPickupStep = 3; // is the interval at which archipelago locations are sent from chest-like objects; 1 is every, 2 is every other, etc
+        public uint ShrineUseStep = 3; // is the interval at which archipelago locations are sent from shrine objects; 1 is every, 2 is every other, etc
 
         private bool chestblockitem = false; // used to keep track of when the chest's item(s) are blocked as a location check
         private bool sacrificeitem = false; // used to keep track of when an item is being dropped by the sacrifice artifiact
@@ -389,35 +389,35 @@ namespace Archipelago.RiskOfRain2.Handlers
         // private bool blockVoidTriple = false;
         public const int testing = 3;
         private bool highlightOn = false;
-        public static SceneDef sceneDef { get; private set; } //used for the currect scene loaded
+        public static SceneDef CurrentSceneDef { get; private set; } //used for the currect scene loaded
 
         private void SceneInfo_Awake(On.RoR2.SceneInfo.orig_Awake orig, SceneInfo self)
         {
             orig(self);
-            sceneDef = self.sceneDef;
+            CurrentSceneDef = self.sceneDef;
             GetCurrentSceneIndex();
-            Log.LogDebug($"Scene Index is {sceneIndex}");
+            Log.LogDebug($"Scene Index is {CurrentSceneIndex}");
         }
 
         public static SceneDef GetLocationScene()
         {
-            return sceneDef;
+            return CurrentSceneDef;
         }
         public void GetCurrentSceneIndex()
         {
-            foreach (var scene in LocationNames.cachedLocationsNames)
+            foreach (var scene in LocationNames.CachedLocationsNames)
             {
-                if (scene.Value == sceneDef.cachedName)
+                if (scene.Value == CurrentSceneDef.cachedName)
                 {
-                    sceneIndex = scene.Key;
+                    CurrentSceneIndex = scene.Key;
                     return;
                 }
             }
-            sceneIndex = 100;
+            CurrentSceneIndex = 100;
         }
         public int GetSceneIndex(string sceneName)
         {
-            foreach (var scene in LocationNames.cachedLocationsNames)
+            foreach (var scene in LocationNames.CachedLocationsNames)
             {
                 if (scene.Value == sceneName)
                 {
@@ -434,13 +434,13 @@ namespace Archipelago.RiskOfRain2.Handlers
             {
                 case LocationTypes.chest:
                     amount = (int) chestitemsPickedUp;
-                    step = (int) itemPickupStep;
+                    step = (int) ItemPickupStep;
                     ArchipelagoCheckCountdownController.UpdateItemCountdown(amount % step, step);
                     new SyncLocationCheckProgress(amount % step, step).Send(NetworkDestination.Clients);
                     break;
                 case LocationTypes.shrine:
                     amount = (int) shrinesUsed;
-                    step = (int) shrineUseStep;
+                    step = (int) ShrineUseStep;
                     ArchipelagoCheckCountdownController.UpdateShrineCountdown(amount % step, step);
                     new SyncShrineCheckProgress(amount % step, step).Send(NetworkDestination.Clients);
                     break;
@@ -465,7 +465,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         /// <returns>Returns the amount of remaining locations.</returns>
         private int checkAvailable(LocationTypes loctype) // TODO make a method to check the nth location
         {
-            int index = GetSceneIndex(sceneDef.cachedName);
+            int index = GetSceneIndex(CurrentSceneDef.cachedName);
             if (!currentlocations.TryGetValue(index, out var locationsinenvironment))
             // prevent KeyNotFoundException by using TryGetValue
             {
@@ -475,7 +475,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
             if (LocationTypes.MAX == loctype)
             {
-                return locationsinenvironment.total();
+                return locationsinenvironment.Total();
             }
             return locationsinenvironment[loctype];
         }
@@ -495,14 +495,14 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             if (LocationTypes.MAX == loctype) throw new ArgumentException("MAX is not a sendable location type.");
 
-            if (!currentlocations.TryGetValue(sceneIndex, out var locationsinenvironment))
+            if (!currentlocations.TryGetValue(CurrentSceneIndex, out var locationsinenvironment))
             // prevent KeyNotFoundException by using TryGetValue
             {
                 // if the locations in the environment that are not being tracked, then there is no check to send
                 return false;
             }
 
-            int environment_start_id = sceneIndex * ArchipelagoLocationOffsets.allocation + ArchipelagoLocationOffsets.ror2_locations_start_orderedstage;
+            int environment_start_id = CurrentSceneIndex * ArchipelagoLocationOffsets.allocation + ArchipelagoLocationOffsets.ror2_locations_start_orderedstage;
 
             // check if there is a check to be done
             // if there are none, then return false
@@ -518,9 +518,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
             int TotalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
             new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
-            if (0 == ArchipelagoLocationsInEnvironmentController.count.total())
+            if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())
             {
-                StageBlockerHandler.CompletedEnvironments.Add(sceneDef.cachedName);
+                StageBlockerHandler.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
                 // Keep objective visible so "All AP checks complete" message shows
                 UpdateClientsUI();
@@ -532,7 +532,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 UpdateClientsUI();
             }
 
-            currentlocations[sceneIndex] = locationsinenvironment; // save changes to the count
+            currentlocations[CurrentSceneIndex] = locationsinenvironment; // save changes to the count
             
             sendLocation(next_index + offset_in_allocation + environment_start_id);
 
@@ -543,19 +543,19 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
         private bool UpdateClientsUI()
         {
-            if (!currentlocations.TryGetValue(sceneIndex, out var locationsinenvironment))
+            if (!currentlocations.TryGetValue(CurrentSceneIndex, out var locationsinenvironment))
             // prevent KeyNotFoundException by using TryGetValue
             {
                 // if the locations in the environment that are not being tracked, then there is no check to send
                 return false;
             }
-            ArchipelagoLocationsInEnvironmentController.CurrentScene = locationsinenvironment.scene();
+            ArchipelagoLocationsInEnvironmentController.CurrentScene = locationsinenvironment.Scene();
             ArchipelagoLocationsInEnvironmentController.CurrentChests = locationsinenvironment[LocationTypes.chest];
             ArchipelagoLocationsInEnvironmentController.CurrentShrines = locationsinenvironment[LocationTypes.shrine];
             ArchipelagoLocationsInEnvironmentController.CurrentScavangers = locationsinenvironment[LocationTypes.scavenger];
             ArchipelagoLocationsInEnvironmentController.CurrentScanners = locationsinenvironment[LocationTypes.radio_scanner];
             ArchipelagoLocationsInEnvironmentController.CurrentNewts = locationsinenvironment[LocationTypes.newt_altar];
-            new SyncCurrentEnvironmentCheckProgress(locationsinenvironment.scene(), locationsinenvironment[LocationTypes.chest], locationsinenvironment[LocationTypes.shrine],
+            new SyncCurrentEnvironmentCheckProgress(locationsinenvironment.Scene(), locationsinenvironment[LocationTypes.chest], locationsinenvironment[LocationTypes.shrine],
                 locationsinenvironment[LocationTypes.scavenger], locationsinenvironment[LocationTypes.radio_scanner], locationsinenvironment[LocationTypes.newt_altar]).Send(NetworkDestination.Clients);
             return true;
         }
@@ -573,7 +573,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             // We want to hook directly to SceneCatalog_OnActiveSceneChanged rather than delegate
             //  to SceneCatalog_OnActiveSceneChanged so that we can take advantage of the changed mostRecentSceneDef.
-            CatchUpSceneLocations(sceneDef.cachedName);
+            CatchUpSceneLocations(CurrentSceneDef.cachedName);
 
             // don't reset the counters on moving between stages
             // this could make it absurdly hard to complete checks on very high step sizes
@@ -605,9 +605,9 @@ namespace Archipelago.RiskOfRain2.Handlers
                 ArchipelagoLocationsInEnvironmentController.count[type] = checkAvailable((LocationTypes)type);
             }
             UpdateClientsUI();
-            if (0 == ArchipelagoLocationsInEnvironmentController.count.total())
+            if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())
             {
-                StageBlockerHandler.CompletedEnvironments.Add(sceneDef.cachedName);
+                StageBlockerHandler.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
                 // Keep objective visible so "All AP checks complete" message shows
             }
@@ -643,7 +643,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} has stage name {stageName}.");
                 if (currentlocations.TryGetValue(environment_index, out var locations))
                 { 
-                    int addweight = locations.total() * 5;
+                    int addweight = locations.Total() * 5;
                     Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} has {addweight / 5} locations, adjusting weight.");
                     dest.ModifyChoiceWeight(i, dest.choices[i].weight + addweight);
                     Log.LogDebug($"Adjusted weight to {dest.choices[i].weight}.");
@@ -680,7 +680,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -= PickupDropletController_CreatePickupDroplet_ChestDrop;
             }
             // only count when checks are avaiable OR when counting does not roll over
-            if (locationavailable || 0 != (chestitemsPickedUp + 1) % itemPickupStep)
+            if (locationavailable || 0 != (chestitemsPickedUp + 1) % ItemPickupStep)
             {
                 chestitemsPickedUp++;
                 Log.LogDebug("chest counted as towards the locations");
@@ -692,7 +692,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
 
             // only send checks when rolling over
-            if (locationavailable && 0 == chestitemsPickedUp % itemPickupStep) return sendNextAvailable(LocationTypes.chest);
+            if (locationavailable && 0 == chestitemsPickedUp % ItemPickupStep) return sendNextAvailable(LocationTypes.chest);
             return false;
         }
 
@@ -755,7 +755,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             bool locationavailable = 0 < checkAvailable(LocationTypes.shrine);
 
             // only count when checks are avaiable OR when counting does not roll over
-            if (locationavailable || 0 != (shrinesUsed + 1) % shrineUseStep)
+            if (locationavailable || 0 != (shrinesUsed + 1) % ShrineUseStep)
             {
                 shrinesUsed++;
                 Log.LogDebug("shrine counted as towards the locations");
@@ -767,7 +767,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
 
             // only send checks when rolling over
-            if (locationavailable && 0 == shrinesUsed % shrineUseStep) return sendNextAvailable(LocationTypes.shrine);
+            if (locationavailable && 0 == shrinesUsed % ShrineUseStep) return sendNextAvailable(LocationTypes.shrine);
             return false;
         }
 
@@ -777,7 +777,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         /// <returns>Returns true if shrineBeat() would submit a location.</returns>
         private bool shrineWillBeLocation()
         {
-            return (0 == (shrinesUsed + 1) % shrineUseStep) && (0 < checkAvailable(LocationTypes.shrine));
+            return (0 == (shrinesUsed + 1) % ShrineUseStep) && (0 < checkAvailable(LocationTypes.shrine));
         }
 
         /// <summary>
@@ -903,7 +903,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 return;
             }
 
-            if (currentlocations.TryGetValue(sceneIndex, out var locationsinenvironment))
+            if (currentlocations.TryGetValue(CurrentSceneIndex, out var locationsinenvironment))
             {
                 Log.LogDebug($"amount of shrine locations left {locationsinenvironment[LocationTypes.shrine]}");
                 if (locationsinenvironment[1] == 0) return;

@@ -19,7 +19,7 @@ namespace Archipelago.RiskOfRain2.UI
         private static bool hooked = false;
 
         // Stage group mapping: scene name → AP stage key (1-4).
-        // Mirrors StageBlockerHandler.stageLookup but static for scoreboard access.
+        // Mirrors StageBlockerHandler.StageLookup but static for scoreboard access.
         // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
         private static readonly Dictionary<string, int> StageGroups = new()
         {
@@ -47,9 +47,9 @@ namespace Archipelago.RiskOfRain2.UI
         static ArchipelagoScoreboardController()
         {
             DisplayNames = new Dictionary<string, string>();
-            foreach (var kvp in LocationNames.cachedLocationsNames)
+            foreach (var kvp in LocationNames.CachedLocationsNames)
             {
-                if (LocationNames.locationsNames.TryGetValue(kvp.Key, out string displayName))
+                if (LocationNames.LocationsNames.TryGetValue(kvp.Key, out string displayName))
                 {
                     DisplayNames[kvp.Value] = displayName;
                 }
@@ -185,7 +185,7 @@ namespace Archipelago.RiskOfRain2.UI
         private static void BuildOverviewPage(StringBuilder sb)
         {
             // Session info
-            var player = ArchipelagoClient.connectedPlayerName;
+            var player = ArchipelagoClient.ConnectedPlayerName;
             sb.AppendLine($"Player: <style=cIsHealing>{(string.IsNullOrEmpty(player) ? "?" : player)}</style>");
 
             // Victory condition
@@ -302,7 +302,7 @@ namespace Archipelago.RiskOfRain2.UI
 
             // Stage keys
             sb.AppendLine("<style=cIsUtility>── Stage Keys ──</style>");
-            foreach (var kvp in StageBlockerHandler.stageUnlocks)
+            foreach (var kvp in StageBlockerHandler.StageUnlocks)
             {
                 var icon = kvp.Value
                     ? "<style=cIsHealing>\u2713</style>"

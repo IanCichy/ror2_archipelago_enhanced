@@ -66,10 +66,10 @@ namespace Archipelago.RiskOfRain2.Handlers
         // TODO these should probably go somewhere else to better keep track of them since they are used in several places
 
         public LocationNames locationsNames = new LocationNames();
-        public int mostRecentStageGroup = 0;
+        public int MostRecentStageGroup = 0;
 
         // Stage Progression system
-        public static Dictionary<string, bool> stageUnlocks = new()
+        public static Dictionary<string, bool> StageUnlocks = new()
         {
             { "Stage 1", false },
             { "Stage 2", false },
@@ -77,7 +77,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             { "Stage 4", false },
 
         };
-        public static int amountOfStages = 0;
+        public static int AmountOfStages = 0;
 
         // Static tracking for the scoreboard panel
         public static HashSet<string> AllSessionEnvironments { get; } = new HashSet<string>();
@@ -86,7 +86,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         // Stage group mapping: scene name → AP stage group (1-4).
         // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
         // Starting stages (game ordered stage 1) are not in this lookup.
-        public readonly Dictionary<string, int> stageLookup = new()
+        public readonly Dictionary<string, int> StageLookup = new()
         {
             // Vanilla + SOTV
             { "ancientloft", 1 },
@@ -115,7 +115,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         };
 
         // Used to display the full location names in chat when a stage is needed to progress
-        public readonly Dictionary<string, string> locationNames = new()
+        public readonly Dictionary<string, string> StageDisplayNames = new()
         {
             // Vanilla + SOTV
             { "ancientloft", "Aphelian Sanctuary" },
@@ -147,29 +147,29 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         // A list of stages that should be blocked because they are locked by archipelago
         // uses scene names: https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Developer-Reference/Scene-Names/
-        List<int> blocked_stages;
-        List<int> unblocked_stages;
-        List<string> blocked_string_stages;
-        List<string> unblocked_string_stages;
-        List<SceneDef> stages_available;
+        List<int> blockedStages;
+        List<int> unblockedStages;
+        List<string> blockedStringStages;
+        List<string> unblockedStringStages;
+        List<SceneDef> availableStages;
         private bool manuallyPickingStage = false; // used to keep track of when the call to PickNextStageScene is from the StageBlocker
         private bool voidPortalSpawned = false; // used for the deep void portal in Void Locus.
         private SceneDef prevOrderedStage = null; // used to keep track of what the scene was before the next scene is selected
-        public static bool progressivesStages = false;
-        public static bool showSeerPortals = false;
-        public static string revertToBeginningMessage = "";
+        public static bool ProgressiveStages = false;
+        public static bool ShowSeerPortals = false;
+        public static string RevertToBeginningMessage = "";
 
         private SeerPortal seerPortal;
 
         public StageBlockerHandler()
         {
             Log.LogDebug($"StageBlocker handler constructor.");
-            blocked_stages = new List<int>();
-            unblocked_stages = new List<int>();
-            blocked_string_stages = new List<string>();
-            unblocked_string_stages = new List<string>();
-            stages_available = new List<SceneDef>();
-            amountOfStages = 0;
+            blockedStages = new List<int>();
+            unblockedStages = new List<int>();
+            blockedStringStages = new List<string>();
+            unblockedStringStages = new List<string>();
+            availableStages = new List<SceneDef>();
+            AmountOfStages = 0;
             AllSessionEnvironments.Clear();
             UnlockedEnvironments.Clear();
             CompletedEnvironments.Clear();
@@ -220,16 +220,16 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.PortalSpawner.Start -= PortalSpawner_Start;
 
             // Reset values to prevent issues when restarting a run
-            blocked_stages = null;
-            unblocked_stages = null;
-            blocked_string_stages = null;
-            unblocked_string_stages = null;
+            blockedStages = null;
+            unblockedStages = null;
+            blockedStringStages = null;
+            unblockedStringStages = null;
             seerPortal = null;
-            stages_available = null;
+            availableStages = null;
             AllSessionEnvironments.Clear();
             UnlockedEnvironments.Clear();
             CompletedEnvironments.Clear();
-            mostRecentStageGroup = 0;
+            MostRecentStageGroup = 0;
         }
 
         private void SceneDef_AddDestinationsToWeightedSelection(On.RoR2.SceneDef.orig_AddDestinationsToWeightedSelection orig, SceneDef self, WeightedSelection<SceneDef> dest, Func<SceneDef, bool> canAdd)
@@ -249,10 +249,10 @@ namespace Archipelago.RiskOfRain2.Handlers
         private void ChatBox_OnEnable(On.RoR2.UI.ChatBox.orig_OnEnable orig, RoR2.UI.ChatBox self)
         {
             orig(self);
-            if (revertToBeginningMessage != "")
+            if (RevertToBeginningMessage != "")
             {
-                ChatMessage.SendColored(revertToBeginningMessage, Color.red);
-                revertToBeginningMessage = "";
+                ChatMessage.SendColored(RevertToBeginningMessage, Color.red);
+                RevertToBeginningMessage = "";
             }
         }
 
@@ -279,7 +279,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         public void UnBlockAll()
         {
-            blocked_string_stages.Clear();
+            blockedStringStages.Clear();
         }
 
         /**
@@ -288,13 +288,13 @@ namespace Archipelago.RiskOfRain2.Handlers
          */
         public bool Block(string stageName)
         {
-            if (blocked_string_stages.Contains(stageName))
+            if (blockedStringStages.Contains(stageName))
             {
                 Log.LogDebug($"Environment already blocked: index {stageName}.");
                 return false;
             }
             Log.LogDebug($"Blocking environment: index {stageName}.");
-            blocked_string_stages.Add(stageName);
+            blockedStringStages.Add(stageName);
             AllSessionEnvironments.Add(stageName);
             return true;
         }
@@ -305,11 +305,11 @@ namespace Archipelago.RiskOfRain2.Handlers
          */
         public bool UnBlock(int index)
         {
-            string stageName = LocationNames.cachedLocationsNames[index];
+            string stageName = LocationNames.CachedLocationsNames[index];
             Log.LogDebug($"UnBlocking environment: index {stageName}.");
-            unblocked_string_stages.Add(stageName);
+            unblockedStringStages.Add(stageName);
             UnlockedEnvironments.Add(stageName);
-            return blocked_string_stages.Remove(stageName);
+            return blockedStringStages.Remove(stageName);
         }
 
         /**
@@ -317,20 +317,20 @@ namespace Archipelago.RiskOfRain2.Handlers
          */
         public bool CheckBlocked(string stageName)
         {
-            if (Run.instance.nextStageScene != null && stageLookup.ContainsKey(stageName))
+            if (Run.instance.nextStageScene != null && StageLookup.ContainsKey(stageName))
             {
                 // Checks to make sure you have the Stage item required to get to the next set of stages
-                if (!stageUnlocks[$"Stage {stageLookup[stageName]}"] && !progressivesStages)
+                if (!StageUnlocks[$"Stage {StageLookup[stageName]}"] && !ProgressiveStages)
                 {
                     return true;
-                } else if(stageLookup[stageName] > amountOfStages && progressivesStages)
+                } else if(StageLookup[stageName] > AmountOfStages && ProgressiveStages)
                 {
                     return true;
                 }
             }
             // Checking the list linearly should be fine.
             // Hooking update methods were avoided as much as they could be and the list itself is short.
-            foreach (string block in blocked_string_stages)
+            foreach (string block in blockedStringStages)
             {
                 if (stageName == block) return true;
             }
@@ -338,9 +338,9 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
         private void ArchipelagoConsoleCommand_OnArchipelagoShowUnlockedStagesCommandCalled()
         {
-            foreach (var scene in unblocked_string_stages)
+            foreach (var scene in unblockedStringStages)
             {
-                if (LocationNames.cachedLocationsNames.ContainsValue(scene))
+                if (LocationNames.CachedLocationsNames.ContainsValue(scene))
                 {
                     ChatMessage.Send($"{scene}");
                 }
@@ -376,8 +376,8 @@ namespace Archipelago.RiskOfRain2.Handlers
                 bool runNextStage = true;
                 int stageOrder = SceneCatalog.mostRecentSceneDef.stageOrder;
 
-                Log.LogDebug($"SceneExitController_SetState checking for blocked stages. Current stage order {stageOrder}, mostRecent..{mostRecentStageGroup}.");
-                if (stageOrder > 5) stageOrder = mostRecentStageGroup; // if the stage order is greater than 5, use the current scene's stage order instead
+                Log.LogDebug($"SceneExitController_SetState checking for blocked stages. Current stage order {stageOrder}, mostRecent..{MostRecentStageGroup}.");
+                if (stageOrder > 5) stageOrder = MostRecentStageGroup; // if the stage order is greater than 5, use the current scene's stage order instead
 
                 switch (stageOrder)
                 {
@@ -417,7 +417,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 Log.LogDebug("SceneExitController_SetState forcefully reroll next stagescene");
                 manuallyPickingStage = false;
             }
-            mostRecentStageGroup = SceneCatalog.mostRecentSceneDef.stageOrder;
+            MostRecentStageGroup = SceneCatalog.mostRecentSceneDef.stageOrder;
             orig(self);
         }
 
@@ -678,7 +678,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 Log.LogDebug("blocking.");
                 return false;
             }
-            stages_available.Add(scenedef);
+            availableStages.Add(scenedef);
             Log.LogDebug("passing through.");
 
             return orig(self, scenedef);
@@ -686,13 +686,13 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         public void GetAvailableStages()
         {
-            stages_available.Clear();
+            availableStages.Clear();
             manuallyPickingStage = true;
             Run.instance.PickNextStageSceneFromCurrentSceneDestinations();
             manuallyPickingStage = false;
-            if (stages_available.Count > 0 && showSeerPortals)
+            if (availableStages.Count > 0 && ShowSeerPortals)
             {
-                seerPortal.CreatePortal(stages_available);
+                seerPortal.CreatePortal(availableStages);
             }
         }
 
@@ -744,7 +744,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             if (manuallyPickingStage && SceneCatalog.mostRecentSceneDef &&  1 <= SceneCatalog.mostRecentSceneDef.stageOrder && 5 >= SceneCatalog.mostRecentSceneDef.stageOrder)
             {
                 //string nextStage = $"Stage {self.nextStageScene.stageOrder - 1}";
-                //Log.LogDebug($"Stage {self.nextStageScene.stageOrder} == {stageUnlocks[nextStage]}");
+                //Log.LogDebug($"Stage {self.nextStageScene.stageOrder} == {StageUnlocks[nextStage]}");
                 // populate choices (in some manner) when there are no choices
                 if (0 == choices.Count)
                 {
@@ -754,18 +754,18 @@ namespace Archipelago.RiskOfRain2.Handlers
                     if (prevOrderedStage) Log.LogDebug($"prev scene {prevOrderedStage.sceneDefIndex} in stage {prevOrderedStage.stageOrder}");
                     else Log.LogDebug("no prev scene");
                     Log.LogDebug($"Most recent scene stage order Stage {SceneCatalog.mostRecentSceneDef.stageOrder}");
-                    if (!stageUnlocks[$"Stage {SceneCatalog.mostRecentSceneDef.stageOrder}"] && !progressivesStages)
+                    if (!StageUnlocks[$"Stage {SceneCatalog.mostRecentSceneDef.stageOrder}"] && !ProgressiveStages)
                     {
                         reason = $"you need Stage {SceneCatalog.mostRecentSceneDef.stageOrder}";
                     }
-                    else if (SceneCatalog.mostRecentSceneDef.stageOrder > amountOfStages && progressivesStages)
+                    else if (SceneCatalog.mostRecentSceneDef.stageOrder > AmountOfStages && ProgressiveStages)
                     {
                         reason = $"you need {SceneCatalog.mostRecentSceneDef.stageOrder} Progressive Stages";
                     } else
                     {
                         List<string> stagesNeeded = new List<string>();
                         reason = $"you are missing ";
-                        foreach (KeyValuePair<string, int> entry in stageLookup)
+                        foreach (KeyValuePair<string, int> entry in StageLookup)
                         {
 
                             if(entry.Value == SceneCatalog.mostRecentSceneDef.stageOrder)
@@ -779,17 +779,17 @@ namespace Archipelago.RiskOfRain2.Handlers
                             {
                                 if (i < stagesNeeded.Count - 1 || stagesNeeded.Count == 1)
                                 {
-                                    reason += $"{locationNames[stagesNeeded[i]]}, ";
+                                    reason += $"{StageDisplayNames[stagesNeeded[i]]}, ";
                                 }
                                 else
                                 {
-                                    reason += $"or {locationNames[stagesNeeded[i]]}";
+                                    reason += $"or {StageDisplayNames[stagesNeeded[i]]}";
                                 }
                             }
                         }
 
                     }
-                    revertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}!";
+                    RevertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}!";
 
                     Log.LogDebug("adding choices for stage 1");
                     self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
@@ -806,7 +806,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             if (choices.Count == 0)
             {
                 Log.LogDebug("startingSceneGroup fallback produced no choices; adding any unblocked scene");
-                foreach (string unblocked in unblocked_string_stages)
+                foreach (string unblocked in unblockedStringStages)
                 {
                     SceneDef sd = SceneCatalog.FindSceneDef(unblocked);
                     if (sd != null && sd.sceneType == SceneType.Stage)

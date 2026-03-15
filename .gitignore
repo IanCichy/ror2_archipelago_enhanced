@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# VSCode workspace settings
+.vscode/
+*.code-workspace
+
 # User-specific files
 *.rsuser
 *.suo

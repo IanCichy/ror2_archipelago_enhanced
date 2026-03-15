@@ -1,7 +1,4 @@
-﻿using Archipelago.RiskOfRain2.Handlers;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Archipelago.RiskOfRain2.Lookup
 {
@@ -12,7 +9,7 @@ namespace Archipelago.RiskOfRain2.Lookup
         // For SOTS and AC stages, they differ (Python uses sequential IDs 48+).
         // These Python IDs are used for AP item/location ID computation, so they MUST match the Python world.
 
-        public static readonly Dictionary<int, string> locationsNames = new()
+        public static readonly Dictionary<int, string> LocationsNames = new()
         {
             // Vanilla
             { 7, "Distant Roost" },
@@ -61,7 +58,7 @@ namespace Archipelago.RiskOfRain2.Lookup
             { 62, "Neural Sanctum" },
         };
 
-        public static readonly Dictionary<int, string> cachedLocationsNames = new()
+        public static readonly Dictionary<int, string> CachedLocationsNames = new()
         {
             // Vanilla
             { 7, "blackbeach" },
@@ -110,54 +107,59 @@ namespace Archipelago.RiskOfRain2.Lookup
             { 62, "solusweb" },
         };
 
-        public string GetLocationName(string cachedName)
+        // Reverse lookup: scene cached name → Python/AP ID (built once, O(1) lookups)
+        private static readonly Dictionary<string, int> cachedNameToIndex;
+
+        static LocationNames()
         {
-            int sceneIndex = GetSceneIndex(cachedName);
-            if (locationsNames.TryGetValue(sceneIndex, out string locationName))
+            cachedNameToIndex = new Dictionary<string, int>(CachedLocationsNames.Count);
+            foreach (var kvp in CachedLocationsNames)
             {
-                return locationName;
+                cachedNameToIndex[kvp.Value] = kvp.Key;
             }
-            return "";
         }
 
-        public string GetLocationNameByIndex(int index)
+        public static string GetLocationName(string cachedName)
         {
-            if (locationsNames.TryGetValue(index, out string locationName))
+            int sceneIndex = GetSceneIndex(cachedName);
+            if (LocationsNames.TryGetValue(sceneIndex, out string locationName))
             {
                 return locationName;
             }
-            return "";
+            return null;
         }
-        public string GetCachedLocationNameByIndex(int index)
+
+        public static string GetLocationNameByIndex(int index)
         {
-            if (cachedLocationsNames.TryGetValue(index, out string cachedName))
+            if (LocationsNames.TryGetValue(index, out string locationName))
+            {
+                return locationName;
+            }
+            return null;
+        }
+
+        public static string GetCachedLocationNameByIndex(int index)
+        {
+            if (CachedLocationsNames.TryGetValue(index, out string cachedName))
             {
                 return cachedName;
             }
-            return "";
+            return null;
         }
 
         public bool LocationNamesContains(string sceneName)
         {
-            return locationsNames.ContainsValue(sceneName);
+            return LocationsNames.ContainsValue(sceneName);
         }
 
-        public bool CachedLocationNamesContains(string cachedName)
+        public static bool CachedLocationNamesContains(string cachedName)
         {
-            return cachedLocationsNames.ContainsValue(cachedName);
+            return cachedNameToIndex.ContainsKey(cachedName);
         }
 
-        public int GetSceneIndex(string cachedName)
+        public static int GetSceneIndex(string cachedName)
         {
-            foreach (var scene in cachedLocationsNames)
-            {
-                if (scene.Value == cachedName)
-                {
-                    return scene.Key;
-                }
-            }
-            return 0;
+            return cachedNameToIndex.TryGetValue(cachedName, out int index) ? index : 0;
         }
-
     }
 }

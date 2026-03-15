@@ -58,7 +58,7 @@ namespace Archipelago.RiskOfRain2
         public static int lastReceivedItemindex { get; set; } = 0;
         public static bool isInGame { get; set; } = false;
         //public static ReleaseClick OnButtonClick;
-        public static string connectedPlayerName;
+        public static string ConnectedPlayerName;
         public static string victoryCondition;
         // Acceptable ending types
         private GameEndingDef[] acceptableEndings;
@@ -280,14 +280,14 @@ namespace Archipelago.RiskOfRain2
             // Progressive stages and seer portals (session-level, static fields)
             if (successResult.SlotData.TryGetValue("progressiveStages", out var progressive))
             {
-                StageBlockerHandler.progressivesStages = Convert.ToBoolean(progressive);
+                StageBlockerHandler.ProgressiveStages = Convert.ToBoolean(progressive);
             }
             if (successResult.SlotData.TryGetValue("showSeerPortals", out var showSeerPortals))
             {
-                StageBlockerHandler.showSeerPortals = Convert.ToBoolean(showSeerPortals);
+                StageBlockerHandler.ShowSeerPortals = Convert.ToBoolean(showSeerPortals);
             }
 
-            connectedPlayerName = session.Players.GetPlayerName(session.ConnectionInfo.Slot);
+            ConnectedPlayerName = session.Players.GetPlayerName(session.ConnectionInfo.Slot);
             genericMenuButton = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/UI/GenericMenuButton.prefab").WaitForCompletion();
 
             // Subscribe session-level events
@@ -301,17 +301,17 @@ namespace Archipelago.RiskOfRain2
             // Needed for backwards compatability
             if (session.Items.GetItemName(37501) == null)
             {
-                StageBlockerHandler.stageUnlocks["Stage 1"] = true;
-                StageBlockerHandler.stageUnlocks["Stage 2"] = true;
-                StageBlockerHandler.stageUnlocks["Stage 3"] = true;
-                StageBlockerHandler.stageUnlocks["Stage 4"] = true;
+                StageBlockerHandler.StageUnlocks["Stage 1"] = true;
+                StageBlockerHandler.StageUnlocks["Stage 2"] = true;
+                StageBlockerHandler.StageUnlocks["Stage 3"] = true;
+                StageBlockerHandler.StageUnlocks["Stage 4"] = true;
             }
             else if (!isInGame)
             {
-                StageBlockerHandler.stageUnlocks["Stage 1"] = false;
-                StageBlockerHandler.stageUnlocks["Stage 2"] = false;
-                StageBlockerHandler.stageUnlocks["Stage 3"] = false;
-                StageBlockerHandler.stageUnlocks["Stage 4"] = false;
+                StageBlockerHandler.StageUnlocks["Stage 1"] = false;
+                StageBlockerHandler.StageUnlocks["Stage 2"] = false;
+                StageBlockerHandler.StageUnlocks["Stage 3"] = false;
+                StageBlockerHandler.StageUnlocks["Stage 4"] = false;
             }
 
             // Set up the first run
@@ -339,15 +339,15 @@ namespace Archipelago.RiskOfRain2
                 Stageblockerhandler = new StageBlockerHandler();
                 ItemLogic.Stageblockerhandler = Stageblockerhandler;
                 Stageblockerhandler.BlockAll();
-                Locationhandler = new LocationHandler(session, LocationHandler.buildTemplateFromSlotData(cachedSlotData));
+                Locationhandler = new LocationHandler(session, LocationHandler.BuildTemplateFromSlotData(cachedSlotData));
                 shrineChanceHelper = new ShrineChanceHandler();
 
                 ArchipelagoCheckCountdownController.ShrineStep = (int)cachedShrineUseStep;
                 ArchipelagoCheckCountdownController.ShrinesUsed = 0;
                 ArchipelagoCheckCountdownController.ShowShrineCountdown = true;
 
-                Locationhandler.itemPickupStep = cachedItemPickupStep;
-                Locationhandler.shrineUseStep = cachedShrineUseStep;
+                Locationhandler.ItemPickupStep = cachedItemPickupStep;
+                Locationhandler.ShrineUseStep = cachedShrineUseStep;
             }
             else
             {
@@ -658,7 +658,7 @@ namespace Archipelago.RiskOfRain2
                     // disconnected, isInGame may be stale (true) but the run is gone.
                     if (Locationhandler != null && isInGame && Run.instance != null)
                     {
-                        Locationhandler.CatchUpSceneLocations(LocationHandler.sceneDef.cachedName);
+                        Locationhandler.CatchUpSceneLocations(LocationHandler.CurrentSceneDef.cachedName);
                         Locationhandler.LoadItemPickupHooks();
                     }
                     reconnecting = false;

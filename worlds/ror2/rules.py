@@ -188,9 +188,8 @@ def set_rules(ror2_world: "RiskOfRainWorld") -> None:
             if ror2_options.victory == "false_son":
                 has_all_items(multiworld, {"Stage 5", "Prime Meridian"}, "Commencement", player)
         if ror2_options.dlc_ac:
-            has_entrance_access_rule(multiworld, "Stage 5", "Neural Sanctum", player)
-            if ror2_options.victory == "solus_heart":
-                has_all_items(multiworld, {"Stage 5", "Neural Sanctum"}, "Commencement", player)
+            pass  # Conduit Canyon is gated by Stage 3 via orderedstage rules;
+            # Solutional Haunt and Neural Sanctum are boss/victory stages and not gated
 
     # Win Condition
     multiworld.completion_condition[player] = lambda state: state.has("Victory", player)
