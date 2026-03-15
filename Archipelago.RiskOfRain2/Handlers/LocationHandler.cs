@@ -287,6 +287,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.ShrineChanceBehavior.AddShrineStack += ShrineChanceBehavior_AddShrineStack;
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_ChanceShrine;
             On.RoR2.ShrineCombatBehavior.AddShrineStack += ShrineCombatBehavior_AddShrineStack;
+            On.RoR2.ShrineBossBehavior.AddShrineStack += ShrineBossBehavior_AddShrineStack;
             On.RoR2.ShrineRestackBehavior.AddShrineStack += ShrineRestackBehavior_AddShrineStack;
             On.RoR2.BossGroup.DropRewards += BossGroup_DropRewards;
             On.RoR2.ShrineHealingBehavior.AddShrineStack += ShrineHealingBehavior_AddShrineStack;
@@ -352,6 +353,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.ShrineChanceBehavior.AddShrineStack -= ShrineChanceBehavior_AddShrineStack;
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -= PickupDropletController_CreatePickupDroplet_ChanceShrine;
             On.RoR2.ShrineCombatBehavior.AddShrineStack -= ShrineCombatBehavior_AddShrineStack;
+            On.RoR2.ShrineBossBehavior.AddShrineStack -= ShrineBossBehavior_AddShrineStack;
             On.RoR2.ShrineRestackBehavior.AddShrineStack -= ShrineRestackBehavior_AddShrineStack;
             On.RoR2.BossGroup.DropRewards -= BossGroup_DropRewards;
             On.RoR2.ShrineHealingBehavior.AddShrineStack -= ShrineHealingBehavior_AddShrineStack;
@@ -518,8 +520,10 @@ namespace Archipelago.RiskOfRain2.Handlers
             new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
             if (0 == ArchipelagoLocationsInEnvironmentController.count.total())
             {
+                StageBlockerHandler.CompletedEnvironments.Add(sceneDef.cachedName);
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
-                ArchipelagoLocationsInEnvironmentController.RemoveObjective();
+                // Keep objective visible so "All AP checks complete" message shows
+                UpdateClientsUI();
             }
             else
             {
@@ -603,8 +607,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             UpdateClientsUI();
             if (0 == ArchipelagoLocationsInEnvironmentController.count.total())
             {
+                StageBlockerHandler.CompletedEnvironments.Add(sceneDef.cachedName);
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
-                ArchipelagoLocationsInEnvironmentController.RemoveObjective();
+                // Keep objective visible so "All AP checks complete" message shows
             }
             else
             {
@@ -845,6 +850,15 @@ namespace Archipelago.RiskOfRain2.Handlers
             orig(self, interactor);
             // TODO maybe combat shrine shouldn't be an instant reward
             shrineBeat(); // using the combat shrine beats it
+        }
+
+        /// <summary>
+        /// Using the mountain shrine beats it.
+        /// </summary>
+        private void ShrineBossBehavior_AddShrineStack(On.RoR2.ShrineBossBehavior.orig_AddShrineStack orig, ShrineBossBehavior self, Interactor interactor)
+        {
+            orig(self, interactor);
+            shrineBeat();
         }
 
         /// <summary>

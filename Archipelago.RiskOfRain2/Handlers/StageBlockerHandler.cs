@@ -82,6 +82,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         // Static tracking for the scoreboard panel
         public static HashSet<string> AllSessionEnvironments { get; } = new HashSet<string>();
         public static HashSet<string> UnlockedEnvironments { get; } = new HashSet<string>();
+        public static HashSet<string> CompletedEnvironments { get; } = new HashSet<string>();
         // Stage group mapping: scene name → AP stage group (1-4).
         // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
         // Starting stages (game ordered stage 1) are not in this lookup.
@@ -104,14 +105,13 @@ namespace Archipelago.RiskOfRain2.Handlers
             { "habitatfall", 2 },
             { "helminthroost", 4 },
             { "meridian", 3 },
-            // AC
-            // NOTE: "nest" (Pretender's Precipice) is orderedstage_1 per Python — not in stageLookup.
-            // TODO: Verify in-game — sprint doc suggests it may actually be Stage 2 (group 1).
-            { "ironalluvium", 1 },
-            { "ironalluvium2", 1 },
-            { "repurposedcrater", 2 },
-            { "conduitcanyon", 3 },
-            { "solutionalhaunt", 4 },
+            // AC (per wiki: nest=Stage2, iron=Stage3, crater/canyon=Stage4, haunt=Stage5)
+            { "nest", 1 },               // Pretender's Precipice = game Stage 2 = AP Stage 1
+            { "ironalluvium", 2 },        // Iron Alluvium = game Stage 3 = AP Stage 2
+            { "ironalluvium2", 2 },       // Iron Auroras = game Stage 3 = AP Stage 2
+            { "repurposedcrater", 3 },    // Repurposed Crater = game Stage 4 = AP Stage 3
+            { "conduitcanyon", 3 },       // Conduit Canyon = game Stage 4 = AP Stage 3
+            { "solutionalhaunt", 4 },     // Solutional Haunt = game Stage 5 = AP Stage 4
         };
 
         // Used to display the full location names in chat when a stage is needed to progress
@@ -135,6 +135,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             { "helminthroost", "Helminth Hatchery" },
             { "meridian", "Prime Meridian" },
             // AC
+            { "nest", "Pretender's Precipice" },
             { "ironalluvium", "Iron Alluvium" },
             { "ironalluvium2", "Iron Auroras" },
             { "repurposedcrater", "Repurposed Crater" },
@@ -171,6 +172,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             amountOfStages = 0;
             AllSessionEnvironments.Clear();
             UnlockedEnvironments.Clear();
+            CompletedEnvironments.Clear();
 
             // blocking stages should be down by the owner of this object
         }
@@ -226,6 +228,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             stages_available = null;
             AllSessionEnvironments.Clear();
             UnlockedEnvironments.Clear();
+            CompletedEnvironments.Clear();
             mostRecentStageGroup = 0;
         }
 
@@ -796,8 +799,29 @@ namespace Archipelago.RiskOfRain2.Handlers
                 prevOrderedStage = SceneCatalog.mostRecentSceneDef;
             }
 
+            // If choices is still empty after the startingSceneGroup fallback, it means
+            // the only unblocked environments aren't in the default startingSceneGroup
+            // (e.g., AC's "nest" which the game doesn't include in startingSceneGroup).
+            // Manually add any unblocked scene as a candidate — any stage is better than crashing.
+            if (choices.Count == 0)
+            {
+                Log.LogDebug("startingSceneGroup fallback produced no choices; adding any unblocked scene");
+                foreach (string unblocked in unblocked_string_stages)
+                {
+                    SceneDef sd = SceneCatalog.FindSceneDef(unblocked);
+                    if (sd != null && sd.sceneType == SceneType.Stage)
+                    {
+                        choices.AddChoice(sd, 1f);
+                        Log.LogDebug($"Added unblocked scene as fallback: {unblocked} (stageOrder={sd.stageOrder})");
+                    }
+                }
+            }
+
             orig(self, choices);
-            Log.LogDebug($"next scene {self.nextStageScene.cachedName} in stage {self.nextStageScene.stageOrder}");
+            if (self.nextStageScene != null)
+                Log.LogDebug($"next scene {self.nextStageScene.cachedName} in stage {self.nextStageScene.stageOrder}");
+            else
+                Log.LogWarning("PickNextStageScene failed to select a stage — nextStageScene is null!");
         }
 
         // Checks to see when the Deep Portal spawns and to see if you have The Planetarium to proceed.

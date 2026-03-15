@@ -15,7 +15,7 @@ namespace Archipelago.RiskOfRain2.UI
     {
         private TextMeshProUGUI apText;
         private int currentPage = 0;
-        private int totalPages = 2;
+        private int totalPages = 3;
         private static bool hooked = false;
 
         // Stage group mapping: scene name → AP stage key (1-4).
@@ -23,16 +23,21 @@ namespace Archipelago.RiskOfRain2.UI
         // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
         private static readonly Dictionary<string, int> StageGroups = new()
         {
-            // Group 1
+            // Starting stages (group 0) — no Stage Key required
+            { "blackbeach", 0 }, { "blackbeach2", 0 }, { "golemplains", 0 }, { "golemplains2", 0 },
+            { "lakes", 0 }, { "snowyforest", 0 },
+            { "village", 0 }, { "villagenight", 0 }, { "lakesnight", 0 },
+            // Group 1 (Stage Key 1 = game Stage 2)
             { "ancientloft", 1 }, { "foggyswamp", 1 }, { "goolake", 1 },
-            { "lemuriantemple", 1 }, { "ironalluvium", 1 }, { "ironalluvium2", 1 },
-            // Group 2
+            { "lemuriantemple", 1 }, { "nest", 1 },
+            // Group 2 (Stage Key 2 = game Stage 3)
             { "frozenwall", 2 }, { "sulfurpools", 2 }, { "wispgraveyard", 2 },
-            { "habitat", 2 }, { "habitatfall", 2 }, { "repurposedcrater", 2 },
-            // Group 3
+            { "habitat", 2 }, { "habitatfall", 2 },
+            { "ironalluvium", 2 }, { "ironalluvium2", 2 },
+            // Group 3 (Stage Key 3 = game Stage 4)
             { "dampcavesimple", 3 }, { "rootjungle", 3 }, { "shipgraveyard", 3 },
-            { "meridian", 3 }, { "conduitcanyon", 3 },
-            // Group 4
+            { "meridian", 3 }, { "repurposedcrater", 3 }, { "conduitcanyon", 3 },
+            // Group 4 (Stage Key 4 = game Stage 5)
             { "skymeadow", 4 }, { "helminthroost", 4 }, { "solutionalhaunt", 4 },
         };
 
@@ -102,7 +107,7 @@ namespace Archipelago.RiskOfRain2.UI
             rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(600f, 600f);
+            rect.sizeDelta = new Vector2(700f, 600f);
 
             // Ignore parent layout so we float independently
             var layoutElement = panelGO.AddComponent<LayoutElement>();
@@ -169,6 +174,9 @@ namespace Archipelago.RiskOfRain2.UI
                 case 1:
                     BuildEnvironmentsPage(sb);
                     break;
+                case 2:
+                    BuildDetailsPage(sb);
+                    break;
             }
 
             return sb.ToString();
@@ -176,6 +184,10 @@ namespace Archipelago.RiskOfRain2.UI
 
         private static void BuildOverviewPage(StringBuilder sb)
         {
+            // Session info
+            var player = ArchipelagoClient.connectedPlayerName;
+            sb.AppendLine($"Player: <style=cIsHealing>{(string.IsNullOrEmpty(player) ? "?" : player)}</style>");
+
             // Victory condition
             var victory = ArchipelagoClient.victoryCondition;
             sb.AppendLine($"Victory: <style=cIsDamage>{(string.IsNullOrEmpty(victory) ? "unknown" : victory)}</style>");
@@ -184,53 +196,70 @@ namespace Archipelago.RiskOfRain2.UI
             var current = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
             var total = ArchipelagoTotalChecksObjectiveController.TotalChecks;
             sb.AppendLine($"Checks: <style=cIsHealing>{current}</style>/<style=cIsHealing>{total}</style>");
-            sb.AppendLine();
 
-            // Stage keys
-            sb.AppendLine("<style=cIsUtility>── Stage Keys ──</style>");
-            foreach (var kvp in StageBlockerHandler.stageUnlocks)
-            {
-                var icon = kvp.Value
-                    ? "<style=cIsHealing>\u2713</style>"
-                    : "<style=cDeath>\u2717</style>";
-                sb.AppendLine($"  {icon} {kvp.Key}");
-            }
+            // Check countdown config
+            var itemStep = ArchipelagoCheckCountdownController.ItemStep;
+            var shrineStep = ArchipelagoCheckCountdownController.ShrineStep;
+            sb.Append($"Checks every: <style=cIsHealing>{itemStep}</style> pickup(s)");
+            if (ArchipelagoCheckCountdownController.ShowShrineCountdown)
+                sb.Append($" | <style=cShrine>{shrineStep}</style> shrine(s)");
+            sb.AppendLine();
+        }
+
+        private static string FormatEnv(string sceneKey, HashSet<string> unlocked)
+        {
+            var name = DisplayNames.TryGetValue(sceneKey, out string dn) ? dn : sceneKey;
+            if (StageBlockerHandler.CompletedEnvironments.Contains(sceneKey))
+                return $"<style=cIsHealing>\u2713 {name}</style>";       // green check — all checks done
+            if (unlocked.Contains(sceneKey))
+                return $"<color=#FFD700>\u25A1 {name}</color>";          // yellow hollow square — unlocked, checks remain
+            return $"<style=cDeath>\u2717 {name}</style>";               // red X — locked
         }
 
         private static void BuildEnvironmentsPage(StringBuilder sb)
         {
-            sb.AppendLine("<style=cIsUtility>── Environments ──</style>");
             var unlocked = StageBlockerHandler.UnlockedEnvironments;
             var allEnvs = StageBlockerHandler.AllSessionEnvironments;
 
-            // Build lists per stage group
+            // Starting stages listed horizontally at the top
+            var starting = StageGroups
+                .Where(e => e.Value == 0 && allEnvs.Contains(e.Key))
+                .Select(e => e.Key)
+                .ToList();
+
+            if (starting.Count > 0)
+            {
+                sb.AppendLine("<style=cIsUtility>── Starting Stages ──</style>");
+                // Two per line to avoid overflow
+                for (int i = 0; i < starting.Count; i += 2)
+                {
+                    sb.Append($"<pos=0>{FormatEnv(starting[i], unlocked)}");
+                    if (i + 1 < starting.Count)
+                        sb.Append($"<pos=350>{FormatEnv(starting[i + 1], unlocked)}");
+                    sb.AppendLine();
+                }
+                sb.AppendLine();
+            }
+
+            // Stage 1-4 in 4 columns with more room
             var columns = new List<string>[4];
             for (int g = 0; g < 4; g++)
             {
                 int group = g + 1;
                 columns[g] = StageGroups
                     .Where(e => e.Value == group && allEnvs.Contains(e.Key))
-                    .Select(e =>
-                    {
-                        var name = DisplayNames.TryGetValue(e.Key, out string dn) ? dn : e.Key;
-                        return unlocked.Contains(e.Key)
-                            ? $"<style=cIsHealing>\u2713 {name}</style>"
-                            : $"<style=cDeath>\u2717 {name}</style>";
-                    })
+                    .Select(e => FormatEnv(e.Key, unlocked))
                     .ToList();
             }
 
-            // Column positions (px) within the 600px panel
-            const int col0 = 0, col1 = 145, col2 = 290, col3 = 435;
-            int[] positions = { col0, col1, col2, col3 };
+            int[] positions = { 0, 175, 350, 525 };
+            string[] headers = { "Stage 1", "Stage 2", "Stage 3", "Stage 4" };
 
-            // Header row
-            sb.Append($"<pos={col0}>Stage 1");
-            sb.Append($"<pos={col1}>Stage 2");
-            sb.Append($"<pos={col2}>Stage 3");
-            sb.AppendLine($"<pos={col3}>Stage 4");
+            sb.AppendLine("<style=cIsUtility>── Stage Key Stages ──</style>");
+            for (int g = 0; g < 4; g++)
+                sb.Append($"<pos={positions[g]}>{headers[g]}");
+            sb.AppendLine();
 
-            // Data rows
             int maxRows = 0;
             for (int g = 0; g < 4; g++)
                 maxRows = Math.Max(maxRows, columns[g].Count);
@@ -243,6 +272,60 @@ namespace Archipelago.RiskOfRain2.UI
                         sb.Append($"<pos={positions[g]}>{columns[g][row]}");
                 }
                 sb.AppendLine();
+            }
+        }
+        // Hidden realms and special stages to show on the details page.
+        private static readonly Dictionary<string, string> HiddenRealms = new()
+        {
+            { "bazaar", "Bazaar Between Time" },
+            { "arena", "Void Fields" },
+            { "goldshores", "Gilded Coast" },
+            { "mysteryspace", "A Moment, Fractured" },
+            { "limbo", "A Moment, Whole" },
+            { "artifactworld", "Bulwark's Ambry" },
+        };
+
+        private static readonly Dictionary<string, string> SpecialStages = new()
+        {
+            { "moon2", "Commencement" },
+            { "voidstage", "Void Locus" },
+            { "voidraid", "The Planetarium" },
+            { "meridian", "Prime Meridian" },
+            { "solutionalhaunt", "Solutional Haunt" },
+            { "solusweb", "Neural Sanctum" },
+        };
+
+        private static void BuildDetailsPage(StringBuilder sb)
+        {
+            var unlocked = StageBlockerHandler.UnlockedEnvironments;
+            var allEnvs = StageBlockerHandler.AllSessionEnvironments;
+
+            // Stage keys
+            sb.AppendLine("<style=cIsUtility>── Stage Keys ──</style>");
+            foreach (var kvp in StageBlockerHandler.stageUnlocks)
+            {
+                var icon = kvp.Value
+                    ? "<style=cIsHealing>\u2713</style>"
+                    : "<style=cDeath>\u2717</style>";
+                sb.AppendLine($"  {icon} {kvp.Key}");
+            }
+            sb.AppendLine();
+
+            // Hidden realms
+            sb.AppendLine("<style=cIsUtility>── Hidden Realms ──</style>");
+            foreach (var kvp in HiddenRealms)
+            {
+                if (!allEnvs.Contains(kvp.Key)) continue;
+                sb.AppendLine($"  {FormatEnv(kvp.Key, unlocked)}");
+            }
+            sb.AppendLine();
+
+            // Special / victory stages
+            sb.AppendLine("<style=cIsUtility>── Special Stages ──</style>");
+            foreach (var kvp in SpecialStages)
+            {
+                if (!allEnvs.Contains(kvp.Key)) continue;
+                sb.AppendLine($"  {FormatEnv(kvp.Key, unlocked)}");
             }
         }
     }

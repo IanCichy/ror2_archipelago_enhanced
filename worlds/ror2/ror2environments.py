@@ -78,18 +78,20 @@ environment_sots_special_table: Dict[str, int] = {
 }
 
 # DLC3 - Alloyed Collective (AC)
+# Per wiki: nest=Stage2, iron=Stage3, crater/canyon=Stage4, haunt=Stage5
 environment_ac_orderedstage_1_table: Dict[str, int] = {
-    "Pretender's Precipice":                   56,  # nest
+    # No AC stage-1 environments (stage 1 = game starting stages)
 }
 environment_ac_orderedstage_2_table: Dict[str, int] = {
-    "Iron Alluvium":                           57,  # ironalluvium
-    "Iron Auroras":                            58,  # ironalluvium2
+    "Pretender's Precipice":                   56,  # nest (game Stage 2)
 }
 environment_ac_orderedstage_3_table: Dict[str, int] = {
-    "Repurposed Crater":                       59,  # repurposedcrater
+    "Iron Alluvium":                           57,  # ironalluvium (game Stage 3)
+    "Iron Auroras":                            58,  # ironalluvium2 (game Stage 3, loop only)
 }
 environment_ac_orderedstage_4_table: Dict[str, int] = {
-    "Conduit Canyon":                          60,  # conduitcanyon
+    "Repurposed Crater":                       59,  # repurposedcrater (game Stage 4)
+    "Conduit Canyon":                          60,  # conduitcanyon (game Stage 4)
 }
 environment_ac_orderedstage_5_table: Dict[str, int] = {
     # Solutional Haunt moved to special table — boss-only stage with no standard interactables
