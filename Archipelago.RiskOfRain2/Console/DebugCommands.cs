@@ -144,6 +144,29 @@ namespace Archipelago.RiskOfRain2.Console
                 Color.yellow);
         }
 
+        [ConCommand(commandName = "ap_debug_all", flags = ConVarFlags.SenderMustBeServer,
+            helpText = "Enable god, money 50k, speed 3x, damage 10x, teleporter 50x.")]
+        private static void CmdAll(ConCommandArgs args)
+        {
+            EnsureHooks();
+            _godMode = true;
+            SetGodModeOnAll(true);
+            _startMoney = 50000;
+            _speedMultiplier = 3f;
+            _damageMultiplier = 10f;
+            _teleporterMultiplier = 50f;
+            MarkStatsDirty();
+
+            // Give money immediately if mid-stage
+            foreach (var player in PlayerCharacterMasterController.instances)
+            {
+                if (player.master != null)
+                    player.master.GiveMoney(_startMoney);
+            }
+
+            ChatMessage.SendColored("[DEBUG] ALL ON — God | $50k | Speed 3x | Damage 10x | Teleporter 50x", Color.yellow);
+        }
+
         [ConCommand(commandName = "ap_debug_god", flags = ConVarFlags.SenderMustBeServer,
             helpText = "Toggle god mode for all players.")]
         private static void CmdGodMode(ConCommandArgs args)

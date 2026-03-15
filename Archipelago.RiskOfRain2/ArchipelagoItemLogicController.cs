@@ -31,7 +31,7 @@ namespace Archipelago.RiskOfRain2
         public int TotalChecks { get; set; }
         System.Random rnd = new System.Random();
 
-        internal StageBlockerHandler StageBlocker { get; set; }
+        internal StageBlockerHandler Stageblockerhandler { get; set; }
 
         public long[] ChecksTogether { get; set; }
         public long[] MissingChecks { get; set; }
@@ -125,7 +125,7 @@ namespace Archipelago.RiskOfRain2
         {
             orig(self);
             exitedPod = true;
-            ArchipelagoClient.IsInGame = true;
+            ArchipelagoClient.isInGame = true;
         }
 
         private void SurvivorPodController_OnPassengerExit(On.RoR2.SurvivorPodController.orig_OnPassengerExit orig, SurvivorPodController self, GameObject passenger)
@@ -136,7 +136,7 @@ namespace Archipelago.RiskOfRain2
             thread.Start();
             teleportedRecently = true;
             exitedPod = true;
-            ArchipelagoClient.IsInGame = true;
+            ArchipelagoClient.isInGame = true;
         }
 
         private void CombatDirector_Awake(On.RoR2.CombatDirector.orig_Awake orig, CombatDirector self)
@@ -148,10 +148,10 @@ namespace Archipelago.RiskOfRain2
         private void Items_ItemReceived(ReceivedItemsHelper helper)
         {
             var newItem = helper.DequeueItem();
-            if (ArchipelagoClient.LastReceivedItemIndex < helper.AllItemsReceived.Count)
+            if (ArchipelagoClient.lastReceivedItemindex < helper.AllItemsReceived.Count)
             {
                 EnqueueItem(newItem.ItemId);
-                ArchipelagoClient.LastReceivedItemIndex = helper.AllItemsReceived.Count;
+                ArchipelagoClient.lastReceivedItemindex = helper.AllItemsReceived.Count;
             }
             else if (environmentRangeLower <= newItem.ItemId && newItem.ItemId <= environmentRangeUpper)
             {
@@ -383,7 +383,6 @@ namespace Archipelago.RiskOfRain2
             {
                 session.Socket.PacketReceived -= Session_PacketReceived;
                 session.Items.ItemReceived -= Items_ItemReceived;
-                session.Locations.CheckedLocationsUpdated -= Check_Locations;
                 session = null;
             }
         }
@@ -405,30 +404,10 @@ namespace Archipelago.RiskOfRain2
             {
                 EnqueueItem(allItems[i].ItemId);
             }
-            ArchipelagoClient.LastReceivedItemIndex = allItems.Count;
+            ArchipelagoClient.lastReceivedItemindex = allItems.Count;
 
             // Drain the library's internal queue so future ItemReceived events
             // don't return stale items that we've already processed above.
-            while (helper.DequeueItem() != null) { }
-        }
-
-        /// <summary>
-        /// Enqueues only items received after the given index. Used during mid-run
-        /// reconnection to avoid re-granting items the player already has.
-        /// </summary>
-        public void ProcessItemsSinceIndex(int startIndex)
-        {
-            var helper = session.Items;
-            var allItems = helper.AllItemsReceived;
-            int newItems = allItems.Count - startIndex;
-            Log.LogDebug($"ProcessItemsSinceIndex: {newItems} new items (from {startIndex} to {allItems.Count})");
-
-            for (int i = startIndex; i < allItems.Count; i++)
-            {
-                EnqueueItem(allItems[i].ItemId);
-            }
-            ArchipelagoClient.LastReceivedItemIndex = allItems.Count;
-
             while (helper.DequeueItem() != null) { }
         }
 
@@ -484,11 +463,7 @@ namespace Archipelago.RiskOfRain2
             // cachedLocationsNames is keyed by Python IDs, so this lookup works directly.
             int pythonId = (int)(itemIdReceived - environmentRangeLower);
             Log.LogDebug($"Handling environment with pythonId {pythonId}, name {itemNameReceived}");
-            StageBlocker?.UnBlock(pythonId);
-            if (IsInGame)
-            {
-                ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
-            }
+            Stageblockerhandler?.UnBlock(pythonId);
         }
         private void HandleReceivedFillerQueueItem()
         {
@@ -501,14 +476,17 @@ namespace Archipelago.RiskOfRain2
                 // Money
                 case 37301:
                     GiveMoneyToPlayers();
+                    ChatMessage.Send("<style=cIsUtility>[AP]</style> Received: <style=cShrine>Money</style>");
                     break;
                 // Lunar Coin
                 case 37302:
                     GiveLunarCoinToPlayers();
+                    ChatMessage.Send("<style=cIsUtility>[AP]</style> Received: <style=cShrine>Lunar Coin</style>");
                     break;
                 // EXP
                 case 37303:
                     GiveExperienceToPlayers();
+                    ChatMessage.Send("<style=cIsUtility>[AP]</style> Received: <style=cShrine>Experience</style>");
                     break;
             }
         }
@@ -546,12 +524,10 @@ namespace Archipelago.RiskOfRain2
             if (itemIdRecieved == 37505)
             {
                 StageBlockerHandler.AmountOfStages += 1;
-                ChatMessage.SendColored($"Received {itemNameReceived} #{StageBlockerHandler.AmountOfStages}!", Color.magenta);
-            } 
+            }
             else
             {
                 StageBlockerHandler.StageUnlocks[itemNameReceived] = true;
-                ChatMessage.SendColored($"Received {itemNameReceived}!", Color.magenta);
             }
             
         }
@@ -816,7 +792,7 @@ namespace Archipelago.RiskOfRain2
         {
             if (!monsterShrineRecently)
             {
-                ChatMessage.SendColored("<style=cShrine>The Mountain has invited you for a challenge..", Color.yellow);
+                ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cShrine>The Mountain has invited you for a challenge..</style>");
                 TeleporterInteraction.instance.AddShrineStack();
                 monsterShrineRecently = true;
                 Thread thread = new Thread(() => MountainShrineRecently());
@@ -857,7 +833,7 @@ namespace Archipelago.RiskOfRain2
                 combatDirector.monsterCredit = 100f * coefficient;
                 Log.LogDebug($"player position {player.master.GetBody().transform.localPosition} monster credit  100 * {coefficient} =  {100 * coefficient}");
                 combatDirector.SpendAllCreditsOnMapSpawns(player.master.GetBody().transform);
-                ChatMessage.SendColored("Incoming Monsters!!", Color.red);
+                ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cDeath>Incoming Monsters!!</style>");
                 PlayShrineSound();
             }
         }
@@ -916,7 +892,7 @@ namespace Archipelago.RiskOfRain2
             var time = Run.instance.GetRunStopwatch();
             time += 180;
             Run.instance.SetRunStopwatch(time);
-            ChatMessage.SendColored($"Monsters grow stronger with time!", Color.red);
+            ChatMessage.Send("<style=cIsUtility>[AP]</style> <style=cDeath>Monsters grow stronger with time!</style>");
             TeamManager.instance.SetTeamLevel(TeamIndex.Monster, 1);
         }
 

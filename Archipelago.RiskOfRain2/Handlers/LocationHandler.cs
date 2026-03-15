@@ -116,12 +116,13 @@ namespace Archipelago.RiskOfRain2.Handlers
         // This is so readabilty and the ability to index the template with the LocationTypes enum.
         public class LocationInformationTemplate
         {
+
             private int[] data = new int[(int)LocationTypes.MAX];
 
             public int this[int i]
             {
                 get => data[i];
-                set => data[i] = value;
+                set => data[i] = value; 
             }
 
             public int this[LocationTypes type]
@@ -137,7 +138,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                 for (int type = 0; type < (int)LocationTypes.MAX; type++) sum += data[type];
                 return sum;
             }
-
             public string Scene()
             {
                 SceneDef scene = LocationHandler.GetLocationScene();
@@ -147,9 +147,10 @@ namespace Archipelago.RiskOfRain2.Handlers
                     ArchipelagoLocationsInEnvironmentController.CurrentScene = $"{LocationNames.LocationsNames[CurrentSceneIndex]}";
                     return $"{LocationNames.LocationsNames[CurrentSceneIndex]}";
                 }
-
                 ArchipelagoLocationsInEnvironmentController.CurrentScene = $"Environment Location";
                 return $"Environment Location";
+
+                
             }
 
             public LocationInformationTemplate Copy()
@@ -173,7 +174,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                     if (SlotData.TryGetValue(LocationTypesSlotName[type], out var type_per_stage)) locationtemplate[type] = Convert.ToInt32(type_per_stage);
                 }
             }
-
             return locationtemplate;
         }
 
@@ -199,22 +199,22 @@ namespace Archipelago.RiskOfRain2.Handlers
         // TODO this should probably become generic so that environment sets can be passed in (e.g. normal environments, simulacrum environments, etc)
         private void InitialSetupLocationDict(LocationInformationTemplate locationstemplate)
         {
-            currentlocations.Add(ancientloft, locationstemplate); // Aphelian Sanctuary
-            currentlocations.Add(blackbeach, locationstemplate); // Distant Roost
-            currentlocations.Add(blackbeach2, locationstemplate); // Distant Roost
-            currentlocations.Add(lakes, locationstemplate); // Verdant Falls
-            currentlocations.Add(dampcavesimple, locationstemplate); // Abyssal Depths
-            currentlocations.Add(foggyswamp, locationstemplate); // Wetland Aspect
-            currentlocations.Add(frozenwall, locationstemplate); // Rallypoint Delta
-            currentlocations.Add(golemplains, locationstemplate); // Titanic Plains
-            currentlocations.Add(golemplains2, locationstemplate); // Titanic Plains
-            currentlocations.Add(goolake, locationstemplate); // Abandoned Aqueduct
-            currentlocations.Add(rootjungle, locationstemplate); // Sundered Grove
-            currentlocations.Add(shipgraveyard, locationstemplate); // Siren's Call
-            currentlocations.Add(skymeadow, locationstemplate); // Sky Meadow
-            currentlocations.Add(snowyforest, locationstemplate); // Siphoned Forest
-            currentlocations.Add(sulfurpools, locationstemplate); // Sulfur Pools
-            currentlocations.Add(wispgraveyard, locationstemplate); // Scorched Acres
+            currentlocations.Add(ancientloft,       locationstemplate); // Aphelian Sanctuary
+            currentlocations.Add(blackbeach,        locationstemplate); // Distant Roost
+            currentlocations.Add(blackbeach2,       locationstemplate); // Distant Roost
+            currentlocations.Add(lakes,             locationstemplate); // Verdant Falls
+            currentlocations.Add(dampcavesimple,    locationstemplate); // Abyssal Depths
+            currentlocations.Add(foggyswamp,        locationstemplate); // Wetland Aspect
+            currentlocations.Add(frozenwall,        locationstemplate); // Rallypoint Delta
+            currentlocations.Add(golemplains,       locationstemplate); // Titanic Plains
+            currentlocations.Add(golemplains2,      locationstemplate); // Titanic Plains
+            currentlocations.Add(goolake,           locationstemplate); // Abandoned Aqueduct
+            currentlocations.Add(rootjungle,        locationstemplate); // Sundered Grove
+            currentlocations.Add(shipgraveyard,     locationstemplate); // Siren's Call
+            currentlocations.Add(skymeadow,         locationstemplate); // Sky Meadow
+            currentlocations.Add(snowyforest,       locationstemplate); // Siphoned Forest
+            currentlocations.Add(sulfurpools,       locationstemplate); // Sulfur Pools
+            currentlocations.Add(wispgraveyard,     locationstemplate); // Scorched Acres
             // Seekers of the Storm
             currentlocations.Add(lakesnight,        locationstemplate); // Viscous Falls
             currentlocations.Add(village,           locationstemplate); // Shattered Abodes
@@ -243,11 +243,10 @@ namespace Archipelago.RiskOfRain2.Handlers
         public void CatchUpSceneLocations(string sceneName)
         {
             int index = GetSceneIndex(sceneName);
-            if (!currentlocations.TryGetValue(index, out LocationInformationTemplate original))
-            {
+            Dictionary<int, LocationInformationTemplate> locationscopy = currentlocations.ToDictionary(k => k.Key, k => k.Value.Copy());
+            if (!locationscopy.TryGetValue(index, out LocationInformationTemplate location)) {
                 return;
             }
-            LocationInformationTemplate location = original.Copy();
 
             ReadOnlyCollection<long> completedchecks = session.Locations.AllLocationsChecked;
             int environment_start_id = index * ArchipelagoLocationOffsets.allocation + ArchipelagoLocationOffsets.ror2_locations_start_orderedstage;
@@ -271,7 +270,6 @@ namespace Archipelago.RiskOfRain2.Handlers
 
             currentlocations[index] = location;
         }
-
         public void Hook()
         {
             // Etc
@@ -289,6 +287,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.ShrineChanceBehavior.AddShrineStack += ShrineChanceBehavior_AddShrineStack;
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_ChanceShrine;
             On.RoR2.ShrineCombatBehavior.AddShrineStack += ShrineCombatBehavior_AddShrineStack;
+            On.RoR2.ShrineBossBehavior.AddShrineStack += ShrineBossBehavior_AddShrineStack;
             On.RoR2.ShrineRestackBehavior.AddShrineStack += ShrineRestackBehavior_AddShrineStack;
             On.RoR2.BossGroup.DropRewards += BossGroup_DropRewards;
             On.RoR2.ShrineHealingBehavior.AddShrineStack += ShrineHealingBehavior_AddShrineStack;
@@ -298,9 +297,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.ChestBehavior.ItemDrop += ChestBehavior_ItemDrop_Scavenger;
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_Scavenger;
             // Void Triple Chest
-            /* On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
-             On.RoR2.OptionChestBehavior.ItemDrop += OptionChestBehavior_ItemDrop;
-             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3;*/
+           /* On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
+            On.RoR2.OptionChestBehavior.ItemDrop += OptionChestBehavior_ItemDrop;
+            On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3;*/
             // Radio Scanners
             On.RoR2.SceneDirector.PopulateScene += SceneDirector_PopulateScene;
             On.RoR2.RadiotowerTerminal.GrantUnlock += RadiotowerTerminal_GrantUnlock;
@@ -309,7 +308,32 @@ namespace Archipelago.RiskOfRain2.Handlers
             // Newt Altars
             On.RoR2.PortalStatueBehavior.GrantPortalEntry += PortalStatueBehavior_GrantPortalEntry_Blue;
             // Highlight Satellite
+            
         }
+
+
+
+        /*        private void PickupDropletController_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3(On.RoR2.PickupDropletController.orig_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 orig, GenericPickupController.CreatePickupInfo pickupInfo, UnityEngine.Vector3 position, UnityEngine.Vector3 velocity)
+                {
+                    throw new NotImplementedException();
+                }
+
+                private void OptionChestBehavior_ItemDrop(On.RoR2.OptionChestBehavior.orig_ItemDrop orig, OptionChestBehavior self)
+                {
+                    if (blockVoidTriple)
+                    {
+                        Log.LogDebug("Blocked triple spawn");
+                        return;
+                    }
+                    orig(self);
+                }*/
+
+        /*        private void PurchaseInteraction_OnInteractionBegin(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
+                {
+                    Log.LogDebug($"Purchase Interaction {self.name} activator {activator.name}");
+                    if (self.name == "VoidTriple(Clone)") blockVoidTriple = true;
+                    orig(self, activator);
+                }*/
 
         public void UnHook()
         {
@@ -329,6 +353,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.ShrineChanceBehavior.AddShrineStack -= ShrineChanceBehavior_AddShrineStack;
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -= PickupDropletController_CreatePickupDroplet_ChanceShrine;
             On.RoR2.ShrineCombatBehavior.AddShrineStack -= ShrineCombatBehavior_AddShrineStack;
+            On.RoR2.ShrineBossBehavior.AddShrineStack -= ShrineBossBehavior_AddShrineStack;
             On.RoR2.ShrineRestackBehavior.AddShrineStack -= ShrineRestackBehavior_AddShrineStack;
             On.RoR2.BossGroup.DropRewards -= BossGroup_DropRewards;
             On.RoR2.ShrineHealingBehavior.AddShrineStack -= ShrineHealingBehavior_AddShrineStack;
@@ -343,11 +368,8 @@ namespace Archipelago.RiskOfRain2.Handlers
             ArchipelagoConsoleCommand.OnArchipelagoHighlightSatelliteCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoHighlightSatelliteCommandCalled;
             // Newt Altars
             On.RoR2.PortalStatueBehavior.GrantPortalEntry -= PortalStatueBehavior_GrantPortalEntry_Blue;
-
+            
         }
-
-        public ArchipelagoLocationCheckProgressBarUI ItemBar = null;
-        public ArchipelagoLocationCheckProgressBarUI ShrineBar = null;
 
         // NOTE the counters are not used to store the actual count, they used for detecting when to send locations
         private uint chestitemsPickedUp = 0; // is used to count the number of items
@@ -367,7 +389,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         // private bool blockVoidTriple = false;
         public const int testing = 3;
         private bool highlightOn = false;
-        public static SceneDef CurrentSceneDef { get; private set; }
+        public static SceneDef CurrentSceneDef { get; private set; } //used for the currect scene loaded
 
         private void SceneInfo_Awake(On.RoR2.SceneInfo.orig_Awake orig, SceneInfo self)
         {
@@ -381,95 +403,58 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             return CurrentSceneDef;
         }
-
         public void GetCurrentSceneIndex()
         {
-            int index = LocationNames.GetSceneIndex(CurrentSceneDef.cachedName);
-            CurrentSceneIndex = index != 0 ? index : 100;
+            foreach (var scene in LocationNames.CachedLocationsNames)
+            {
+                if (scene.Value == CurrentSceneDef.cachedName)
+                {
+                    CurrentSceneIndex = scene.Key;
+                    return;
+                }
+            }
+            CurrentSceneIndex = 100;
         }
-        public static int GetSceneIndex(string sceneName)
+        public int GetSceneIndex(string sceneName)
         {
-            return LocationNames.GetSceneIndex(sceneName);
+            foreach (var scene in LocationNames.CachedLocationsNames)
+            {
+                if (scene.Value == sceneName)
+                {
+                    return scene.Key;
+                }
+            }
+            return 0;
         }
-
         private void updateBar(LocationTypes loctype)
         {
-            ArchipelagoLocationCheckProgressBarUI bar = null;
             int amount = 0;
             int step = 1;
             switch (loctype)
             {
                 case LocationTypes.chest:
-                    bar = ItemBar;
-                    amount = (int)chestitemsPickedUp;
-                    step = (int)ItemPickupStep;
+                    amount = (int) chestitemsPickedUp;
+                    step = (int) ItemPickupStep;
+                    ArchipelagoCheckCountdownController.UpdateItemCountdown(amount % step, step);
                     new SyncLocationCheckProgress(amount % step, step).Send(NetworkDestination.Clients);
                     break;
                 case LocationTypes.shrine:
-                    bar = ShrineBar;
-                    amount = (int)shrinesUsed;
-                    step = (int)ShrineUseStep;
+                    amount = (int) shrinesUsed;
+                    step = (int) ShrineUseStep;
+                    ArchipelagoCheckCountdownController.UpdateShrineCountdown(amount % step, step);
                     new SyncShrineCheckProgress(amount % step, step).Send(NetworkDestination.Clients);
                     break;
             }
-
-            if (null != bar)
-            {
-                bar.UpdateCheckProgress(amount % step, step);
-                // use the default color with checks, use the alt color when out of checks
-                bar.ChangeBarColor(0 < checkAvailable(loctype) ? ArchipelagoLocationCheckProgressBarUI.defaultColor : ArchipelagoLocationCheckProgressBarUI.altColor);
-            }
         }
-
-        private readonly List<long> pendingChecks = new List<long>();
 
         private void sendLocation(int id)
         {
-            if (session?.Socket?.Connected == true)
-            {
-                LocationChecksPacket packet = new LocationChecksPacket();
-                packet.Locations = new List<long> { id }.ToArray();
-                Log.LogDebug($"Sending location {id}");
-                session.Socket.SendPacketAsync(packet);
-            }
-            else
-            {
-                Log.LogWarning($"Socket not connected, queueing location {id} for retry");
-                pendingChecks.Add(id);
-            }
-        }
-
-        /// <summary>
-        /// Returns the current pending checks list (for saving before handler disposal).
-        /// </summary>
-        public List<long> GetPendingChecks() => new List<long>(pendingChecks);
-
-        /// <summary>
-        /// Adds previously cached pending checks (from a prior handler instance).
-        /// </summary>
-        public void AddPendingChecks(List<long> checks)
-        {
-            pendingChecks.AddRange(checks);
-        }
-
-        /// <summary>
-        /// Re-sends any location checks that failed during a disconnect.
-        /// Called after a successful reconnection.
-        /// </summary>
-        public void FlushPendingChecks()
-        {
-            if (pendingChecks.Count == 0) return;
-            if (session?.Socket?.Connected != true)
-            {
-                Log.LogWarning($"FlushPendingChecks: socket still not connected, {pendingChecks.Count} checks remain queued");
-                return;
-            }
-
-            Log.LogDebug($"Flushing {pendingChecks.Count} pending location checks");
             LocationChecksPacket packet = new LocationChecksPacket();
-            packet.Locations = pendingChecks.ToArray();
+            packet.Locations = new List<long> { id }.ToArray();
+            Log.LogDebug($"planning to send location {id}"); // XXX
+            // Changed to Async.. lets see if it breaks something else
             session.Socket.SendPacketAsync(packet);
-            pendingChecks.Clear();
+            
         }
 
         /// <summary>
@@ -480,7 +465,8 @@ namespace Archipelago.RiskOfRain2.Handlers
         /// <returns>Returns the amount of remaining locations.</returns>
         private int checkAvailable(LocationTypes loctype) // TODO make a method to check the nth location
         {
-            if (!currentlocations.TryGetValue(CurrentSceneIndex, out var locationsinenvironment))
+            int index = GetSceneIndex(CurrentSceneDef.cachedName);
+            if (!currentlocations.TryGetValue(index, out var locationsinenvironment))
             // prevent KeyNotFoundException by using TryGetValue
             {
                 // if the locations in the environment are not being tracked, there must be 0 locations
@@ -529,13 +515,15 @@ namespace Archipelago.RiskOfRain2.Handlers
 
             // update UI to the results of sending the location
             ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
-            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
+            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
             int TotalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
             new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
             if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())
             {
+                StageBlockerHandler.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
-                ArchipelagoLocationsInEnvironmentController.RemoveObjective();
+                // Keep objective visible so "All AP checks complete" message shows
+                UpdateClientsUI();
             }
             else
             {
@@ -545,7 +533,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
 
             currentlocations[CurrentSceneIndex] = locationsinenvironment; // save changes to the count
-
+            
             sendLocation(next_index + offset_in_allocation + environment_start_id);
 
             return true; // a location must have been sent
@@ -619,16 +607,19 @@ namespace Archipelago.RiskOfRain2.Handlers
             UpdateClientsUI();
             if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())
             {
+                StageBlockerHandler.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
-                ArchipelagoLocationsInEnvironmentController.RemoveObjective();
+                // Keep objective visible so "All AP checks complete" message shows
             }
             else
             {
                 new NextStageObjectives().Send(NetworkDestination.Clients);
                 ArchipelagoLocationsInEnvironmentController.AddObjective();
             }
-        }
 
+            // TODO maybe the make sure the ArchipelagoTotalChecksObjectiveController.CurrentChecks gets synced here (since sending a location increments it and could possibly desync it?)
+
+        }
         private void SceneExitController_OnDestroy(On.RoR2.SceneExitController.orig_OnDestroy orig, SceneExitController self)
         {
             On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Chest;
@@ -636,14 +627,14 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -= PickupDropletController_CreatePickupDroplet_ChestDrop;
             orig(self);
         }
-
         private void SceneCollection_AddToWeightedSelection(On.RoR2.SceneCollection.orig_AddToWeightedSelection orig, SceneCollection self, WeightedSelection<SceneDef> dest, Func<SceneDef, bool> canAdd)
         {
             // In explore mode we will give help the player a little by adjusting the RNG to favor locations where checks need to still be performed.
             // This should help the player not get stuck in an RNG hell where they simply cannot roll into the stages they need to go to to complte things.
+
             orig(self, dest, canAdd);
             if (null == dest) return; // prevent NRE
-            for (int i = 0; i < dest.Count; i++)
+            for (int i=0; i < dest.Count; i++)
             {
                 // add 5 weight to per location left in an environment
                 string stageName = dest.choices[i].value.cachedName;
@@ -651,7 +642,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 CatchUpSceneLocations(stageName);
                 Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} has stage name {stageName}.");
                 if (currentlocations.TryGetValue(environment_index, out var locations))
-                {
+                { 
                     int addweight = locations.Total() * 5;
                     Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} has {addweight / 5} locations, adjusting weight.");
                     dest.ModifyChoiceWeight(i, dest.choices[i].weight + addweight);
@@ -664,6 +655,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 }
                 else Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} does not have locations.");
             }
+
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -681,15 +673,12 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             bool locationavailable = 0 < checkAvailable(LocationTypes.chest);
             // If no chests we dont need the hooks running.
-            // Only unhook on tracked stages that exhausted all checks — not on untracked stages
-            // (boss/victory stages like Solutional Haunt) where hooks are still needed for later stages.
-            if (!locationavailable && currentlocations.ContainsKey(CurrentSceneIndex))
+            if (!locationavailable)
             {
                 On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Chest;
                 On.RoR2.Artifacts.SacrificeArtifactManager.OnServerCharacterDeath -= SacrificeArtifactManager_OnServerCharacterDeath;
                 On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -= PickupDropletController_CreatePickupDroplet_ChestDrop;
             }
-
             // only count when checks are avaiable OR when counting does not roll over
             if (locationavailable || 0 != (chestitemsPickedUp + 1) % ItemPickupStep)
             {
@@ -715,13 +704,12 @@ namespace Archipelago.RiskOfRain2.Handlers
             {
                 chestblockitem = chestOpened();
             }
-
             if (!chestblockitem)
             {
                 orig(self);
             }
 
-            // the original will end up calling PickupDropletController_CreatePickupDroplet as well as other things
+             // the original will end up calling PickupDropletController_CreatePickupDroplet as well as other things
             chestblockitem = false;
         }
 
@@ -745,10 +733,8 @@ namespace Archipelago.RiskOfRain2.Handlers
                     Log.LogDebug($"sacrifice chest item {pickupInfo._pickupState} was used to satisfy a location and thus is consumed");
                     return;
                 }
-
                 Log.LogDebug($"sacrifice chest item {pickupInfo._pickupState} passed through");
             }
-
             orig(pickupInfo, position, velocity);
         }
 
@@ -867,6 +853,15 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
 
         /// <summary>
+        /// Using the mountain shrine beats it.
+        /// </summary>
+        private void ShrineBossBehavior_AddShrineStack(On.RoR2.ShrineBossBehavior.orig_AddShrineStack orig, ShrineBossBehavior self, Interactor interactor)
+        {
+            orig(self, interactor);
+            shrineBeat();
+        }
+
+        /// <summary>
         /// Using the order shrine beats it
         /// </summary>
         private void ShrineRestackBehavior_AddShrineStack(On.RoR2.ShrineRestackBehavior.orig_AddShrineStack orig, ShrineRestackBehavior self, Interactor interactor)
@@ -945,7 +940,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             // All chest like objects drop 1 item, this includes scavenger backpacks which just call this method several times.
             // Therefore we need to manually make sure the call here is from the backpack.
-            if (NetworkServer.active && self.currentPickup != UniquePickup.none && scavbackpackHash == self.GetHashCode())
+            if(NetworkServer.active && self.currentPickup != UniquePickup.none && scavbackpackHash == self.GetHashCode())
             {
                 // TODO make an option to block scavenger backpacks from dropping items
                 scavbackpackblockitem = scavbackpackWasLocation;
@@ -1068,5 +1063,8 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+
     }
+
+    // TODO it may be interesting if Baazar seers could allow the player to travel to environments earlier in the loop (ie to give more control over where the player goes)
 }

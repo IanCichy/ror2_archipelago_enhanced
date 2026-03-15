@@ -58,16 +58,16 @@ environment_sotv_special_table: Dict[str, int] = {
 environment_sots_orderedstage_1_table: Dict[str, int] = {
     "Shattered Abodes":                        48,  # village
     "Disturbed Impact":                        49,  # villagenight
-    "Viscous Falls":                           50,  # lakesnight (post-loop only)
 }
 environment_sots_orderedstage_2_table: Dict[str, int] = {
-    "Reformed Altar":                          51,  # lemuriantemple
+    "Viscous Falls":                           50,  # lakesnight
 }
 environment_sots_orderedstage_3_table: Dict[str, int] = {
-    "Treeborn Colony":                         52,  # habitat
-    "Golden Dieback":                          53,  # habitatfall
+    "Reformed Altar":                          51,  # lemuriantemple
 }
 environment_sots_orderedstage_4_table: Dict[str, int] = {
+    "Treeborn Colony":                         52,  # habitat
+    "Golden Dieback":                          53,  # habitatfall
 }
 environment_sots_orderedstage_5_table: Dict[str, int] = {
     "Helminth Hatchery":                       54,  # helminthroost
@@ -78,18 +78,20 @@ environment_sots_special_table: Dict[str, int] = {
 }
 
 # DLC3 - Alloyed Collective (AC)
+# Per wiki: nest=Stage2, iron=Stage3, crater/canyon=Stage4, haunt=Stage5
 environment_ac_orderedstage_1_table: Dict[str, int] = {
+    # No AC stage-1 environments (stage 1 = game starting stages)
 }
 environment_ac_orderedstage_2_table: Dict[str, int] = {
-    "Pretender's Precipice":                   56,  # nest
+    "Pretender's Precipice":                   56,  # nest (game Stage 2)
 }
 environment_ac_orderedstage_3_table: Dict[str, int] = {
-    "Iron Alluvium":                           57,  # ironalluvium
-    "Iron Auroras":                            58,  # ironalluvium2
+    "Iron Alluvium":                           57,  # ironalluvium (game Stage 3)
+    "Iron Auroras":                            58,  # ironalluvium2 (game Stage 3, loop only)
 }
 environment_ac_orderedstage_4_table: Dict[str, int] = {
-    "Repurposed Crater":                       59,  # repurposedcrater
-    "Conduit Canyon":                          60,  # conduitcanyon
+    "Repurposed Crater":                       59,  # repurposedcrater (game Stage 4)
+    "Conduit Canyon":                          60,  # conduitcanyon (game Stage 4)
 }
 environment_ac_orderedstage_5_table: Dict[str, int] = {
     # Solutional Haunt moved to special table — boss-only stage with no standard interactables
