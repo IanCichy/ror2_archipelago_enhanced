@@ -1,88 +1,121 @@
-# Archipelago.RiskOfRain2 | ![Discord Shield](https://discordapp.com/api/guilds/731205301247803413/widget.png?style=shield)
+# Risk of Rain 2 - Archipelago Enhanced
 
-## To be used with [Archipelago](https://archipelago.gg)
+A [Risk of Rain 2](https://store.steampowered.com/app/632360/Risk_of_Rain_2/) mod for [Archipelago](https://archipelago.gg) multiworld randomizer. Connect your RoR2 runs to an Archipelago session alongside players in other games.
 
-This mod adds support to Risk of Rain 2 for playing as an Archipelago client. For more information on Archipelago head over to https://archipelago.gg.
+Originally forked from [kindasneaki/Archipelago.RiskOfRain2](https://github.com/kindasneaki/Archipelago.RiskOfRain2).
 
-Multiplayer compatible. Be sure to scale up your YAML settings if you play in multiplayer. All players require the mod in multiplayer.
+## Features
 
-![In Game Example](https://raw.githubusercontent.com/kindasneaki/Archipelago.RiskOfRain2/main/docs/img/Example.png)
-## Gameplay 
+### DLC Support
+- **Survivors of the Void (SOTV)** - Void items, Void Locus, The Planetarium
+- **Seekers of the Storm (SOTS)** - Shattered Abodes, Reformed Altar, Treeborn Colony, Helminth Hatchery, Prime Meridian, and more
+- **Alloyed Collective (AC)** - Pretender's Precipice, Iron Alluvium, Repurposed Crater, Conduit Canyon, Solutional Haunt, Neural Sanctum
 
-### Classic mode
+Each DLC can be individually toggled in your YAML settings.
 
-Classic mode is the original way to play Archipelago in Risk of Rain 2.
+### Victory Conditions
+| Victory | Requirement | DLC |
+|---------|------------|-----|
+| Mithrix | Defeat Mithrix on Commencement | Base |
+| Voidling | Defeat Voidling in The Planetarium | SOTV |
+| Limbo | Defeat Twisted Scavenger in A Moment, Whole | Base |
+| False Son | Defeat False Son on Prime Meridian | SOTS |
+| Solus Heart | Defeat Solus Heart in Neural Sanctum | AC |
+| Any | Any of the above | - |
 
-The Risk of Rain 2 players send checks by causing items to spawn in-game. Currently, this includes opening chests, defeating bosses, using scrappers and 3D printers, opening lunar pods, and accessing terminals. 
-An item check is only sent out after a certain number of items are picked up. This count is configurable in the player's YAML.
+**Final Stage Death**: Optionally, dying on a victory stage counts as a win.
 
-### Explore mode
+### Game Modes
 
-Explore mode is an alternative way to play Archipelago in Risk of Rain 2.
+**Explore Mode** - Locations are tied to specific environments. Open chests, beat shrines, find scanners, and discover newt altars to send checks. Environments are items in the pool - you must unlock them to visit new stages. The teleporter favors stages with remaining checks.
 
-The Risk of Rain 2 player sends checks from doing different actions such as opening chests, beating shrines, defeating scavengers, finding radio scanners, and finding newt altars.
-These locations divided evenly across the different stages and can only be completed in their respective stages.
+**Classic Mode** - Item pickups fill a counter that sends location checks. Simpler, no stage gating.
 
-Environments will be in the item pool, and you will need to unlock them to progress towards your goal.
+### In-Game UI
+- **Scoreboard (Tab)** - 3-page overlay showing session info, environment unlock status (red/yellow/green), stage keys, hidden realms, and special stages
+- **Objectives Panel** - Per-stage check breakdown (chests, shrines, scanners, newt altars) with color-coded counts
+- **Check Countdown** - "Next item check in X pickup(s)" tracker
+- **Connect Panel** - In-lobby AP connection with auto-minimize on connect
+- **Styled Chat** - AP messages with RoR2 rich text formatting
 
+### Explore Mode Check Rules
+- **Chests**: Opening chests, lunar pods, void cradles. Sacrifice artifact drops count as chests
+- **Shrines**: Blood, Chance (on reward), Combat, Order, Mountain, Woods (last 2 uses), Halcyon/Colossus
+- **Scanners**: Radio scanners (guaranteed spawn per stage)
+- **Newt Altars**: Finding altars sends a check (refunds lunar coin, no blue portal until checks depleted)
+- **Scavengers**: Opening scavenger bags
 
-The rules for locations are as follows:
-- Chest-like interactables will send a check when a certain number of chests are opened. Multishops are not chest, 
-but lunar pods and void cradles are. Artifact of sacrifice will treat item drops like opening chests.
-- Shrines will send a check when a certain number of shrines are beat. Rules for beating shrines are:
-    - Altar of Gold is beat on purchase.
-    - Shrine of Blood is beat on interact. Sending shrine as a check denies gold.
-    - Shrine of Chance is beat on when rewarded. Sending shrine as a check denies the item.
-    - Shrine of Combat is beat on interact.
-    - Shrine of Order is beat on purchase.
-    - Shrine of the Mountain is beat on defeating the challenge of the Mountain. Sending the shrine as a check denies the bonus item.
-    - Shrine of the Woods is beat on the second and third purchases.
-- Scavenger bags send checks when opened but do not grant items. Looping to the same environment will let you reopen the scavenger bag.
-- Radio Scanners can be found on every stage and send a check. Radio Scanners are guaranteed to spawn.
-- Newt Altars send checks when found but do not grant a Blue Portal (Refunds 1 lunar coin). Newts Altars grant portals when the checks are depleted.
+### Multiplayer
+Fully multiplayer compatible. All players need the mod installed. Scale up your YAML settings for more players. Session state syncs across all connected clients.
 
-Explore mode also attempts to help against being stuck in RNG hell; the teleporter will favor environments that have more checks remaining.
+## Setup
 
+### Requirements
+- Risk of Rain 2
+- [r2modman](https://thunderstore.io/package/ebkr/r2modman/) or manual BepInEx setup
+- [Archipelago](https://archipelago.gg) (v0.6.4+)
 
-### Achieving Victory or Defeat
+### Installation
+1. Install the mod via r2modman or manually place the DLL in `BepInEx/plugins/`
+2. Place the `.apworld` file in your Archipelago `lib/worlds/` folder
 
-Achieving victory is defined as beating Mithrix, defeating the Twisted Scavenger, or beating the Voidling (DLC enabled). (This is both true for Classic and Explore modes.)
-
-Alternatively you can change the Final Stage Death is Win setting to enable Obliteration ending as well as if you
-die in the Commencement map (the moon)/ The Planetarium (DLC enabled)/ Hidden Realm: A Momemt, Whole (limbo). 
-
-Due to the nature of roguelike games, you can possibly die and lose your place completely. This is mitigated partly by the free grants of `Dio's Best Friend`
-but it is still possible to lose. If you do lose, you can reconnect to the Archipelago server and start a new run. The server will send you the items you have
-earned thus far, giving you a small boost to the start of your run.
+### Connecting
+1. Generate a seed with your YAML on the Archipelago server
+2. Launch RoR2 with the mod enabled
+3. In the character select lobby, fill in your server URL, port, slot name, and password
+4. Click **Connect To AP**
+5. Click **Ready** to start the run
 
 ## YAML Settings
 
-To create a YAML please goto [Archipelago RoR2 Settings](https://archipelago.gg/games/Risk%20of%20Rain%202/player-settings)
+Create a YAML at [Archipelago RoR2 Settings](https://archipelago.gg/games/Risk%20of%20Rain%202/player-settings) or manually:
 
-## Connecting to an Archipelago Server
+| Setting | Values | Description |
+|---------|--------|-------------|
+| `goal` | 0 (Classic), 1 (Explore) | Game mode |
+| `victory` | 0-5 | Victory condition (0=any, 1=Mithrix, 2=Voidling, 3=Limbo, 4=False Son, 5=Solus Heart) |
+| `total_locations` | 40-250 | Classic mode total checks |
+| `chests_per_stage` | 2-20 | Explore mode chests per environment |
+| `shrines_per_stage` | 2-20 | Explore mode shrines per environment |
+| `item_pickup_step` | 0-5 | Items picked up before a check is sent |
+| `shrine_use_step` | 0-3 | Shrines used before a check is sent |
+| `require_stages` | true/false | Stage key items gate progression |
+| `progressive_stages` | true/false | Use progressive stage items instead |
+| `death_link` | true/false | Enable DeathLink |
+| `dlc_sotv` | true/false | Enable SOTV content |
+| `dlc_sots` | true/false | Enable SOTS content |
+| `dlc_ac` | true/false | Enable AC content |
 
-I assume you already have an Archipelago server running. Instructions on how to run a server are available at [Setup Guide](https://archipelago.gg/tutorial/Archipelago/setup/en#hosting-an-archipelago-server).
+Item weight presets: Default, Uncommon, Legendary, Chaos, No Scraps, Even, Scraps Only, Lunartic, Void
 
-Fill in the relevant info and click `Connect To AP` to connect to the server
+## Console Commands
 
-Keep password blank if there is no password on the server.
+Open the console with `Ctrl+Alt+~`.
 
-![In Lobby UI Example](https://raw.githubusercontent.com/kindasneaki/Archipelago.RiskOfRain2/main/docs/img/lobby.png)
-
-Once connected it will print in chat that you have successfully connected!
-
+| Command | Description |
+|---------|-------------|
+| `archipelago_connect <url> <port> <slot> [pw]` | Connect to AP server |
+| `archipelago_disconnect` | Disconnect |
+| `archipelago_reconnect` | Attempt reconnection |
+| `archipelago_deathlink <true/false>` | Toggle DeathLink |
+| `archipelago_final_stage_death <true/false>` | Toggle final stage death |
+| `archipelago_show_unlocked_stages` | Show unlocked stages |
 
 ## Known Issues
 
-* Splitscreen support is unlikely at the moment. It might work, it might not.
+- Splitscreen is untested and likely unsupported
+- 1 filler item may fail to place during seed generation (harmless)
 
-## To-do/Ideas
+## Project Structure
 
-* Cache and load data package from file system.
-* Further randomization in some way. Mob spawns, elite types, variance api, boss types, mob families, mobs with items, etc.
-* More item/reward types: warbanner drops, drones
-* Funny/joke item types: launching you into the air, switch left and right click
-* Trap item types: spawn bosses, drop bombs on the stage
+```
+Archipelago.RiskOfRain2/    # C# BepInEx mod (client-side)
+worlds/ror2/                # Python Archipelago world (server-side)
+docs/sprints/               # Sprint planning docs
+```
 
+## Credits
 
-## [Change Log](CHANGELOG.md)
+- Original mod by [Ijwu](https://github.com/Ijwu) and [kindasneaki](https://github.com/kindasneaki)
+- Enhanced by [IanCichy](https://github.com/IanCichy)
+- Built for [Archipelago](https://archipelago.gg)
