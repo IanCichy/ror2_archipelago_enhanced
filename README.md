@@ -4,6 +4,8 @@ A [Risk of Rain 2](https://store.steampowered.com/app/632360/Risk_of_Rain_2/) mo
 
 Originally forked from [kindasneaki/Archipelago.RiskOfRain2](https://github.com/kindasneaki/Archipelago.RiskOfRain2).
 
+![In-Game Objectives UI](docs/img/GameplayExample.png)
+
 ## Features
 
 ### DLC Support
@@ -65,6 +67,12 @@ Fully multiplayer compatible. All players need the mod installed. Scale up your 
 3. In the character select lobby, fill in your server URL, port, slot name, and password
 4. Click **Connect To AP**
 5. Click **Ready** to start the run
+
+![Lobby Connect Panel](docs/img/LobbyV2.png)
+
+The panel auto-minimizes after connecting:
+
+![Connected and Ready](docs/img/LobbyV2.1.png)
 
 ## YAML Settings
 
