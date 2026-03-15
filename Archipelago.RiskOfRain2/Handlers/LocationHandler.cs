@@ -243,10 +243,10 @@ namespace Archipelago.RiskOfRain2.Handlers
         public void CatchUpSceneLocations(string sceneName)
         {
             int index = GetSceneIndex(sceneName);
-            Dictionary<int, LocationInformationTemplate> locationscopy = currentlocations.ToDictionary(k => k.Key, k => k.Value.Copy());
-            if (!locationscopy.TryGetValue(index, out LocationInformationTemplate location)) {
+            if (!currentlocations.TryGetValue(index, out LocationInformationTemplate original)) {
                 return;
             }
+            LocationInformationTemplate location = original.Copy();
 
             ReadOnlyCollection<long> completedchecks = session.Locations.AllLocationsChecked;
             int environment_start_id = index * ArchipelagoLocationOffsets.allocation + ArchipelagoLocationOffsets.ror2_locations_start_orderedstage;
@@ -389,7 +389,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         // private bool blockVoidTriple = false;
         public const int testing = 3;
         private bool highlightOn = false;
-        public static SceneDef CurrentSceneDef { get; private set; } //used for the currect scene loaded
+        public static SceneDef CurrentSceneDef { get; private set; } //used for the current scene loaded
 
         private void SceneInfo_Awake(On.RoR2.SceneInfo.orig_Awake orig, SceneInfo self)
         {
@@ -405,15 +405,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
         public void GetCurrentSceneIndex()
         {
-            foreach (var scene in LocationNames.CachedLocationsNames)
-            {
-                if (scene.Value == CurrentSceneDef.cachedName)
-                {
-                    CurrentSceneIndex = scene.Key;
-                    return;
-                }
-            }
-            CurrentSceneIndex = 100;
+            CurrentSceneIndex = GetSceneIndex(CurrentSceneDef.cachedName);
         }
         public int GetSceneIndex(string sceneName)
         {
@@ -515,7 +507,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
             // update UI to the results of sending the location
             ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
-            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
+            int CurrentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
             int TotalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
             new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
             if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())

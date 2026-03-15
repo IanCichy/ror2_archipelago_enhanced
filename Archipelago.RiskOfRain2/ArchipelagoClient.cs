@@ -233,48 +233,14 @@ namespace Archipelago.RiskOfRain2
                         victoryCondition = "Solus Heart";
                         break;
                     default:
-                        victoryCondition = "any";
-                        acceptableEndings = new[] {
-                            RoR2Content.GameEndings.MainEnding,
-                            //RoR2Content.GameEndings.ObliterationEnding,
-                            RoR2Content.GameEndings.LimboEnding,
-                            DLC1Content.GameEndings.VoidEnding,
-                            DLC2Content.GameEndings.RebirthEndingDef,
-                            // Solus Heart has no GameEndingDef — handled via boss-kill hook
-                        };
-                        acceptableLosses = new[] {
-                            "moon",
-                            "moon2",
-                            "voidraid",
-                            "mysteryspace",
-                            "limbo",
-                            "meridian",
-                            "solusweb",
-                        };
+                        SetAnyVictoryCondition();
                         break;
 
                 }
             }
             else
             {
-                victoryCondition = "any";
-                acceptableEndings = new[] {
-                    RoR2Content.GameEndings.MainEnding,
-                    //RoR2Content.GameEndings.ObliterationEnding,
-                    RoR2Content.GameEndings.LimboEnding,
-                    DLC1Content.GameEndings.VoidEnding,
-                    DLC2Content.GameEndings.RebirthEndingDef,
-                    // Solus Heart has no GameEndingDef — handled via boss-kill hook
-                };
-                acceptableLosses = new[] {
-                    "moon",
-                    "moon2",
-                    "voidraid",
-                    "mysteryspace",
-                    "limbo",
-                    "meridian",
-                    "solusweb",
-                };
+                SetAnyVictoryCondition();
             }
 
             // Progressive stages and seer portals (session-level, static fields)
@@ -748,6 +714,28 @@ namespace Archipelago.RiskOfRain2
             session.Socket.SendPacketAsync(packet);
 
             new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+        }
+
+        private void SetAnyVictoryCondition()
+        {
+            victoryCondition = "any";
+            acceptableEndings = new[] {
+                RoR2Content.GameEndings.MainEnding,
+                //RoR2Content.GameEndings.ObliterationEnding,
+                RoR2Content.GameEndings.LimboEnding,
+                DLC1Content.GameEndings.VoidEnding,
+                DLC2Content.GameEndings.RebirthEndingDef,
+                // Solus Heart has no GameEndingDef — handled via boss-kill hook
+            };
+            acceptableLosses = new[] {
+                "moon",
+                "moon2",
+                "voidraid",
+                "mysteryspace",
+                "limbo",
+                "meridian",
+                "solusweb",
+            };
         }
 
         // Which stages count for boss-kill victory detection, based on the current victory condition.

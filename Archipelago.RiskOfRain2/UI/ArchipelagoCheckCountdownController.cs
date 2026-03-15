@@ -8,6 +8,11 @@ namespace Archipelago.RiskOfRain2.UI
     {
         public class CheckCountdownTracker : ObjectiveTracker
         {
+            private int lastItemsPickedUp = -1;
+            private int lastItemStep = -1;
+            private int lastShrinesUsed = -1;
+            private int lastShrineStep = -1;
+
             public override string GenerateString()
             {
                 var parts = new List<string>();
@@ -29,12 +34,20 @@ namespace Archipelago.RiskOfRain2.UI
                 if (parts.Count == 0)
                     return "No checks remaining";
 
+                lastItemsPickedUp = ItemsPickedUp;
+                lastItemStep = ItemStep;
+                lastShrinesUsed = ShrinesUsed;
+                lastShrineStep = ShrineStep;
+
                 return string.Join(" | ", parts);
             }
 
             public override bool IsDirty()
             {
-                return true;
+                return ItemsPickedUp != lastItemsPickedUp
+                    || ItemStep != lastItemStep
+                    || ShrinesUsed != lastShrinesUsed
+                    || ShrineStep != lastShrineStep;
             }
         }
 

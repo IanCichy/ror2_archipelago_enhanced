@@ -17,6 +17,8 @@ namespace Archipelago.RiskOfRain2.UI
         private int currentPage = 0;
         private int totalPages = 3;
         private static bool hooked = false;
+        private int lastPage = -1;
+        private string cachedText;
 
         // Stage group mapping: scene name → AP stage key (1-4).
         // Mirrors StageBlockerHandler.StageLookup but static for scoreboard access.
@@ -155,7 +157,14 @@ namespace Archipelago.RiskOfRain2.UI
             else if (scroll < 0f)
                 currentPage = Mathf.Min(totalPages - 1, currentPage + 1);
 
-            apText.text = BuildText(currentPage, totalPages);
+            // Only rebuild text when the page changes
+            if (currentPage != lastPage)
+            {
+                lastPage = currentPage;
+                cachedText = BuildText(currentPage, totalPages);
+            }
+
+            apText.text = cachedText;
         }
 
         private static string BuildText(int page, int totalPages)

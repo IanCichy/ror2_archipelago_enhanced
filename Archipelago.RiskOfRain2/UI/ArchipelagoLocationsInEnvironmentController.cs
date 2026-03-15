@@ -9,6 +9,13 @@ namespace Archipelago.RiskOfRain2.UI
     {
         public class ChecksInEnvironment : ObjectiveTracker
         {
+            private int lastChests = -1;
+            private int lastShrines = -1;
+            private int lastScavangers = -1;
+            private int lastScanners = -1;
+            private int lastNewts = -1;
+            private string lastScene;
+
             public override string GenerateString()
             {
                 var lines = new List<string>();
@@ -18,6 +25,13 @@ namespace Archipelago.RiskOfRain2.UI
                 if (CurrentScanners > 0)   lines.Add($"  <color=#6FCF97>Scanner: {CurrentScanners} remaining</color>");
                 if (CurrentNewts > 0)      lines.Add($"  <color=#56B4E9>Newt Altar: {CurrentNewts} remaining</color>");
 
+                lastChests = CurrentChests;
+                lastShrines = CurrentShrines;
+                lastScavangers = CurrentScavangers;
+                lastScanners = CurrentScanners;
+                lastNewts = CurrentNewts;
+                lastScene = CurrentScene;
+
                 if (lines.Count == 0)
                     return $"{CurrentScene}\n  <style=cIsHealing>All AP checks complete on this stage!</style>";
 
@@ -26,7 +40,12 @@ namespace Archipelago.RiskOfRain2.UI
 
             public override bool IsDirty()
             {
-                return true;
+                return CurrentChests != lastChests
+                    || CurrentShrines != lastShrines
+                    || CurrentScavangers != lastScavangers
+                    || CurrentScanners != lastScanners
+                    || CurrentNewts != lastNewts
+                    || CurrentScene != lastScene;
             }
         }
 

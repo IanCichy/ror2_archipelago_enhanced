@@ -1,9 +1,34 @@
+**1.6.0**
+* **Connection Lifecycle Rework**
+    * AP session now survives across runs — no need to reconnect between games
+    * Checks queued during disconnect are sent on reconnect
+    * Fixed duplicate items being granted on reconnect
+* **Full DLC Stage Support**
+    * Added all SOTV, SOTS, and Alloyed Collective stages to explore mode
+    * Added False Son (SOTS) and Solus Heart (AC) victory conditions
+* **UI Overhaul**
+    * New 3-page scoreboard (items, environments, goals)
+    * Check countdown timer with stage-aware display
+    * Styled chat messages with Archipelago colors
+    * Environment locations panel with 3-color status indicators
+    * Mountain shrine checks tracked separately
+* **Debug Commands**
+    * Added debug console commands for testing
+* **Code Cleanup**
+    * C# naming conventions applied across codebase
+    * Removed dead code and build artifacts from repo
+* **Bug Fixes:**
+    * Fixed AC stage not appearing in stage pool
+    * Fixed session-reuse bugs (run start, auto-setup, item re-granting)
+    * Fixed double-increment bug in location check counter (checks advanced by 2 instead of 1)
+    * Fixed objective panel UI rebuilding every frame — now only updates on actual state changes
+
 **1.5.3**
 * Update gamelib/mmhook/ror2bepinexpack
 * Add more guards to deathlink to prevent attempt to prevent crashes.
 *  **Bug Fixes:**
     * New Variant stages have a default weight of 0, causing them to never be accessable if locations are complete
-    * 
+    *
 **1.5.2**
 *  **Bug Fixes:**
     * Fixed items not counting as checks when related to pickupDropletController
