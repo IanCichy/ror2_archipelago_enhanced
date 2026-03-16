@@ -477,7 +477,6 @@ namespace Archipelago.RiskOfRain2
             Locationhandler?.Hook();
             shrineChanceHelper?.Hook();
             ItemPoolHandler?.Hook();
-            if (ItemPoolHandler != null) ItemPoolViewerController.Hook();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter += PortalDialerPreDialState_OnEnter;
@@ -508,7 +507,6 @@ namespace Archipelago.RiskOfRain2
             Locationhandler?.UnHook();
             shrineChanceHelper?.UnHook();
             ItemPoolHandler?.UnHook();
-            ItemPoolViewerController.Unhook();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter -= PortalDialerPreDialState_OnEnter;

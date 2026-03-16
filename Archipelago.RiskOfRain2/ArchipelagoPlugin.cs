@@ -216,6 +216,7 @@ namespace Archipelago.RiskOfRain2
             }
         }
 
+
         private void Run_onRunDestroyGlobal(Run obj)
         {
             if (isPlayingAP)

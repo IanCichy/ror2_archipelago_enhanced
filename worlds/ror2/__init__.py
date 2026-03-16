@@ -39,7 +39,7 @@ class RiskOfRainWorld(World):
     game = "Risk of Rain 2"
     options_dataclass = ROR2Options
     options: ROR2Options
-    topology_present = False
+    topology_present = True
     item_name_to_id = {name: data.code for name, data in item_table.items()}
     item_name_groups = {
         "Stages": {name for name, data in item_table.items() if data.category == "Stage"},

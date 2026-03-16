@@ -1,5 +1,6 @@
 using Archipelago.RiskOfRain2.Handlers;
 using Archipelago.RiskOfRain2.Lookup;
+using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,8 @@ namespace Archipelago.RiskOfRain2.UI
     public class ArchipelagoScoreboardController : MonoBehaviour
     {
         private TextMeshProUGUI apText;
+        private GameObject panelRef;
+        private List<GameObject> poolIcons = new List<GameObject>();
         private int currentPage = 0;
         private int totalPages = 3;
         private static bool hooked = false;
@@ -144,11 +147,18 @@ namespace Archipelago.RiskOfRain2.UI
             // Attach our MonoBehaviour for per-frame updates + page input
             var controller = panelGO.AddComponent<ArchipelagoScoreboardController>();
             controller.apText = text;
+            controller.panelRef = panelGO;
         }
 
         private void Update()
         {
             if (apText == null) return;
+
+            // Dynamically add pool pages when item pool limiting is active
+            if (ItemPoolHandler.IsActive && ItemPoolHandler.Instance != null)
+                totalPages = 3 + ItemPoolHandler.Instance.GetNonEmptyTierCount();
+            else
+                totalPages = 3;
 
             // Mouse wheel to change pages while Tab scoreboard is open
             float scroll = Input.mouseScrollDelta.y;
@@ -157,11 +167,18 @@ namespace Archipelago.RiskOfRain2.UI
             else if (scroll < 0f)
                 currentPage = Mathf.Min(totalPages - 1, currentPage + 1);
 
-            // Only rebuild text when the page changes
+            // Only rebuild when the page changes
             if (currentPage != lastPage)
             {
                 lastPage = currentPage;
+                ClearPoolIcons();
                 cachedText = BuildText(currentPage, totalPages);
+
+                // Add icons on pool pages
+                if (currentPage >= 3 && ItemPoolHandler.IsActive && ItemPoolHandler.Instance != null)
+                {
+                    BuildPoolIcons(currentPage - 3);
+                }
             }
 
             apText.text = cachedText;
@@ -185,6 +202,11 @@ namespace Archipelago.RiskOfRain2.UI
                     break;
                 case 2:
                     BuildDetailsPage(sb);
+                    break;
+                default:
+                    // Pool pages (page 3+ maps to tier index)
+                    if (ItemPoolHandler.IsActive && ItemPoolHandler.Instance != null)
+                        BuildPoolPage(sb, page - 3);
                     break;
             }
 
@@ -303,6 +325,120 @@ namespace Archipelago.RiskOfRain2.UI
             { "solutionalhaunt", "Solutional Haunt" },
             { "solusweb", "Neural Sanctum" },
         };
+
+        private void ClearPoolIcons()
+        {
+            foreach (var obj in poolIcons)
+                Destroy(obj);
+            poolIcons.Clear();
+        }
+
+        private void BuildPoolIcons(int poolPageIndex)
+        {
+            var handler = ItemPoolHandler.Instance;
+            if (handler == null || panelRef == null) return;
+
+            var tiers = handler.GetTierSummary();
+            int tierIndex = -1;
+            int nonEmptyIndex = 0;
+            for (int i = 0; i < tiers.Length; i++)
+            {
+                if (tiers[i].Total > 0)
+                {
+                    if (nonEmptyIndex == poolPageIndex) { tierIndex = i; break; }
+                    nonEmptyIndex++;
+                }
+            }
+            if (tierIndex < 0) return;
+
+            var items = handler.GetTierItems(tierIndex);
+            float iconSize = 48f;
+            float spacing = 4f;
+            float iconsPerRow = 12f;
+            float startX = 14f;
+            float startY = -70f; // below the header + tier title lines
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                var (index, allowed) = items[i];
+
+                Sprite iconSprite = null;
+                if (tierIndex < 6)
+                {
+                    var def = ItemCatalog.GetItemDef((ItemIndex)index);
+                    if (def != null) iconSprite = def.pickupIconSprite;
+                }
+                else
+                {
+                    var def = EquipmentCatalog.GetEquipmentDef((EquipmentIndex)index);
+                    if (def != null) iconSprite = def.pickupIconSprite;
+                }
+
+                var iconGO = new GameObject("PoolIcon");
+                iconGO.transform.SetParent(panelRef.transform, false);
+
+                var image = iconGO.AddComponent<Image>();
+                image.raycastTarget = false;
+                image.preserveAspect = true;
+
+                if (iconSprite != null)
+                {
+                    image.sprite = iconSprite;
+                    image.color = allowed ? Color.white : new Color(0.15f, 0.15f, 0.15f, 0.5f);
+                }
+                else
+                {
+                    Color tierColor;
+                    ColorUtility.TryParseHtmlString("#" + TierHexColors[tierIndex], out tierColor);
+                    image.color = allowed ? tierColor : tierColor * 0.3f;
+                }
+
+                var iconRect = iconGO.GetComponent<RectTransform>();
+                iconRect.anchorMin = new Vector2(0, 1);
+                iconRect.anchorMax = new Vector2(0, 1);
+                iconRect.pivot = new Vector2(0, 1);
+                int col = i % (int)iconsPerRow;
+                int row = i / (int)iconsPerRow;
+                iconRect.anchoredPosition = new Vector2(
+                    startX + col * (iconSize + spacing),
+                    startY - row * (iconSize + spacing));
+                iconRect.sizeDelta = new Vector2(iconSize, iconSize);
+
+                poolIcons.Add(iconGO);
+            }
+        }
+
+        private static readonly string[] TierNames = { "White", "Green", "Red", "Boss", "Lunar", "Void", "Equipment" };
+        private static readonly string[] TierHexColors = { "FFFFFF", "77FF20", "E5533F", "FFFF00", "307FFF", "C455E0", "FF8000" };
+
+        private static void BuildPoolPage(StringBuilder sb, int poolPageIndex)
+        {
+            var handler = ItemPoolHandler.Instance;
+            if (handler == null) return;
+
+            // Map poolPageIndex to actual tier index (skip empty tiers)
+            var tiers = handler.GetTierSummary();
+            int tierIndex = -1;
+            int nonEmptyIndex = 0;
+            for (int i = 0; i < tiers.Length; i++)
+            {
+                if (tiers[i].Total > 0)
+                {
+                    if (nonEmptyIndex == poolPageIndex)
+                    {
+                        tierIndex = i;
+                        break;
+                    }
+                    nonEmptyIndex++;
+                }
+            }
+            if (tierIndex < 0) return;
+
+            var tier = tiers[tierIndex];
+            string hex = TierHexColors[tierIndex];
+
+            sb.AppendLine($"<color=#{hex}>── {TierNames[tierIndex]} Items: {tier.Current} / {tier.Total} ──</color>");
+        }
 
         private static void BuildDetailsPage(StringBuilder sb)
         {

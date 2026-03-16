@@ -64,6 +64,17 @@ namespace Archipelago.RiskOfRain2.Handlers
             };
         }
 
+        public int GetNonEmptyTierCount()
+        {
+            int count = 0;
+            var tiers = GetTierSummary();
+            foreach (var t in tiers)
+            {
+                if (t.Total > 0) count++;
+            }
+            return count;
+        }
+
         /// <summary>
         /// Returns all items for the given tier page index (0=White..6=Equipment).
         /// Each entry is (itemIndex or equipmentIndex as int, isAllowed).
