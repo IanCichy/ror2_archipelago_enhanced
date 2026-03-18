@@ -21,11 +21,11 @@ namespace Archipelago.RiskOfRain2.UI
 
                 var tiers = ItemPoolHandler.Instance.GetTierSummary();
                 var parts = new List<string>();
-                foreach (var t in tiers)
+                for (int i = 0; i < tiers.Length; i++)
                 {
-                    if (t.Total == 0) continue;
-                    string color = GetTierColor(t.Name);
-                    parts.Add($"<color={color}>{t.Name[0]}</color> {t.Current}/{t.Total}");
+                    if (tiers[i].Total == 0) continue;
+                    string color = ItemPoolHandler.TierHexColors[i];
+                    parts.Add($"<color={color}>{tiers[i].Name[0]}</color> {tiers[i].Current}/{tiers[i].Total}");
                 }
 
                 lastText = "Pool: " + string.Join(" | ", parts);
@@ -37,21 +37,6 @@ namespace Archipelago.RiskOfRain2.UI
                 // Rebuild every frame is cheap since it's just string concat.
                 // Could optimize with dirty flag from ItemPoolHandler.OnPoolChanged if needed.
                 return true;
-            }
-
-            private static string GetTierColor(string tierName)
-            {
-                switch (tierName)
-                {
-                    case "White": return "#FFFFFF";
-                    case "Green": return "#77FF20";
-                    case "Red": return "#E5533F";
-                    case "Boss": return "#FFFF00";
-                    case "Lunar": return "#307FFF";
-                    case "Void": return "#C455E0";
-                    case "Equipment": return "#FF8000";
-                    default: return "#FFFFFF";
-                }
             }
         }
 

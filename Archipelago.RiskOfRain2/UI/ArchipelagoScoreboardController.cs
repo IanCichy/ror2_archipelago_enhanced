@@ -338,17 +338,7 @@ namespace Archipelago.RiskOfRain2.UI
             var handler = ItemPoolHandler.Instance;
             if (handler == null || panelRef == null) return;
 
-            var tiers = handler.GetTierSummary();
-            int tierIndex = -1;
-            int nonEmptyIndex = 0;
-            for (int i = 0; i < tiers.Length; i++)
-            {
-                if (tiers[i].Total > 0)
-                {
-                    if (nonEmptyIndex == poolPageIndex) { tierIndex = i; break; }
-                    nonEmptyIndex++;
-                }
-            }
+            int tierIndex = handler.GetTierIndexForPoolPage(poolPageIndex);
             if (tierIndex < 0) return;
 
             var items = handler.GetTierItems(tierIndex);
@@ -389,7 +379,7 @@ namespace Archipelago.RiskOfRain2.UI
                 else
                 {
                     Color tierColor;
-                    ColorUtility.TryParseHtmlString("#" + TierHexColors[tierIndex], out tierColor);
+                    ColorUtility.TryParseHtmlString(ItemPoolHandler.TierHexColors[tierIndex], out tierColor);
                     image.color = allowed ? tierColor : tierColor * 0.3f;
                 }
 
@@ -408,36 +398,18 @@ namespace Archipelago.RiskOfRain2.UI
             }
         }
 
-        private static readonly string[] TierNames = { "White", "Green", "Red", "Boss", "Lunar", "Void", "Equipment" };
-        private static readonly string[] TierHexColors = { "FFFFFF", "77FF20", "E5533F", "FFFF00", "307FFF", "C455E0", "FF8000" };
-
         private static void BuildPoolPage(StringBuilder sb, int poolPageIndex)
         {
             var handler = ItemPoolHandler.Instance;
             if (handler == null) return;
 
-            // Map poolPageIndex to actual tier index (skip empty tiers)
-            var tiers = handler.GetTierSummary();
-            int tierIndex = -1;
-            int nonEmptyIndex = 0;
-            for (int i = 0; i < tiers.Length; i++)
-            {
-                if (tiers[i].Total > 0)
-                {
-                    if (nonEmptyIndex == poolPageIndex)
-                    {
-                        tierIndex = i;
-                        break;
-                    }
-                    nonEmptyIndex++;
-                }
-            }
+            int tierIndex = handler.GetTierIndexForPoolPage(poolPageIndex);
             if (tierIndex < 0) return;
 
-            var tier = tiers[tierIndex];
-            string hex = TierHexColors[tierIndex];
+            var tier = handler.GetTierSummary()[tierIndex];
+            string hex = ItemPoolHandler.TierHexColors[tierIndex];
 
-            sb.AppendLine($"<color=#{hex}>── {TierNames[tierIndex]} Items: {tier.Current} / {tier.Total} ──</color>");
+            sb.AppendLine($"<color={hex}>── {ItemPoolHandler.TierNames[tierIndex]} Items: {tier.Current} / {tier.Total} ──</color>");
         }
 
         private static void BuildDetailsPage(StringBuilder sb)

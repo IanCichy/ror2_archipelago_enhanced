@@ -40,6 +40,29 @@ namespace Archipelago.RiskOfRain2.Handlers
         public static bool IsActive { get; private set; }
         public static event Action OnPoolChanged;
 
+        // Shared tier metadata — single source of truth for names and colors
+        public static readonly string[] TierNames = { "White", "Green", "Red", "Boss", "Lunar", "Void", "Equipment" };
+        public static readonly string[] TierHexColors = { "#FFFFFF", "#77FF20", "#E5533F", "#FFFF00", "#307FFF", "#C455E0", "#FF8000" };
+
+        /// <summary>
+        /// Maps a pool page index (skipping empty tiers) to the actual tier index.
+        /// Returns -1 if no matching tier is found.
+        /// </summary>
+        public int GetTierIndexForPoolPage(int poolPageIndex)
+        {
+            var tiers = GetTierSummary();
+            int nonEmptyIndex = 0;
+            for (int i = 0; i < tiers.Length; i++)
+            {
+                if (tiers[i].Total > 0)
+                {
+                    if (nonEmptyIndex == poolPageIndex) return i;
+                    nonEmptyIndex++;
+                }
+            }
+            return -1;
+        }
+
         // Tier info for UI display
         public struct TierInfo
         {
@@ -137,7 +160,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             Shuffle(shuffledBoss, rng);
             Shuffle(shuffledLunar, rng);
             Shuffle(shuffledVoid, rng);
-            ShuffleEquipment(shuffledEquipment, rng);
+            Shuffle(shuffledEquipment, rng);
 
             // Populate starting pools
             PopulateStarting(allowedWhite, shuffledWhite, startWhite);
@@ -146,7 +169,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             PopulateStarting(allowedBoss, shuffledBoss, startBoss);
             PopulateStarting(allowedLunar, shuffledLunar, startLunar);
             PopulateStarting(allowedVoid, shuffledVoid, startVoid);
-            PopulateStartingEquipment(allowedEquipment, shuffledEquipment, startEquipment);
+            PopulateStarting(allowedEquipment, shuffledEquipment, startEquipment);
 
             Log.LogDebug($"ItemPoolHandler initialized: White {allowedWhite.Count}/{shuffledWhite.Count}, " +
                          $"Green {allowedGreen.Count}/{shuffledGreen.Count}, " +
@@ -213,13 +236,11 @@ namespace Archipelago.RiskOfRain2.Handlers
         public void Hook()
         {
             On.RoR2.BasicPickupDropTable.GenerateWeightedSelection += FilterDropTable;
-            On.RoR2.PickupTransmutationManager.RebuildPickupGroups += FilterTransmutation;
         }
 
         public void UnHook()
         {
             On.RoR2.BasicPickupDropTable.GenerateWeightedSelection -= FilterDropTable;
-            On.RoR2.PickupTransmutationManager.RebuildPickupGroups -= FilterTransmutation;
             Instance = null;
             IsActive = false;
         }
@@ -250,15 +271,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                     self.selector.ModifyChoiceWeight(i, 0f);
                 }
             }
-        }
-
-        private void FilterTransmutation(
-            On.RoR2.PickupTransmutationManager.orig_RebuildPickupGroups orig)
-        {
-            orig();
-            // After transmutation groups are rebuilt, we don't need to filter here
-            // because the GenerateWeightedSelection hook covers printers/scrappers.
-            // This hook is reserved for future needs (e.g., Command artifact grid).
         }
 
         #endregion
@@ -316,20 +328,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
         }
 
-        private static void ShuffleEquipment(List<EquipmentIndex> list, System.Random rng)
-        {
-            Shuffle(list, rng);
-        }
-
-        private static void PopulateStarting(HashSet<ItemIndex> allowed, List<ItemIndex> shuffled, int count)
-        {
-            for (int i = 0; i < count && i < shuffled.Count; i++)
-            {
-                allowed.Add(shuffled[i]);
-            }
-        }
-
-        private static void PopulateStartingEquipment(HashSet<EquipmentIndex> allowed, List<EquipmentIndex> shuffled, int count)
+        private static void PopulateStarting<T>(HashSet<T> allowed, List<T> shuffled, int count)
         {
             for (int i = 0; i < count && i < shuffled.Count; i++)
             {

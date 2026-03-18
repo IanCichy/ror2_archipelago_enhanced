@@ -574,17 +574,10 @@ namespace Archipelago.RiskOfRain2
 
         private static string GetPoolTierColor(long itemId)
         {
-            switch ((int)(itemId - 37100))
-            {
-                case 1: return "#FFFFFF"; // White
-                case 2: return "#77FF20"; // Green
-                case 3: return "#E5533F"; // Red
-                case 4: return "#FFFF00"; // Boss
-                case 5: return "#307FFF"; // Lunar
-                case 6: return "#C455E0"; // Void
-                case 7: return "#FF8000"; // Equipment
-                default: return "#FFFFFF";
-            }
+            int tierIndex = (int)(itemId - 37100) - 1; // 37101→0 (White), 37107→6 (Equipment)
+            if (tierIndex >= 0 && tierIndex < ItemPoolHandler.TierHexColors.Length)
+                return ItemPoolHandler.TierHexColors[tierIndex];
+            return ItemPoolHandler.TierHexColors[0];
         }
 
         private void HandleReceivedItemQueueItem()
