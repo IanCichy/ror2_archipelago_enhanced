@@ -302,12 +302,9 @@ namespace Archipelago.RiskOfRain2.Handlers
         /// </summary>
         public void UnlockEnvironmentsForProgressiveStages(int amount)
         {
-            foreach (var entry in StageLookup)
+            for (int tier = 1; tier <= amount; tier++)
             {
-                if (entry.Value <= amount && AllSessionEnvironments.Contains(entry.Key))
-                {
-                    UnlockedEnvironments.Add(entry.Key);
-                }
+                UnlockEnvironmentsForStage(tier);
             }
         }
 

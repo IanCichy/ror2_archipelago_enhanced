@@ -535,8 +535,11 @@ namespace Archipelago.RiskOfRain2
             string itemNameReceived = itemReceived.Value;
             if (itemIdRecieved == 37505)
             {
-                StageBlockerHandler.AmountOfStages += 1;
-                Stageblockerhandler?.UnlockEnvironmentsForProgressiveStages(StageBlockerHandler.AmountOfStages);
+                if (Stageblockerhandler != null)
+                {
+                    StageBlockerHandler.AmountOfStages += 1;
+                    Stageblockerhandler.UnlockEnvironmentsForProgressiveStages(StageBlockerHandler.AmountOfStages);
+                }
             }
             else
             {
