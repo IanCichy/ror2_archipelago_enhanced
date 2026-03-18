@@ -536,10 +536,16 @@ namespace Archipelago.RiskOfRain2
             if (itemIdRecieved == 37505)
             {
                 StageBlockerHandler.AmountOfStages += 1;
+                Stageblockerhandler?.UnlockEnvironmentsForProgressiveStages(StageBlockerHandler.AmountOfStages);
             }
             else
             {
                 StageBlockerHandler.StageUnlocks[itemNameReceived] = true;
+                // Parse the stage tier from the item name (e.g. "Stage 2" → 2)
+                if (int.TryParse(itemNameReceived.Replace("Stage ", ""), out int tier))
+                {
+                    Stageblockerhandler?.UnlockEnvironmentsForStage(tier);
+                }
             }
 
         }

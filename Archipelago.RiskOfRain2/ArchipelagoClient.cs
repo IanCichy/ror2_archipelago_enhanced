@@ -783,6 +783,30 @@ namespace Archipelago.RiskOfRain2
                 Log.LogDebug("Session alive, auto-setting up new run.");
                 SetupRun();
             }
+            else if (!IsConnected && !string.IsNullOrEmpty(lastServerUrl))
+            {
+                // Socket disconnected during menu transition — reconnect using cached credentials
+                Log.LogDebug("Session lost during menu transition — auto-reconnecting.");
+                try
+                {
+                    Connect(lastServerUrl, lastSlotName, lastPassword);
+                }
+                catch (Exception ex)
+                {
+                    Log.LogWarning($"Auto-reconnect on run start failed: {ex.Message}");
+                }
+            }
+
+            // Run.Start() picks the starting stage BEFORE onRunStartGlobal fires,
+            // so our CanPickStage hook wasn't in place. Re-validate the picked stage.
+            if (Stageblockerhandler != null && obj.nextStageScene != null)
+            {
+                if (Stageblockerhandler.CheckBlocked(obj.nextStageScene.cachedName))
+                {
+                    Log.LogWarning($"Starting stage {obj.nextStageScene.cachedName} is blocked — re-picking.");
+                    obj.PickNextStageSceneFromCurrentSceneDestinations();
+                }
+            }
         }
 
         // When exiting to menu/game this will run — only cleans up the run, session stays alive

@@ -282,6 +282,35 @@ namespace Archipelago.RiskOfRain2.Handlers
             blockedStringStages.Clear();
         }
 
+        /// <summary>
+        /// Marks all environments belonging to the given stage tier as unlocked
+        /// in <see cref="UnlockedEnvironments"/> so the scoreboard reflects them.
+        /// </summary>
+        public void UnlockEnvironmentsForStage(int stageTier)
+        {
+            foreach (var entry in StageLookup)
+            {
+                if (entry.Value == stageTier && AllSessionEnvironments.Contains(entry.Key))
+                {
+                    UnlockedEnvironments.Add(entry.Key);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Marks all environments up to the given progressive stage count as unlocked.
+        /// </summary>
+        public void UnlockEnvironmentsForProgressiveStages(int amount)
+        {
+            foreach (var entry in StageLookup)
+            {
+                if (entry.Value <= amount && AllSessionEnvironments.Contains(entry.Key))
+                {
+                    UnlockedEnvironments.Add(entry.Key);
+                }
+            }
+        }
+
         /**
          * Blocks a given environment.
          * Returns true if the stage was blocked by this call.
@@ -606,9 +635,16 @@ namespace Archipelago.RiskOfRain2.Handlers
         private void SceneDirector_PlaceTeleporter(On.RoR2.SceneDirector.orig_PlaceTeleporter orig, SceneDirector self)
         {
             orig(self);
-            seerPortal = null;
-            seerPortal = new SeerPortal();
-            seerPortal.Initialize();
+            try
+            {
+                seerPortal = null;
+                seerPortal = new SeerPortal();
+                seerPortal.Initialize();
+            }
+            catch (Exception ex)
+            {
+                Log.LogError($"SeerPortal initialization failed: {ex}");
+            }
         }
 
         /**
@@ -789,10 +825,44 @@ namespace Archipelago.RiskOfRain2.Handlers
                         }
 
                     }
-                    RevertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}!";
+                    // Non-progressive: try to skip forward to the next unlocked tier
+                    if (!ProgressiveStages)
+                    {
+                        int currentTier = SceneCatalog.mostRecentSceneDef.stageOrder;
+                        for (int tier = currentTier + 1; tier <= 5; tier++)
+                        {
+                            string stageKey = $"Stage {tier}";
+                            if (StageUnlocks.ContainsKey(stageKey) && StageUnlocks[stageKey])
+                            {
+                                foreach (var entry in StageLookup)
+                                {
+                                    if (entry.Value == tier && !CheckBlocked(entry.Key))
+                                    {
+                                        SceneDef sd = SceneCatalog.FindSceneDef(entry.Key);
+                                        if (sd != null)
+                                        {
+                                            choices.AddChoice(sd, 1f);
+                                            Log.LogDebug($"Tier-skip: added {entry.Key} (tier {tier})");
+                                        }
+                                    }
+                                }
+                                if (choices.Count > 0)
+                                {
+                                    RevertToBeginningMessage = $"Skipping to Stage {tier} environments!";
+                                    break;
+                                }
+                            }
+                        }
+                    }
 
-                    Log.LogDebug("adding choices for stage 1");
-                    self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
+                    // If tier-skipping didn't find anything (or progressive mode), fall back to stage 1
+                    if (choices.Count == 0)
+                    {
+                        RevertToBeginningMessage = $"Unable to advance to the next set of stages because {reason}!";
+
+                        Log.LogDebug("adding choices for stage 1");
+                        self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
+                    }
                 }
                 else Log.LogDebug("there are choices for the next scene; skipping tampering said choices");
 
@@ -817,6 +887,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 }
             }
 
+            Log.LogDebug($"PickNextStageScene: final choices.Count={choices.Count}, manuallyPicking={manuallyPickingStage}");
             orig(self, choices);
             if (self.nextStageScene != null)
                 Log.LogDebug($"next scene {self.nextStageScene.cachedName} in stage {self.nextStageScene.stageOrder}");

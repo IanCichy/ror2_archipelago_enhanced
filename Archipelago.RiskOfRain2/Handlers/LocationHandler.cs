@@ -269,6 +269,12 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
 
             currentlocations[index] = location;
+
+            // Track completed environments for the scoreboard (✓ vs ☐)
+            if (location.Total() == 0)
+            {
+                StageBlockerHandler.CompletedEnvironments.Add(sceneName);
+            }
         }
         public void Hook()
         {
@@ -558,14 +564,23 @@ namespace Archipelago.RiskOfRain2.Handlers
         private void SceneCatalog_OnActiveSceneChanged(On.RoR2.SceneCatalog.orig_OnActiveSceneChanged orig, UnityEngine.SceneManagement.Scene oldScene, UnityEngine.SceneManagement.Scene newScene)
         {
             orig(oldScene, newScene);
-            LoadItemPickupHooks();
+            try
+            {
+                LoadItemPickupHooks();
+            }
+            catch (Exception ex)
+            {
+                Log.LogError($"LoadItemPickupHooks failed on scene change: {ex}");
+            }
         }
 
         public void LoadItemPickupHooks()
         {
             // We want to hook directly to SceneCatalog_OnActiveSceneChanged rather than delegate
             //  to SceneCatalog_OnActiveSceneChanged so that we can take advantage of the changed mostRecentSceneDef.
+            Log.LogDebug($"LoadItemPickupHooks: scene={CurrentSceneDef?.cachedName}");
             CatchUpSceneLocations(CurrentSceneDef.cachedName);
+            Log.LogDebug($"LoadItemPickupHooks: chests={checkAvailable(LocationTypes.chest)}, shrines={checkAvailable(LocationTypes.shrine)}, scanners={checkAvailable(LocationTypes.radio_scanner)}, altars={checkAvailable(LocationTypes.newt_altar)}");
 
             // don't reset the counters on moving between stages
             // this could make it absurdly hard to complete checks on very high step sizes
@@ -968,29 +983,35 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         private void SceneDirector_PopulateScene(On.RoR2.SceneDirector.orig_PopulateScene orig, SceneDirector self)
         {
-            // XXX somehow SceneDirector_PopulateScene can get called several times in a row, thus spawning a bunch of scanners... why do the calls happen?
-            Log.LogDebug("SceneDirector_PopulateScene"); // XXX remove after figuring out why this can get called repeatedly
-            // XXX perhaps a solution could be to use flags similar to shrines if there is no apparent reason why scene population can repeat
+            Log.LogDebug($"SceneDirector_PopulateScene: scene={SceneCatalog.mostRecentSceneDef?.cachedName}, interactableCredit={self.interactableCredit}");
 
             orig(self); // let the director do it's own thing first as to not get in the way
+            Log.LogDebug($"SceneDirector_PopulateScene: after orig, interactableCredit remaining={self.interactableCredit}");
 
-            if (0 < checkAvailable(LocationTypes.radio_scanner))
-            // we always want to always spawn a radio scanner if it is a location
+            try
             {
-                Log.LogDebug("Environment has radio_scanner locations, spawning an iscRadarTower.");
+                if (0 < checkAvailable(LocationTypes.radio_scanner))
+                // we always want to always spawn a radio scanner if it is a location
+                {
+                    Log.LogDebug("Environment has radio_scanner locations, spawning an iscRadarTower.");
 
-                // the format for spawning is stolen directly from how rusty/lock boxes are spawned
-                Xoroshiro128Plus xoroshiro128PlusRadioScanner = new Xoroshiro128Plus(self.rng.nextUlong);
-                DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(LegacyResourcesAPI.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscRadarTower"), new DirectorPlacementRule
-                {
-                    placementMode = DirectorPlacementRule.PlacementMode.Random,
-                }, xoroshiro128PlusRadioScanner));
-                if (highlightOn)
-                {
-                    var radar = UnityEngine.GameObject.Find("RadarTower(Clone)");
-                    radar.GetComponent<Highlight>().isOn = true;
+                    // the format for spawning is stolen directly from how rusty/lock boxes are spawned
+                    Xoroshiro128Plus xoroshiro128PlusRadioScanner = new Xoroshiro128Plus(self.rng.nextUlong);
+                    DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(LegacyResourcesAPI.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscRadarTower"), new DirectorPlacementRule
+                    {
+                        placementMode = DirectorPlacementRule.PlacementMode.Random,
+                    }, xoroshiro128PlusRadioScanner));
+                    if (highlightOn)
+                    {
+                        var radar = UnityEngine.GameObject.Find("RadarTower(Clone)");
+                        if (radar != null)
+                            radar.GetComponent<Highlight>().isOn = true;
+                    }
                 }
-
+            }
+            catch (Exception ex)
+            {
+                Log.LogError($"SceneDirector_PopulateScene AP logic failed: {ex}");
             }
         }
 
