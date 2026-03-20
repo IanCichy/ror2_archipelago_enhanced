@@ -10,6 +10,7 @@ public static class IEnumerableExtensions
     public static T PickRandom<T>(this IEnumerable<T> self)
     {
         var list = self.ToList();
+        if (list.Count == 0) return default;
         return list[rand.Next(list.Count)];
     }
 }

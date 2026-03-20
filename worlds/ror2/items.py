@@ -74,6 +74,15 @@ pool_table: Dict[str, RiskOfRainItemData] = {
     "Equipment Pool Expansion": RiskOfRainItemData("Pool", 7 + pool_offset, ItemClassification.useful),
 }
 
+# Total in-game items per tier (used by pool expansion math in __init__.py and option range_end values)
+TIER_TOTAL_WHITE: int = 36
+TIER_TOTAL_GREEN: int = 42
+TIER_TOTAL_RED: int = 36
+TIER_TOTAL_BOSS: int = 22
+TIER_TOTAL_LUNAR: int = 20
+TIER_TOTAL_VOID: int = 14
+TIER_TOTAL_EQUIPMENT: int = 34
+
 item_table = {**upgrade_table, **other_table, **filler_table, **trap_table, **stage_table, **pool_table}
 # Environment item ids 37700 - 37746
 ##################################################

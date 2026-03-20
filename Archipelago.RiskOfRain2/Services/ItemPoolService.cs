@@ -25,6 +25,15 @@ public class ItemPoolService : IService
     private List<ItemIndex> shuffledVoid;
     private List<EquipmentIndex> shuffledEquipment;
 
+    // Per-tier unlock cursors: track position in shuffled list independently of set size
+    private int cursorWhite;
+    private int cursorGreen;
+    private int cursorRed;
+    private int cursorBoss;
+    private int cursorLunar;
+    private int cursorVoid;
+    private int cursorEquipment;
+
     // Items per expansion (from slot data)
     private int perWhiteExpansion;
     private int perGreenExpansion;
@@ -162,14 +171,14 @@ public class ItemPoolService : IService
         Shuffle(shuffledVoid, rng);
         Shuffle(shuffledEquipment, rng);
 
-        // Populate starting pools
-        PopulateStarting(allowedWhite, shuffledWhite, startWhite);
-        PopulateStarting(allowedGreen, shuffledGreen, startGreen);
-        PopulateStarting(allowedRed, shuffledRed, startRed);
-        PopulateStarting(allowedBoss, shuffledBoss, startBoss);
-        PopulateStarting(allowedLunar, shuffledLunar, startLunar);
-        PopulateStarting(allowedVoid, shuffledVoid, startVoid);
-        PopulateStarting(allowedEquipment, shuffledEquipment, startEquipment);
+        // Populate starting pools and set cursors
+        cursorWhite = PopulateStarting(allowedWhite, shuffledWhite, startWhite);
+        cursorGreen = PopulateStarting(allowedGreen, shuffledGreen, startGreen);
+        cursorRed = PopulateStarting(allowedRed, shuffledRed, startRed);
+        cursorBoss = PopulateStarting(allowedBoss, shuffledBoss, startBoss);
+        cursorLunar = PopulateStarting(allowedLunar, shuffledLunar, startLunar);
+        cursorVoid = PopulateStarting(allowedVoid, shuffledVoid, startVoid);
+        cursorEquipment = PopulateStarting(allowedEquipment, shuffledEquipment, startEquipment);
 
         Log.LogDebug($"ItemPoolService initialized: White {allowedWhite.Count}/{shuffledWhite.Count}, " +
                         $"Green {allowedGreen.Count}/{shuffledGreen.Count}, " +
@@ -220,13 +229,13 @@ public class ItemPoolService : IService
 
         switch (tierIndex)
         {
-            case 1: ExpandTier(allowedWhite, shuffledWhite, perWhiteExpansion, newNames); break;
-            case 2: ExpandTier(allowedGreen, shuffledGreen, perGreenExpansion, newNames); break;
-            case 3: ExpandTier(allowedRed, shuffledRed, perRedExpansion, newNames); break;
-            case 4: ExpandTier(allowedBoss, shuffledBoss, perBossExpansion, newNames); break;
-            case 5: ExpandTier(allowedLunar, shuffledLunar, perLunarExpansion, newNames); break;
-            case 6: ExpandTier(allowedVoid, shuffledVoid, perVoidExpansion, newNames); break;
-            case 7: ExpandEquipmentTier(allowedEquipment, shuffledEquipment, perEquipmentExpansion, newNames); break;
+            case 1: ExpandTier(allowedWhite, shuffledWhite, perWhiteExpansion, ref cursorWhite, newNames); break;
+            case 2: ExpandTier(allowedGreen, shuffledGreen, perGreenExpansion, ref cursorGreen, newNames); break;
+            case 3: ExpandTier(allowedRed, shuffledRed, perRedExpansion, ref cursorRed, newNames); break;
+            case 4: ExpandTier(allowedBoss, shuffledBoss, perBossExpansion, ref cursorBoss, newNames); break;
+            case 5: ExpandTier(allowedLunar, shuffledLunar, perLunarExpansion, ref cursorLunar, newNames); break;
+            case 6: ExpandTier(allowedVoid, shuffledVoid, perVoidExpansion, ref cursorVoid, newNames); break;
+            case 7: ExpandEquipmentTier(allowedEquipment, shuffledEquipment, perEquipmentExpansion, ref cursorEquipment, newNames); break;
         }
 
         OnPoolChanged?.Invoke();
@@ -255,21 +264,41 @@ public class ItemPoolService : IService
         orig(self, run);
         if (!PoolEnabled) return;
 
-        for (int i = self.selector.Count - 1; i >= 0; i--)
+        try
         {
-            var choice = self.selector.GetChoice(i);
-            UniquePickup pickup = choice.value;
-            PickupDef def = PickupCatalog.GetPickupDef(pickup.pickupIndex);
-            if (def == null) continue;
+            for (int i = self.selector.Count - 1; i >= 0; i--)
+            {
+                var choice = self.selector.GetChoice(i);
+                UniquePickup pickup = choice.value;
+                PickupDef def = PickupCatalog.GetPickupDef(pickup.pickupIndex);
+                if (def == null) continue;
 
-            if (def.itemIndex != ItemIndex.None && !IsItemAllowed(def.itemIndex))
-            {
-                self.selector.ModifyChoiceWeight(i, 0f);
+                if (def.itemIndex != ItemIndex.None && !IsItemAllowed(def.itemIndex))
+                {
+                    self.selector.ModifyChoiceWeight(i, 0f);
+                }
+                else if (def.equipmentIndex != EquipmentIndex.None && !IsEquipmentAllowed(def.equipmentIndex))
+                {
+                    self.selector.ModifyChoiceWeight(i, 0f);
+                }
             }
-            else if (def.equipmentIndex != EquipmentIndex.None && !IsEquipmentAllowed(def.equipmentIndex))
+
+            // If we zeroed out every choice, restore the original table so the
+            // game doesn't crash when it tries to pick from an empty selection.
+            bool anyNonZero = false;
+            for (int i = 0; i < self.selector.Count; i++)
             {
-                self.selector.ModifyChoiceWeight(i, 0f);
+                if (self.selector.GetChoice(i).weight > 0f) { anyNonZero = true; break; }
             }
+            if (!anyNonZero && self.selector.Count > 0)
+            {
+                Log.LogWarning("Pool filtering would empty entire drop table — restoring unfiltered table.");
+                orig(self, run);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.LogError($"FilterDropTable failed, drop table left unfiltered: {ex}");
         }
     }
 
@@ -328,43 +357,49 @@ public class ItemPoolService : IService
         }
     }
 
-    private static void PopulateStarting<T>(HashSet<T> allowed, List<T> shuffled, int count)
+    private static int PopulateStarting<T>(HashSet<T> allowed, List<T> shuffled, int count)
     {
-        for (int i = 0; i < count && i < shuffled.Count; i++)
+        int cursor = 0;
+        for (; cursor < count && cursor < shuffled.Count; cursor++)
         {
-            allowed.Add(shuffled[i]);
+            allowed.Add(shuffled[cursor]);
         }
+        return cursor;
     }
 
-    private static void ExpandTier(HashSet<ItemIndex> allowed, List<ItemIndex> shuffled, int perExpansion, List<string> newNames)
+    private static void ExpandTier(HashSet<ItemIndex> allowed, List<ItemIndex> shuffled, int perExpansion, ref int cursor, List<string> newNames)
     {
-        int start = allowed.Count;
-        for (int i = start; i < start + perExpansion && i < shuffled.Count; i++)
+        int added = 0;
+        while (added < perExpansion && cursor < shuffled.Count)
         {
-            if (allowed.Add(shuffled[i]))
+            if (allowed.Add(shuffled[cursor]))
             {
-                var def = ItemCatalog.GetItemDef(shuffled[i]);
+                var def = ItemCatalog.GetItemDef(shuffled[cursor]);
                 if (def != null)
                 {
                     newNames.Add(Language.GetString(def.nameToken));
                 }
+                added++;
             }
+            cursor++;
         }
     }
 
-    private static void ExpandEquipmentTier(HashSet<EquipmentIndex> allowed, List<EquipmentIndex> shuffled, int perExpansion, List<string> newNames)
+    private static void ExpandEquipmentTier(HashSet<EquipmentIndex> allowed, List<EquipmentIndex> shuffled, int perExpansion, ref int cursor, List<string> newNames)
     {
-        int start = allowed.Count;
-        for (int i = start; i < start + perExpansion && i < shuffled.Count; i++)
+        int added = 0;
+        while (added < perExpansion && cursor < shuffled.Count)
         {
-            if (allowed.Add(shuffled[i]))
+            if (allowed.Add(shuffled[cursor]))
             {
-                var def = EquipmentCatalog.GetEquipmentDef(shuffled[i]);
+                var def = EquipmentCatalog.GetEquipmentDef(shuffled[cursor]);
                 if (def != null)
                 {
                     newNames.Add(Language.GetString(def.nameToken));
                 }
+                added++;
             }
+            cursor++;
         }
     }
 

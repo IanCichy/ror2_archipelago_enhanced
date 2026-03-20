@@ -1,7 +1,9 @@
 import math
 import string
 
-from .items import RiskOfRainItem, item_table, item_pool_weights, offset, filler_table, environment_offset
+from .items import (RiskOfRainItem, item_table, item_pool_weights, offset, filler_table, environment_offset,
+                     TIER_TOTAL_WHITE, TIER_TOTAL_GREEN, TIER_TOTAL_RED, TIER_TOTAL_BOSS,
+                     TIER_TOTAL_LUNAR, TIER_TOTAL_VOID, TIER_TOTAL_EQUIPMENT)
 from .locations import RiskOfRainLocation, item_pickups, get_locations
 from .rules import set_rules
 from .ror2environments import environment_vanilla_table, environment_vanilla_orderedstages_table, \
@@ -176,19 +178,19 @@ class RiskOfRainWorld(World):
         # Add pool expansion items when item pool limiting is enabled
         if self.options.item_pool_limiting:
             pool_tiers = [
-                ("White Pool Expansion", 36, self.options.starting_white_pool.value,
+                ("White Pool Expansion", TIER_TOTAL_WHITE, self.options.starting_white_pool.value,
                  self.options.items_per_white_expansion.value),
-                ("Green Pool Expansion", 42, self.options.starting_green_pool.value,
+                ("Green Pool Expansion", TIER_TOTAL_GREEN, self.options.starting_green_pool.value,
                  self.options.items_per_green_expansion.value),
-                ("Red Pool Expansion", 36, self.options.starting_red_pool.value,
+                ("Red Pool Expansion", TIER_TOTAL_RED, self.options.starting_red_pool.value,
                  self.options.items_per_red_expansion.value),
-                ("Boss Pool Expansion", 22, self.options.starting_boss_pool.value,
+                ("Boss Pool Expansion", TIER_TOTAL_BOSS, self.options.starting_boss_pool.value,
                  self.options.items_per_boss_expansion.value),
-                ("Lunar Pool Expansion", 20, self.options.starting_lunar_pool.value,
+                ("Lunar Pool Expansion", TIER_TOTAL_LUNAR, self.options.starting_lunar_pool.value,
                  self.options.items_per_lunar_expansion.value),
-                ("Void Pool Expansion", 14, self.options.starting_void_pool.value,
+                ("Void Pool Expansion", TIER_TOTAL_VOID, self.options.starting_void_pool.value,
                  self.options.items_per_void_expansion.value),
-                ("Equipment Pool Expansion", 34, self.options.starting_equipment_pool.value,
+                ("Equipment Pool Expansion", TIER_TOTAL_EQUIPMENT, self.options.starting_equipment_pool.value,
                  self.options.items_per_equipment_expansion.value),
             ]
             for name, total_in_tier, starting, per_expansion in pool_tiers:

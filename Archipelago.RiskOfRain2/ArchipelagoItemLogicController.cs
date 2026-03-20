@@ -31,7 +31,7 @@ namespace Archipelago.RiskOfRain2
         public int TotalChecks { get; set; }
         System.Random rnd = new System.Random();
 
-        internal StageBlockerService Stageblockerhandler { get; set; }
+        internal StageBlockerService StageBlockerService { get; set; }
         internal ItemPoolService ItemPoolService { get; set; }
 
         public long[] ChecksTogether { get; set; }
@@ -475,7 +475,7 @@ namespace Archipelago.RiskOfRain2
             // cachedLocationsNames is keyed by Python IDs, so this lookup works directly.
             int pythonId = (int)(itemIdReceived - environmentRangeLower);
             Log.LogDebug($"Handling environment with pythonId {pythonId}, name {itemNameReceived}");
-            Stageblockerhandler?.UnBlock(pythonId);
+            StageBlockerService?.UnBlock(pythonId);
         }
         private void HandleReceivedFillerQueueItem()
         {
@@ -535,10 +535,10 @@ namespace Archipelago.RiskOfRain2
             string itemNameReceived = itemReceived.Value;
             if (itemIdRecieved == 37505)
             {
-                if (Stageblockerhandler != null)
+                if (StageBlockerService != null)
                 {
                     StageBlockerService.AmountOfStages += 1;
-                    Stageblockerhandler.UnlockEnvironmentsForProgressiveStages(StageBlockerService.AmountOfStages);
+                    StageBlockerService.UnlockEnvironmentsForProgressiveStages(StageBlockerService.AmountOfStages);
                 }
             }
             else
@@ -547,7 +547,7 @@ namespace Archipelago.RiskOfRain2
                 // Parse the stage tier from the item name (e.g. "Stage 2" → 2)
                 if (int.TryParse(itemNameReceived.Replace("Stage ", ""), out int tier))
                 {
-                    Stageblockerhandler?.UnlockEnvironmentsForStage(tier);
+                    StageBlockerService?.UnlockEnvironmentsForStage(tier);
                 }
             }
 
