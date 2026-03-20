@@ -21,6 +21,7 @@ namespace Archipelago.RiskOfRain2
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
+    [R2APISubmoduleDependency(nameof(LanguageAPI))]
     //[BepInDependency("com.KingEnderBrine.InLobbyConfig", BepInDependency.DependencyFlags.HardDependency)]
     public class ArchipelagoPlugin : BaseUnityPlugin
     {
@@ -78,7 +79,9 @@ namespace Archipelago.RiskOfRain2
             NetworkManagerSystem.onStopClientGlobal += GameNetworkManager_onStopClientGlobal;
             On.RoR2.UI.ChatBox.SubmitChat += ChatBox_SubmitChat;
             AssetBundleHelper.LoadBundle();         
-
+            LanguageAPI.Add("BAZAAR_AP_CHECK_NAME", "Archipelago Terminal");
+            LanguageAPI.Add("BAZAAR_AP_CHECK_CONTEXT", "Activate <style=cIsUtility>Archipelago Check</style>");
+            
             CreateLobbyFields();
 
             NetworkingAPI.RegisterMessageType<SyncLocationCheckProgress>();

@@ -40,6 +40,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int shipgraveyard = 37;    // Siren's Call
         public const int rootjungle = 35;       // Sundered Grove
         public const int skymeadow = 38;        // Sky Meadow
+        public const long BazaarInteractableLocationId = 82250;
         // SOTV
         public const int snowyforest = 39;      // Siphoned Forest
         public const int ancientloft = 3;       // Aphelian Sanctuary
@@ -292,6 +293,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.BossGroup.DropRewards += BossGroup_DropRewards;
             On.RoR2.ShrineHealingBehavior.AddShrineStack += ShrineHealingBehavior_AddShrineStack;
             On.RoR2.ShrineColossusAccessBehavior.OnInteraction += ShrineColossusAccessBehavior_OnInteraction;
+            // Bazaar
+            On.RoR2.SceneDirector.PopulateScene += SceneDirector_PopulateScene_Bazaar;
+            On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
             // Scavengers
             On.EntityStates.ScavBackpack.Opening.OnEnter += Opening_OnEnter;
             On.RoR2.ChestBehavior.ItemDrop += ChestBehavior_ItemDrop_Scavenger;
@@ -358,6 +362,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.BossGroup.DropRewards -= BossGroup_DropRewards;
             On.RoR2.ShrineHealingBehavior.AddShrineStack -= ShrineHealingBehavior_AddShrineStack;
             On.RoR2.ShrineColossusAccessBehavior.OnInteraction -= ShrineColossusAccessBehavior_OnInteraction;
+            // Bazaar
+            On.RoR2.SceneDirector.PopulateScene -= SceneDirector_PopulateScene_Bazaar;
+            On.RoR2.PurchaseInteraction.OnInteractionBegin -= PurchaseInteraction_OnInteractionBegin;
             // Scavengers
             On.EntityStates.ScavBackpack.Opening.OnEnter -= Opening_OnEnter;
             On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Scavenger;
@@ -390,6 +397,15 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int testing = 3;
         private bool highlightOn = false;
         public static SceneDef CurrentSceneDef { get; private set; } //used for the current scene loaded
+        // bazaar shop stuff
+        public int BazaarLunarCost { get; set; } = 2; //used to set the shop cost for special AP check pedestals in the bazaar
+        private bool bazaarCheckSent = false; // prevent sending the check more than once
+        private Queue<long> bazaarShopCheckQueue = new Queue<long>(); // remaining shop AP checks
+        private int bazaarShopChecksTotal = 0; // total configured checks
+        public const int BazaarShopSlotsPerVisit = 5; // always replace all 5 slots
+        private const long BazaarShopLocationIdStart = 82251; // Bazaar Shop 1 starts here
+        private HashSet<ShopTerminalBehavior> apCheckTerminals = new HashSet<ShopTerminalBehavior>();
+        private Dictionary<ShopTerminalBehavior, long> terminalLocationIds = new Dictionary<ShopTerminalBehavior, long>();
 
         private void SceneInfo_Awake(On.RoR2.SceneInfo.orig_Awake orig, SceneInfo self)
         {
@@ -581,6 +597,9 @@ namespace Archipelago.RiskOfRain2.Handlers
             scavbackpackHash = 0;
             scavbackpackWasLocation = false;
             scavbackpackblockitem = false;
+            bazaarCheckSent = false; // reset so the check can be sent again if re-entering the Bazaar
+            apCheckTerminals.Clear();
+            terminalLocationIds.Clear();
 
             // update the bars for the new scene
             updateBar(LocationTypes.chest);
@@ -608,6 +627,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                 new NextStageObjectives().Send(NetworkDestination.Clients);
                 ArchipelagoLocationsInEnvironmentController.AddObjective();
             }
+            apCheckTerminals.Clear();
 
             // TODO maybe the make sure the ArchipelagoTotalChecksObjectiveController.CurrentChecks gets synced here (since sending a location increments it and could possibly desync it?)
 
@@ -1055,6 +1075,193 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Bazaar Between Time Special Pedastals
+
+        private void SceneDirector_PopulateScene_Bazaar(On.RoR2.SceneDirector.orig_PopulateScene orig, SceneDirector self)
+        {
+            orig(self);
+
+            // Only spawn in the Bazaar
+            if (CurrentSceneDef == null || CurrentSceneDef.cachedName != "bazaar") return;
+
+            // Don't spawn if already checked this session
+            if (bazaarCheckSent) return;
+
+            // Don't spawn if this location is already completed
+            if (session.Locations.AllLocationsChecked.Contains(BazaarInteractableLocationId)) 
+            {
+                Log.LogDebug("Bazaar AP check already completed, skipping spawn.");
+                return;
+            }
+
+            Log.LogDebug("Spawning Bazaar AP interactable.");
+            SpawnBazaarInteractable();
+            // needed for Bazaar Lunar Shop Replacement
+            ReplaceBazaarShopTerminals();
+        }
+
+        private void SpawnBazaarInteractable()
+        {
+            var lunarPodPrefab = UnityEngine.AddressableAssets.Addressables
+                .LoadAssetAsync<UnityEngine.GameObject>("RoR2/Base/LunarChest/LunarChest.prefab")
+                .WaitForCompletion();
+
+            if (lunarPodPrefab == null)
+            {
+                Log.LogError("Failed to load LunarChest prefab for Bazaar AP interactable.");
+                return;
+            }
+
+            var instance = UnityEngine.GameObject.Instantiate(
+                lunarPodPrefab,
+                new UnityEngine.Vector3(-113.2785f, -24.97112f, -11.44043f), // TODO tune this position in-game
+                UnityEngine.Quaternion.identity
+            );
+
+            var purchaseInteraction = instance.GetComponent<PurchaseInteraction>();
+            if (purchaseInteraction != null)
+            {
+                purchaseInteraction.cost = BazaarLunarCost;
+                purchaseInteraction.costType = CostTypeIndex.LunarCoin;
+                purchaseInteraction.displayNameToken = "BAZAAR_AP_CHECK_NAME";
+                purchaseInteraction.contextToken = "BAZAAR_AP_CHECK_CONTEXT";
+
+                purchaseInteraction.onPurchase.AddListener((interactor) =>
+                {
+                    OnBazaarInteractablePurchased();
+                });
+            }
+
+            UnityEngine.Networking.NetworkServer.Spawn(instance);
+            Log.LogDebug("Bazaar AP interactable spawned.");
+        }
+
+        private void OnBazaarInteractablePurchased()
+        {
+            if (bazaarCheckSent) return; // guard against double-fire
+            bazaarCheckSent = true;
+
+            Log.LogDebug($"Bazaar AP check purchased, sending location {BazaarInteractableLocationId}.");
+
+            // Update total checks UI
+            ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
+            int currentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
+            int totalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
+            new SyncTotalCheckProgress(currentChecks, totalChecks).Send(NetworkDestination.Clients);
+
+            sendLocation((int)BazaarInteractableLocationId);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        /// Bazaar Between Time: Lunar Shop Replacement aka AP Checks Shop
+        public void InitializeBazaarShopQueue(int totalChecks) // init
+        {
+            bazaarShopChecksTotal = totalChecks;
+            bazaarShopCheckQueue.Clear();
+
+            // Only enqueue IDs that haven't been completed yet
+            for (int i = 0; i < totalChecks; i++)
+            {
+                long locationId = BazaarShopLocationIdStart + i;
+                if (!session.Locations.AllLocationsChecked.Contains(locationId))
+                {
+                    bazaarShopCheckQueue.Enqueue(locationId);
+                }
+            }
+            Log.LogDebug($"Bazaar shop queue initialized with {bazaarShopCheckQueue.Count} checks.");
+        }
+
+        private void ReplaceBazaarShopTerminals()
+        {
+            if (bazaarShopCheckQueue.Count == 0)
+            {
+                Log.LogDebug("No Bazaar shop checks remaining, skipping replacement.");
+                return;
+            }
+
+            // Find all shop terminals in the Bazaar scene
+            var allTerminals = UnityEngine.Object.FindObjectsOfType<ShopTerminalBehavior>();
+            Log.LogDebug($"Found {allTerminals.Length} ShopTerminalBehavior instances in Bazaar.");
+
+            foreach (var terminal in allTerminals)
+            {
+                if (bazaarShopCheckQueue.Count == 0) break;
+
+                var purchaseInteraction = terminal.GetComponent<PurchaseInteraction>();
+                if (purchaseInteraction == null) continue;
+                if (purchaseInteraction.costType != CostTypeIndex.LunarCoin) continue;
+
+                // Log the name so we can identify the reroll terminal
+                Log.LogDebug($"Found Lunar Coin terminal: {terminal.gameObject.name}");
+
+                // Skip the reroll/cleanse terminal — add more names as needed based on logs
+                if (terminal.gameObject.name.Contains("Reroll") ||
+                    terminal.gameObject.name.Contains("Cleanse") ||
+                    terminal.gameObject.name.Contains("Scrapper"))
+                {
+                    Log.LogDebug($"Skipping terminal: {terminal.gameObject.name}");
+                    continue;
+                }
+
+                // Mark as AP check
+                long locationId = bazaarShopCheckQueue.Dequeue();
+                terminalLocationIds[terminal] = locationId;
+                apCheckTerminals.Add(terminal);
+                purchaseInteraction.displayNameToken = "BAZAAR_AP_CHECK_NAME";
+                purchaseInteraction.contextToken = "BAZAAR_AP_CHECK_CONTEXT";
+                terminal.SetPickup(UniquePickup.none, true);
+
+                Log.LogDebug($"Replaced {terminal.gameObject.name} with AP check. {bazaarShopCheckQueue.Count} remaining in queue.");
+            }
+        }
+        private void PurchaseInteraction_OnInteractionBegin(
+            On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig,
+            PurchaseInteraction self,
+            Interactor interactor)
+        {
+            if (CurrentSceneDef?.cachedName == "bazaar")
+            {
+                var shopTerminal = self.GetComponent<ShopTerminalBehavior>();
+                if (shopTerminal != null && apCheckTerminals.Contains(shopTerminal))
+                {
+                    if (terminalLocationIds.TryGetValue(shopTerminal, out long locationId))
+                    {
+                        Log.LogDebug($"Bazaar shop AP check purchased, sending location {locationId}.");
+
+                        apCheckTerminals.Remove(shopTerminal);
+                        terminalLocationIds.Remove(shopTerminal);
+
+                        // Deduct lunar coins from the interacting player
+                        var characterBody = interactor.GetComponent<CharacterBody>();
+                        if (characterBody != null)
+                        {
+                            var networkUser = Util.LookUpBodyNetworkUser(characterBody);
+                            if (networkUser != null)
+                            {
+                                networkUser.DeductLunarCoins((uint)self.cost);
+                            }
+                        }
+
+                        // Update UI
+                        ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
+                        int currentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
+                        int totalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
+                        new SyncTotalCheckProgress(currentChecks, totalChecks).Send(NetworkDestination.Clients);
+
+                        sendLocation((int)locationId);
+
+                        // Lock the terminal
+                        shopTerminal.SetPickup(UniquePickup.none, false);
+                        shopTerminal.SetHasBeenPurchased(true);
+                    }
+                    return; // never call orig for AP check terminals
+                }
+            }
+
+            orig(self, interactor);
+        }
 
     }
 

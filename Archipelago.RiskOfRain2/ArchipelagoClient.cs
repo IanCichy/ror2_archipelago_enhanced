@@ -68,6 +68,7 @@ namespace Archipelago.RiskOfRain2
         private bool bossDefeatedOnVictoryStage;
 
         // Cached slot data for session reuse across runs
+        private uint cachedBazaarLunarCost = 2; // default shop cost
         private bool cachedGoalIsExplore;
         private bool cachedDeathLinkEnabled;
         private uint cachedItemPickupStep = 3;
@@ -171,6 +172,12 @@ namespace Archipelago.RiskOfRain2
                 cachedShrineUseStep = Convert.ToUInt32(oshrineUseStep);
                 Log.LogDebug($"shrineUseStep from slot data: {cachedShrineUseStep}");
                 cachedShrineUseStep++; // Add 1 because the user's YAML will contain a value equal to "number of pickups before sent location"
+            }
+            // bazaar shop cost from slot data
+            if (successResult.SlotData.TryGetValue("bazaarLunarCost", out var oBazaarLunarCost))
+            {
+                cachedBazaarLunarCost = Convert.ToUInt32(oBazaarLunarCost);
+                Log.LogDebug($"bazaarLunarCost from slot data: {cachedBazaarLunarCost}");
             }
 
             // DeathLink (session-level)
@@ -314,6 +321,12 @@ namespace Archipelago.RiskOfRain2
 
                 Locationhandler.ItemPickupStep = cachedItemPickupStep;
                 Locationhandler.ShrineUseStep = cachedShrineUseStep;
+                Locationhandler.BazaarLunarCost = (int)cachedBazaarLunarCost;
+                // Initialize Bazaar shop queue
+                if (cachedSlotData.TryGetValue("bazaarShopChecks", out var bazaarShopChecks))
+                {
+                    Locationhandler.InitializeBazaarShopQueue(Convert.ToInt32(bazaarShopChecks));
+                }
             }
             else
             {

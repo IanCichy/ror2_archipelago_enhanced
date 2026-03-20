@@ -1,7 +1,7 @@
 import string
 
 from .items import RiskOfRainItem, item_table, item_pool_weights, offset, filler_table, environment_offset
-from .locations import RiskOfRainLocation, item_pickups, get_locations
+from .locations import RiskOfRainLocation, item_pickups, get_locations, bazaar_interactable_pickups, bazaar_shop_pickups  
 from .rules import set_rules
 from .ror2environments import environment_vanilla_table, environment_vanilla_orderedstages_table, \
     environment_sotv_orderedstages_table, environment_sotv_table, \
@@ -14,6 +14,7 @@ from .options import ItemWeights, ROR2Options, ror2_option_groups
 from worlds.AutoWorld import World, WebWorld
 from .regions import create_explore_regions, create_classic_regions
 from typing import List, Dict, Any
+
 
 
 class RiskOfWeb(WebWorld):
@@ -47,7 +48,7 @@ class RiskOfRainWorld(World):
         "Fillers": {name for name, data in item_table.items() if data.category == "Filler"},
         "Traps": {name for name, data in item_table.items() if data.category == "Trap"},
     }
-    location_name_to_id = item_pickups
+    location_name_to_id = {**item_pickups, **bazaar_interactable_pickups, **bazaar_shop_pickups}
 
     required_client_version = (0, 5, 0)
     web = RiskOfWeb()
@@ -70,6 +71,9 @@ class RiskOfRainWorld(World):
                     dlc_ac=bool(self.options.dlc_ac.value)
                 )
             )
+            # Account for Bazaar locations in revival calculation
+            total_locations += 1  # Bazaar Pedestal (currently only 1)
+            total_locations += self.options.bazaar_shop_checks.value
         self.total_revivals = int(self.options.total_revivals.value / 100 *
                                   total_locations)
         if self.options.start_with_revive:
@@ -89,6 +93,24 @@ class RiskOfRainWorld(World):
         else:
             # explore mode
             create_explore_regions(self)
+            # adds bazaar shop interactible as location
+            bazaar_region = self.multiworld.get_region("Hidden Realm: Bazaar Between Time", self.player)
+            bazaar_location = RiskOfRainLocation(
+                self.player,
+                "Bazaar Lunar Interactable",
+                bazaar_interactable_pickups["Bazaar Lunar Interactable"],
+                bazaar_region
+            )
+            bazaar_region.locations.append(bazaar_location)
+            # Bazaar shop checks — only register up to the configured number
+            for i in range(self.options.bazaar_shop_checks.value):
+                shop_location = RiskOfRainLocation(
+                    self.player,
+                    f"Bazaar Shop {i + 1}",
+                    bazaar_shop_pickups[f"Bazaar Shop {i + 1}"],
+                    bazaar_region
+                )
+                bazaar_region.locations.append(shop_location)
 
         self.create_events()
 
@@ -153,7 +175,6 @@ class RiskOfRainWorld(World):
             total_locations = self.options.total_locations.value
         else:
             # explore mode
-
             # Add Stage items to the pool
             if self.options.require_stages:
                 itempool += ["Stage 1", "Stage 2", "Stage 3", "Stage 4"] if not self.options.progressive_stages else \
@@ -171,7 +192,14 @@ class RiskOfRainWorld(World):
                     dlc_ac=bool(self.options.dlc_ac.value)
                 )
             )
+            # Add Bazaar locations to the total so junk fills them
+            print(f"[ROR2 DEBUG] env_total={total_locations} bazaar_shop_checks={self.options.bazaar_shop_checks.value}", flush=True)
+            total_locations += 1  # Bazaar Pedestal (currently only 1)
+            total_locations += self.options.bazaar_shop_checks.value  # Bazaar shop slots
+            print(f"[ROR2 DEBUG] final total_locations={total_locations}", flush=True)
         # Create junk items
+        print(f"total_locations: {total_locations}")
+        print(f"itempool size before filler: {len(itempool)}")
         junk_pool = self.create_junk_pool()
         # Fill remaining items with randomly generated junk
         filler = self.random.choices(*zip(*junk_pool.items()), k=total_locations - len(itempool))
@@ -245,7 +273,9 @@ class RiskOfRainWorld(World):
                                             "chests_per_stage", "shrines_per_stage", "scavengers_per_stage",
                                             "scanner_per_stage", "altars_per_stage", "total_revivals",
                                             "start_with_revive", "final_stage_death", "death_link", "require_stages",
-                                            "progressive_stages", "dlc_sotv", "dlc_sots", "dlc_ac", casing="camel")
+                                            "progressive_stages", "dlc_sotv", "dlc_sots", "dlc_ac", "bazaar_lunar_cost",
+                                            "bazaar_shop_checks",
+                                            casing="camel")
         return {
             **options_dict,
             "seed": "".join(self.random.choice(string.digits) for _ in range(16)),
