@@ -26,6 +26,7 @@ namespace Archipelago.RiskOfRain2.Console
             commandName = "archipelago_connect",
             flags = ConVarFlags.SenderMustBeServer,
             helpText = "Connects to Archipelago. Syntax: archipelago_connect <url> <port> <slot> [password]")]
+
         private static void ArchipelagoConCommand(ConCommandArgs args)
         {
             if (args.Count < 3 || args.Count > 4)
@@ -48,25 +49,29 @@ namespace Archipelago.RiskOfRain2.Console
             OnArchipelagoCommandCalled(url, port, slot, password);
         }
 
-        [ConCommand(commandName = "archipelago_disconnect", flags = ConVarFlags.SenderMustBeServer, helpText = "Disconnects from Archipelago.")]
+        [ConCommand(commandName = "archipelago_disconnect", flags = ConVarFlags.SenderMustBeServer,
+         helpText = "Disconnects from Archipelago.")]
         private static void ArchipelagoDisconnect(ConCommandArgs args)
         {
             OnArchipelagoDisconnectCommandCalled();
         }
         
-        [ConCommand(commandName = "archipelago_reconnect", flags = ConVarFlags.SenderMustBeServer, helpText = "Attempts to reconnect to Archipelago.")]
+        [ConCommand(commandName = "archipelago_reconnect", flags = ConVarFlags.SenderMustBeServer,
+         helpText = "Attempts to reconnect to Archipelago.")]
         private static void ArchipelagoReconnect(ConCommandArgs args)
         {
             OnArchipelagoReconnectCommandCalled?.Invoke();
         }
 
-        [ConCommand(commandName = "archipelago_show_unlocked_stages", flags = ConVarFlags.SenderMustBeServer, helpText = "Shows the current stages unlocked")]
+        [ConCommand(commandName = "archipelago_show_unlocked_stages", flags = ConVarFlags.SenderMustBeServer,
+         helpText = "Shows the current stages unlocked")]
         private static void ArchipelagoShowUnlockedStages(ConCommandArgs args)
         {
             OnArchipelagoShowUnlockedStagesCommandCalled();
         }
 
-        [ConCommand(commandName = "archipelago_deathlink", flags = ConVarFlags.SenderMustBeServer, helpText = "Change deathlink. Syntax archipelago_deathlink <true/false>.")]
+        [ConCommand(commandName = "archipelago_deathlink", flags = ConVarFlags.SenderMustBeServer,
+         helpText = "Change deathlink. Syntax archipelago_deathlink <true/false>.")]
         private static void ArchipelagoDeathlink(ConCommandArgs args)
         {
             if (args.Count > 1)
@@ -85,7 +90,8 @@ namespace Archipelago.RiskOfRain2.Console
             }
         }
 
-        [ConCommand(commandName = "archipelago_final_stage_death", flags = ConVarFlags.SenderMustBeServer, helpText = "Change final stage death. Syntax archipelago_final_stage_death <true/false>.")]
+        [ConCommand(commandName = "archipelago_final_stage_death", flags = ConVarFlags.SenderMustBeServer,
+         helpText = "Change final stage death. Syntax archipelago_final_stage_death <true/false>.")]
         private static void ArchipelagoFinalStageDeath(ConCommandArgs args)
         {
             if (args.Count > 1)
@@ -104,7 +110,8 @@ namespace Archipelago.RiskOfRain2.Console
             }
         }
 
-        [ConCommand(commandName = "archipelago_highlight_satellite", flags = ConVarFlags.SenderMustBeServer, helpText = "Change to highlight the radar satellite <true/false>.")]
+        [ConCommand(commandName = "archipelago_highlight_satellite", flags = ConVarFlags.SenderMustBeServer,
+         helpText = "Change to highlight the radar satellite <true/false>.")]
         private static void ArchipelagoHighlightSatellite(ConCommandArgs args)
         {
             if (args.Count > 1)
@@ -116,10 +123,7 @@ namespace Archipelago.RiskOfRain2.Console
                 bool highlight = Convert.ToBoolean(args.GetArgString(0));
                 OnArchipelagoHighlightSatelliteCommandCalled(highlight);
                 var radar = UnityEngine.GameObject.Find("RadarTower(Clone)");
-                if (radar != null)
-                {
-                    radar.GetComponent<Highlight>().isOn = Convert.ToBoolean(args.GetArgString(0));
-                }
+                radar?.GetComponent<Highlight>().isOn = Convert.ToBoolean(args.GetArgString(0));
                 ChatMessage.Send($"Satellite Highlight is now set to {Convert.ToBoolean(args.GetArgString(0))}");
             }
             else

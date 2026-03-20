@@ -9,7 +9,7 @@ using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
 using Archipelago.MultiClient.Net.Packets;
 using Archipelago.RiskOfRain2.Console;
-using Archipelago.RiskOfRain2.Handlers;
+using Archipelago.RiskOfRain2.Services;
 using Archipelago.RiskOfRain2.Net;
 using Archipelago.RiskOfRain2.UI;
 using R2API.Networking;
@@ -34,11 +34,11 @@ namespace Archipelago.RiskOfRain2
         public string lastPassword { get; set; }
         public bool IsConnected => session != null && session.Socket.Connected;
 
-        internal DeathLinkHandler Deathlinkhandler { get; private set; }
-        internal StageBlockerHandler Stageblockerhandler { get; private set; }
-        internal LocationHandler Locationhandler { get; private set; }
-        internal ShrineChanceHandler shrineChanceHelper { get; private set; }
-        internal ItemPoolHandler ItemPoolHandler { get; private set; }
+        internal DeathLinkService Deathlinkhandler { get; private set; }
+        internal StageBlockerService Stageblockerhandler { get; private set; }
+        internal LocationService Locationhandler { get; private set; }
+        internal ShrineChanceService shrineChanceHelper { get; private set; }
+        internal ItemPoolService ItemPoolService { get; private set; }
 
         public ArchipelagoItemLogicController ItemLogic;
 
@@ -178,14 +178,14 @@ namespace Archipelago.RiskOfRain2
             // DeathLink (session-level)
             deathLinkService = DeathLinkProvider.CreateDeathLinkService(session);
             Log.LogDebug("Starting DeathLink service");
-            Deathlinkhandler = new DeathLinkHandler(deathLinkService);
+            Deathlinkhandler = new DeathLinkService(deathLinkService);
             cachedDeathLinkEnabled = false;
             if (successResult.SlotData.TryGetValue("deathLink", out var enabledeathlink))
             {
                 cachedDeathLinkEnabled = Convert.ToBoolean(enabledeathlink);
                 if (cachedDeathLinkEnabled)
                 {
-                    deathLinkService.EnableDeathLink(); // deathlink should just be enabled, the DeathLinkHandler assumes it is already enabled
+                    deathLinkService.EnableDeathLink(); // deathlink should just be enabled, the DeathLinkService assumes it is already enabled
                 }
             }
 
@@ -256,11 +256,11 @@ namespace Archipelago.RiskOfRain2
             // Progressive stages and seer portals (session-level, static fields)
             if (successResult.SlotData.TryGetValue("progressiveStages", out var progressive))
             {
-                StageBlockerHandler.ProgressiveStages = Convert.ToBoolean(progressive);
+                StageBlockerService.ProgressiveStages = Convert.ToBoolean(progressive);
             }
             if (successResult.SlotData.TryGetValue("showSeerPortals", out var showSeerPortals))
             {
-                StageBlockerHandler.ShowSeerPortals = Convert.ToBoolean(showSeerPortals);
+                StageBlockerService.ShowSeerPortals = Convert.ToBoolean(showSeerPortals);
             }
 
             ConnectedPlayerName = session.Players.GetPlayerName(session.ConnectionInfo.Slot);
@@ -277,17 +277,17 @@ namespace Archipelago.RiskOfRain2
             // Needed for backwards compatability
             if (session.Items.GetItemName(37501) == null)
             {
-                StageBlockerHandler.StageUnlocks["Stage 1"] = true;
-                StageBlockerHandler.StageUnlocks["Stage 2"] = true;
-                StageBlockerHandler.StageUnlocks["Stage 3"] = true;
-                StageBlockerHandler.StageUnlocks["Stage 4"] = true;
+                StageBlockerService.StageUnlocks["Stage 1"] = true;
+                StageBlockerService.StageUnlocks["Stage 2"] = true;
+                StageBlockerService.StageUnlocks["Stage 3"] = true;
+                StageBlockerService.StageUnlocks["Stage 4"] = true;
             }
             else if (!isInGame)
             {
-                StageBlockerHandler.StageUnlocks["Stage 1"] = false;
-                StageBlockerHandler.StageUnlocks["Stage 2"] = false;
-                StageBlockerHandler.StageUnlocks["Stage 3"] = false;
-                StageBlockerHandler.StageUnlocks["Stage 4"] = false;
+                StageBlockerService.StageUnlocks["Stage 1"] = false;
+                StageBlockerService.StageUnlocks["Stage 2"] = false;
+                StageBlockerService.StageUnlocks["Stage 3"] = false;
+                StageBlockerService.StageUnlocks["Stage 4"] = false;
             }
 
             // Set up the first run
@@ -312,11 +312,11 @@ namespace Archipelago.RiskOfRain2
             if (cachedGoalIsExplore)
             {
                 Log.LogDebug("Setting up explore mode for run");
-                Stageblockerhandler = new StageBlockerHandler();
+                Stageblockerhandler = new StageBlockerService();
                 ItemLogic.Stageblockerhandler = Stageblockerhandler;
                 Stageblockerhandler.BlockAll();
-                Locationhandler = new LocationHandler(session, LocationHandler.BuildTemplateFromSlotData(cachedSlotData));
-                shrineChanceHelper = new ShrineChanceHandler();
+                Locationhandler = new LocationService(session, LocationService.BuildTemplateFromSlotData(cachedSlotData));
+                shrineChanceHelper = new ShrineChanceService();
 
                 ArchipelagoCheckCountdownController.ShrineStep = (int)cachedShrineUseStep;
                 ArchipelagoCheckCountdownController.ShrinesUsed = 0;
@@ -338,10 +338,10 @@ namespace Archipelago.RiskOfRain2
             // Item pool limiting
             if (cachedItemPoolLimiting)
             {
-                ItemPoolHandler = new ItemPoolHandler();
-                ItemPoolHandler.Initialize(cachedSlotData);
-                ItemLogic.ItemPoolHandler = ItemPoolHandler;
-                ArchipelagoItemPoolObjectiveController.AddObjective();
+                ItemPoolService = new ItemPoolService();
+                ItemPoolService.Initialize(cachedSlotData);
+                ItemLogic.ItemPoolService = ItemPoolService;
+
             }
 
             // Initialize ItemLogic location tracking from session state.
@@ -362,7 +362,7 @@ namespace Archipelago.RiskOfRain2
             ItemLogic.OnItemDropProcessed += ItemLogicHandler_ItemDropProcessed;
             if (cachedDeathLinkEnabled)
             {
-                Deathlinkhandler?.Hook();
+                Deathlinkhandler?.Register();
             }
             HookGame();
 
@@ -410,14 +410,14 @@ namespace Archipelago.RiskOfRain2
             }
 
             ArchipelagoCheckCountdownController.RemoveObjective();
-            ArchipelagoItemPoolObjectiveController.RemoveObjective();
+
 
             // In the case the player joins a lobby that uses different settings, the previous objects may still exist and may be called again when hooks are started.
             // To prevent this, the old objects will be thrown away when cleaning up.
             Stageblockerhandler = null;
             Locationhandler = null;
             shrineChanceHelper = null;
-            ItemPoolHandler = null;
+            ItemPoolService = null;
             bossDefeatedOnVictoryStage = false;
         }
 
@@ -471,12 +471,12 @@ namespace Archipelago.RiskOfRain2
             OnReleaseClick += WillRelease;
             OnCollectClick += WillCollect;
             On.RoR2.SceneObjectToggleGroup.Awake += SceneObjectToggleGroup_Awake;
-            ArchipelagoScoreboardController.Hook();
+            ArchipelagoScoreboardController.Register();
 
-            Stageblockerhandler?.Hook();
-            Locationhandler?.Hook();
-            shrineChanceHelper?.Hook();
-            ItemPoolHandler?.Hook();
+            Stageblockerhandler?.Register();
+            Locationhandler?.Register();
+            shrineChanceHelper?.Register();
+            ItemPoolService?.Register();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter += PortalDialerPreDialState_OnEnter;
@@ -500,13 +500,13 @@ namespace Archipelago.RiskOfRain2
             OnReleaseClick -= WillRelease;
             OnCollectClick -= WillCollect;
             On.RoR2.SceneObjectToggleGroup.Awake -= SceneObjectToggleGroup_Awake;
-            ArchipelagoScoreboardController.Unhook();
+            ArchipelagoScoreboardController.Unregister();
 
-            Deathlinkhandler?.UnHook();
-            Stageblockerhandler?.UnHook();
-            Locationhandler?.UnHook();
-            shrineChanceHelper?.UnHook();
-            ItemPoolHandler?.UnHook();
+            Deathlinkhandler?.Unregister();
+            Stageblockerhandler?.Unregister();
+            Locationhandler?.Unregister();
+            shrineChanceHelper?.Unregister();
+            ItemPoolService?.Unregister();
             ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
             ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
             On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter -= PortalDialerPreDialState_OnEnter;
@@ -543,12 +543,12 @@ namespace Archipelago.RiskOfRain2
         {
             if (link)
             {
-                Deathlinkhandler?.Hook();
+                Deathlinkhandler?.Register();
                 deathLinkService.EnableDeathLink();
             }
             else
             {
-                Deathlinkhandler?.UnHook();
+                Deathlinkhandler?.Unregister();
                 deathLinkService.DisableDeathLink();
             }
         }
@@ -647,7 +647,7 @@ namespace Archipelago.RiskOfRain2
                     // disconnected, isInGame may be stale (true) but the run is gone.
                     if (Locationhandler != null && isInGame && Run.instance != null)
                     {
-                        Locationhandler.CatchUpSceneLocations(LocationHandler.CurrentSceneDef.cachedName);
+                        Locationhandler.CatchUpSceneLocations(LocationService.CurrentSceneDef.cachedName);
                         Locationhandler.LoadItemPickupHooks();
                     }
                     reconnecting = false;

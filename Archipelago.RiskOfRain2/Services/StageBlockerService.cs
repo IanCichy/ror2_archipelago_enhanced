@@ -1,5 +1,5 @@
 ﻿using Archipelago.RiskOfRain2.Console;
-using Archipelago.RiskOfRain2.Lookup;
+using Archipelago.RiskOfRain2.Extensions;
 using EntityStates;
 using R2API.Utils;
 using RoR2;
@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Archipelago.RiskOfRain2.Handlers
+namespace Archipelago.RiskOfRain2.Services
 {
-    class StageBlockerHandler : IHandler
+    class StageBlockerService : IService
     {
         // Python/AP IDs from worlds/ror2/ror2environments.py.
         // For vanilla and SOTV, these match C# SceneCatalog indices.
@@ -65,7 +65,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int mysteryspace = 33;     // Hidden Realm: A Moment, Fractured
         // TODO these should probably go somewhere else to better keep track of them since they are used in several places
 
-        public LocationNames locationsNames = new LocationNames();
+        public LocationExtensions locationsNames = new LocationExtensions();
         public int MostRecentStageGroup = 0;
 
         // Stage Progression system
@@ -161,7 +161,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
         private SeerPortal seerPortal;
 
-        public StageBlockerHandler()
+        public StageBlockerService()
         {
             Log.LogDebug($"StageBlocker handler constructor.");
             blockedStages = new List<int>();
@@ -177,7 +177,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             // blocking stages should be down by the owner of this object
         }
 
-        public void Hook()
+        public void Register()
         {
             On.RoR2.SceneDirector.PlaceTeleporter += SceneDirector_PlaceTeleporter;
             On.RoR2.TeleporterInteraction.AttemptToSpawnAllEligiblePortals += TeleporterInteraction_AttemptToSpawnAllEligiblePortals1;
@@ -199,7 +199,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.PortalSpawner.Start += PortalSpawner_Start;
         }
 
-        public void UnHook()
+        public void Unregister()
         {
             On.RoR2.SceneDirector.PlaceTeleporter -= SceneDirector_PlaceTeleporter;
             On.RoR2.TeleporterInteraction.AttemptToSpawnAllEligiblePortals -= TeleporterInteraction_AttemptToSpawnAllEligiblePortals1;
@@ -331,7 +331,7 @@ namespace Archipelago.RiskOfRain2.Handlers
          */
         public bool UnBlock(int index)
         {
-            string stageName = LocationNames.CachedLocationsNames[index];
+            string stageName = LocationExtensions.InternalSceneName[index];
             Log.LogDebug($"UnBlocking environment: index {stageName}.");
             unblockedStringStages.Add(stageName);
             UnlockedEnvironments.Add(stageName);
@@ -366,7 +366,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             foreach (var scene in unblockedStringStages)
             {
-                if (LocationNames.CachedLocationsNames.ContainsValue(scene))
+                if (LocationExtensions.InternalSceneName.ContainsValue(scene))
                 {
                     ChatMessage.Send($"{scene}");
                 }

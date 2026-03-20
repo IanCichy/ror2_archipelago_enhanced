@@ -1,4 +1,4 @@
-﻿using Archipelago.RiskOfRain2.Handlers;
+﻿using Archipelago.RiskOfRain2.Services;
 using System.Collections.Generic;
 using RoR2.UI;
 using static RoR2.UI.ObjectivePanelController;
@@ -72,7 +72,7 @@ namespace Archipelago.RiskOfRain2.UI
             }
         }
 
-        internal static LocationHandler.LocationInformationTemplate count = new LocationHandler.LocationInformationTemplate();
+        internal static LocationService.LocationInformationTemplate count = new LocationService.LocationInformationTemplate();
 
         public static string CurrentScene { get; set; }
         public static int CurrentChests { get; set; }

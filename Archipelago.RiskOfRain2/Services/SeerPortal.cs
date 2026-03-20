@@ -1,11 +1,11 @@
-﻿using Archipelago.RiskOfRain2.Lookup;
+﻿using Archipelago.RiskOfRain2.Extensions;
 using RoR2;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
 
-namespace Archipelago.RiskOfRain2.Handlers
+namespace Archipelago.RiskOfRain2.Services
 {
     internal class SeerPortal
     {
@@ -61,7 +61,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
                     purchaseInteraction.Networkcost = 0;
                     purchaseInteraction.cost = 0;
-                    purchaseInteraction.contextToken = LocationNames.GetLocationName(sceneDef[i].cachedName) ?? sceneDef[i].cachedName;
+                    purchaseInteraction.contextToken = LocationExtensions.GetLocationName(sceneDef[i].cachedName) ?? sceneDef[i].cachedName;
                 }
             }
         }

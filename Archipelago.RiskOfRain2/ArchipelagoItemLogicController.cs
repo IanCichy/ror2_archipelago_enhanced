@@ -7,7 +7,7 @@ using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.Packets;
 using Archipelago.MultiClient.Net.Helpers;
 using Archipelago.RiskOfRain2.Extensions;
-using Archipelago.RiskOfRain2.Handlers;
+using Archipelago.RiskOfRain2.Services;
 using Archipelago.RiskOfRain2.Net;
 using Archipelago.RiskOfRain2.UI;
 using R2API.Networking;
@@ -31,8 +31,8 @@ namespace Archipelago.RiskOfRain2
         public int TotalChecks { get; set; }
         System.Random rnd = new System.Random();
 
-        internal StageBlockerHandler Stageblockerhandler { get; set; }
-        internal ItemPoolHandler ItemPoolHandler { get; set; }
+        internal StageBlockerService Stageblockerhandler { get; set; }
+        internal ItemPoolService ItemPoolService { get; set; }
 
         public long[] ChecksTogether { get; set; }
         public long[] MissingChecks { get; set; }
@@ -48,7 +48,7 @@ namespace Archipelago.RiskOfRain2
         private Queue<KeyValuePair<long, string>> trapReceivedQueue = new Queue<KeyValuePair<long, string>>();
         private Queue<KeyValuePair<long, string>> stageReceivedQueue = new Queue<KeyValuePair<long, string>>();
         private Queue<KeyValuePair<long, string>> poolReceivedQueue = new Queue<KeyValuePair<long, string>>();
-        // TODO get magic numbers from somewhere else (eg move to LocationHandler.cs)
+        // TODO get magic numbers from somewhere else (eg move to LocationService.cs)
         private const long environmentRangeLower = 37700;
         private const long environmentRangeUpper = 37999;
         private const long fillerRangeLower = 37300;
@@ -537,13 +537,13 @@ namespace Archipelago.RiskOfRain2
             {
                 if (Stageblockerhandler != null)
                 {
-                    StageBlockerHandler.AmountOfStages += 1;
-                    Stageblockerhandler.UnlockEnvironmentsForProgressiveStages(StageBlockerHandler.AmountOfStages);
+                    StageBlockerService.AmountOfStages += 1;
+                    Stageblockerhandler.UnlockEnvironmentsForProgressiveStages(StageBlockerService.AmountOfStages);
                 }
             }
             else
             {
-                StageBlockerHandler.StageUnlocks[itemNameReceived] = true;
+                StageBlockerService.StageUnlocks[itemNameReceived] = true;
                 // Parse the stage tier from the item name (e.g. "Stage 2" → 2)
                 if (int.TryParse(itemNameReceived.Replace("Stage ", ""), out int tier))
                 {
@@ -560,9 +560,9 @@ namespace Archipelago.RiskOfRain2
             long itemIdReceived = itemReceived.Key;
             string itemNameReceived = itemReceived.Value;
 
-            if (ItemPoolHandler == null) return;
+            if (ItemPoolService == null) return;
 
-            var newItems = ItemPoolHandler.ExpandPool(itemIdReceived);
+            var newItems = ItemPoolService.ExpandPool(itemIdReceived);
             if (newItems.Count > 0)
             {
                 string tierColor = GetPoolTierColor(itemIdReceived);
@@ -575,9 +575,9 @@ namespace Archipelago.RiskOfRain2
         private static string GetPoolTierColor(long itemId)
         {
             int tierIndex = (int)(itemId - 37100) - 1; // 37101→0 (White), 37107→6 (Equipment)
-            if (tierIndex >= 0 && tierIndex < ItemPoolHandler.TierHexColors.Length)
-                return ItemPoolHandler.TierHexColors[tierIndex];
-            return ItemPoolHandler.TierHexColors[0];
+            if (tierIndex >= 0 && tierIndex < ItemPoolService.TierHexColors.Length)
+                return ItemPoolService.TierHexColors[tierIndex];
+            return ItemPoolService.TierHexColors[0];
         }
 
         private void HandleReceivedItemQueueItem()
@@ -596,7 +596,7 @@ namespace Archipelago.RiskOfRain2
                 case 37002:
                     foreach (var player in PlayerCharacterMasterController.instances)
                     {
-                        var common = Run.instance.availableTier1DropList.Choice();
+                        var common = Run.instance.availableTier1DropList.PickRandom();
                         GiveItemToPlayers(common, player);
                     }
                     break;
@@ -604,7 +604,7 @@ namespace Archipelago.RiskOfRain2
                 case 37003:
                     foreach (var player in PlayerCharacterMasterController.instances)
                     {
-                        var uncommon = Run.instance.availableTier2DropList.Choice();
+                        var uncommon = Run.instance.availableTier2DropList.PickRandom();
                         GiveItemToPlayers(uncommon, player);
                     }
 
@@ -613,7 +613,7 @@ namespace Archipelago.RiskOfRain2
                 case 37004:
                     foreach (var player in PlayerCharacterMasterController.instances)
                     {
-                        var legendary = Run.instance.availableTier3DropList.Choice();
+                        var legendary = Run.instance.availableTier3DropList.PickRandom();
                         GiveItemToPlayers(legendary, player);
                     }
 
@@ -622,7 +622,7 @@ namespace Archipelago.RiskOfRain2
                 case 37005:
                     foreach (var player in PlayerCharacterMasterController.instances)
                     {
-                        var boss = Run.instance.availableBossDropList.Choice();
+                        var boss = Run.instance.availableBossDropList.PickRandom();
                         GiveItemToPlayers(boss, player);
                     }
                     break;
@@ -630,7 +630,7 @@ namespace Archipelago.RiskOfRain2
                 case 37006:
                     foreach (var player in PlayerCharacterMasterController.instances)
                     {
-                        var lunar = Run.instance.availableLunarCombinedDropList.Choice();
+                        var lunar = Run.instance.availableLunarCombinedDropList.PickRandom();
                         var pickupDef = PickupCatalog.GetPickupDef(lunar);
                         if (pickupDef.itemIndex != ItemIndex.None)
                         {
@@ -647,7 +647,7 @@ namespace Archipelago.RiskOfRain2
                 case 37007:
                     foreach (var player in PlayerCharacterMasterController.instances)
                     {
-                        var equipment = Run.instance.availableEquipmentDropList.Choice();
+                        var equipment = Run.instance.availableEquipmentDropList.PickRandom();
                         GiveEquipmentToPlayers(equipment, player);
                     }
                     break;
@@ -688,19 +688,19 @@ namespace Archipelago.RiskOfRain2
                         var voidItem = new PickupIndex();
                         if (voidChoice <= 70)
                         {
-                            voidItem = Run.instance.availableVoidTier1DropList.Choice();
+                            voidItem = Run.instance.availableVoidTier1DropList.PickRandom();
                         }
                         else if (voidChoice <= 110)
                         {
-                            voidItem = Run.instance.availableVoidTier2DropList.Choice();
+                            voidItem = Run.instance.availableVoidTier2DropList.PickRandom();
                         }
                         else if (voidChoice <= 120)
                         {
-                            voidItem = Run.instance.availableVoidTier3DropList.Choice();
+                            voidItem = Run.instance.availableVoidTier3DropList.PickRandom();
                         }
                         else
                         {
-                            voidItem = Run.instance.availableVoidBossDropList.Choice();
+                            voidItem = Run.instance.availableVoidBossDropList.PickRandom();
                         }
                         GiveItemToPlayers(voidItem, player);
                     }

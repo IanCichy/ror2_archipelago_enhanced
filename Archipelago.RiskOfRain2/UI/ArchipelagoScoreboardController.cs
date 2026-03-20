@@ -1,5 +1,5 @@
-using Archipelago.RiskOfRain2.Handlers;
-using Archipelago.RiskOfRain2.Lookup;
+using Archipelago.RiskOfRain2.Services;
+using Archipelago.RiskOfRain2.Extensions;
 using RoR2;
 using System;
 using System.Collections.Generic;
@@ -24,7 +24,7 @@ namespace Archipelago.RiskOfRain2.UI
         private string cachedText;
 
         // Stage group mapping: scene name → AP stage key (1-4).
-        // Mirrors StageBlockerHandler.StageLookup but static for scoreboard access.
+        // Mirrors StageBlockerService.StageLookup but static for scoreboard access.
         // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
         private static readonly Dictionary<string, int> StageGroups = new()
         {
@@ -52,16 +52,16 @@ namespace Archipelago.RiskOfRain2.UI
         static ArchipelagoScoreboardController()
         {
             DisplayNames = new Dictionary<string, string>();
-            foreach (var kvp in LocationNames.CachedLocationsNames)
+            foreach (var kvp in LocationExtensions.InternalSceneName)
             {
-                if (LocationNames.LocationsNames.TryGetValue(kvp.Key, out string displayName))
+                if (LocationExtensions.LocationDisplayName.TryGetValue(kvp.Key, out string displayName))
                 {
                     DisplayNames[kvp.Value] = displayName;
                 }
             }
         }
 
-        public static void Hook()
+        public static void Register()
         {
             if (!hooked)
             {
@@ -70,7 +70,7 @@ namespace Archipelago.RiskOfRain2.UI
             }
         }
 
-        public static void Unhook()
+        public static void Unregister()
         {
             if (hooked)
             {
@@ -155,8 +155,8 @@ namespace Archipelago.RiskOfRain2.UI
             if (apText == null) return;
 
             // Dynamically add pool pages when item pool limiting is active
-            if (ItemPoolHandler.IsActive && ItemPoolHandler.Instance != null)
-                totalPages = 3 + ItemPoolHandler.Instance.GetNonEmptyTierCount();
+            if (ItemPoolService.IsActive && ItemPoolService.Instance != null)
+                totalPages = 3 + ItemPoolService.Instance.GetNonEmptyTierCount();
             else
                 totalPages = 3;
 
@@ -175,7 +175,7 @@ namespace Archipelago.RiskOfRain2.UI
                 cachedText = BuildText(currentPage, totalPages);
 
                 // Add icons on pool pages
-                if (currentPage >= 3 && ItemPoolHandler.IsActive && ItemPoolHandler.Instance != null)
+                if (currentPage >= 3 && ItemPoolService.IsActive && ItemPoolService.Instance != null)
                 {
                     BuildPoolIcons(currentPage - 3);
                 }
@@ -205,7 +205,7 @@ namespace Archipelago.RiskOfRain2.UI
                     break;
                 default:
                     // Pool pages (page 3+ maps to tier index)
-                    if (ItemPoolHandler.IsActive && ItemPoolHandler.Instance != null)
+                    if (ItemPoolService.IsActive && ItemPoolService.Instance != null)
                         BuildPoolPage(sb, page - 3);
                     break;
             }
@@ -240,7 +240,7 @@ namespace Archipelago.RiskOfRain2.UI
         private static string FormatEnv(string sceneKey, HashSet<string> unlocked)
         {
             var name = DisplayNames.TryGetValue(sceneKey, out string dn) ? dn : sceneKey;
-            if (StageBlockerHandler.CompletedEnvironments.Contains(sceneKey))
+            if (StageBlockerService.CompletedEnvironments.Contains(sceneKey))
                 return $"<style=cIsHealing>\u2713 {name}</style>";       // green check — all checks done
             if (unlocked.Contains(sceneKey))
                 return $"<color=#FFD700>\u25A1 {name}</color>";          // yellow hollow square — unlocked, checks remain
@@ -249,8 +249,8 @@ namespace Archipelago.RiskOfRain2.UI
 
         private static void BuildEnvironmentsPage(StringBuilder sb)
         {
-            var unlocked = StageBlockerHandler.UnlockedEnvironments;
-            var allEnvs = StageBlockerHandler.AllSessionEnvironments;
+            var unlocked = StageBlockerService.UnlockedEnvironments;
+            var allEnvs = StageBlockerService.AllSessionEnvironments;
 
             // Starting stages listed horizontally at the top
             var starting = StageGroups
@@ -335,7 +335,7 @@ namespace Archipelago.RiskOfRain2.UI
 
         private void BuildPoolIcons(int poolPageIndex)
         {
-            var handler = ItemPoolHandler.Instance;
+            var handler = ItemPoolService.Instance;
             if (handler == null || panelRef == null) return;
 
             int tierIndex = handler.GetTierIndexForPoolPage(poolPageIndex);
@@ -379,7 +379,7 @@ namespace Archipelago.RiskOfRain2.UI
                 else
                 {
                     Color tierColor;
-                    ColorUtility.TryParseHtmlString(ItemPoolHandler.TierHexColors[tierIndex], out tierColor);
+                    ColorUtility.TryParseHtmlString(ItemPoolService.TierHexColors[tierIndex], out tierColor);
                     image.color = allowed ? tierColor : tierColor * 0.3f;
                 }
 
@@ -400,26 +400,26 @@ namespace Archipelago.RiskOfRain2.UI
 
         private static void BuildPoolPage(StringBuilder sb, int poolPageIndex)
         {
-            var handler = ItemPoolHandler.Instance;
+            var handler = ItemPoolService.Instance;
             if (handler == null) return;
 
             int tierIndex = handler.GetTierIndexForPoolPage(poolPageIndex);
             if (tierIndex < 0) return;
 
             var tier = handler.GetTierSummary()[tierIndex];
-            string hex = ItemPoolHandler.TierHexColors[tierIndex];
+            string hex = ItemPoolService.TierHexColors[tierIndex];
 
-            sb.AppendLine($"<color={hex}>── {ItemPoolHandler.TierNames[tierIndex]} Items: {tier.Current} / {tier.Total} ──</color>");
+            sb.AppendLine($"<color={hex}>── {ItemPoolService.TierNames[tierIndex]} Items: {tier.Current} / {tier.Total} ──</color>");
         }
 
         private static void BuildDetailsPage(StringBuilder sb)
         {
-            var unlocked = StageBlockerHandler.UnlockedEnvironments;
-            var allEnvs = StageBlockerHandler.AllSessionEnvironments;
+            var unlocked = StageBlockerService.UnlockedEnvironments;
+            var allEnvs = StageBlockerService.AllSessionEnvironments;
 
             // Stage keys
             sb.AppendLine("<style=cIsUtility>── Stage Keys ──</style>");
-            foreach (var kvp in StageBlockerHandler.StageUnlocks)
+            foreach (var kvp in StageBlockerService.StageUnlocks)
             {
                 var icon = kvp.Value
                     ? "<style=cIsHealing>\u2713</style>"

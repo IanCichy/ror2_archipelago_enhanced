@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Archipelago.RiskOfRain2.Console;
 using Archipelago.RiskOfRain2.Net;
 using Archipelago.RiskOfRain2.UI;
-using Archipelago.RiskOfRain2.Handlers;
+using Archipelago.RiskOfRain2.Services;
 using BepInEx;
 using BepInEx.Bootstrap;
 using R2API;
@@ -39,7 +39,7 @@ namespace Archipelago.RiskOfRain2
         //public static AssetBundle localAssetBundle { get; private set; }
 
         private ArchipelagoClient AP;
-        private ClientItemsHandler ClientItems;
+        private ClientItemsService ClientItems;
         //private bool isInLobbyConfigLoaded = false;
         internal static string apServerUri = "archipelago.gg";
         internal static int apServerPort = 38281;
@@ -209,9 +209,9 @@ namespace Archipelago.RiskOfRain2
             {
                 // Clean up previous handler to prevent hook leaks on session reuse
                 // or reconnection (ArchipelagoStartMessage can be received multiple times).
-                ClientItems?.UnHook();
-                ClientItems = new ClientItemsHandler();
-                ClientItems?.Hook();
+                ClientItems?.Unregister();
+                ClientItems = new ClientItemsService();
+                ClientItems?.Register();
                 isPlayingAP = true;
             }
         }
@@ -223,7 +223,7 @@ namespace Archipelago.RiskOfRain2
             {
                 ArchipelagoTotalChecksObjectiveController.RemoveObjective();
                 ArchipelagoLocationsInEnvironmentController.RemoveObjective();
-                ArchipelagoItemPoolObjectiveController.RemoveObjective();
+
             }
         }
         private void CreateLobbyFields()

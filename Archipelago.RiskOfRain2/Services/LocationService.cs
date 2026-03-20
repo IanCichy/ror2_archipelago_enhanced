@@ -12,11 +12,11 @@ using UnityEngine.Networking;
 using R2API.Utils;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
-using Archipelago.RiskOfRain2.Lookup;
+using Archipelago.RiskOfRain2.Extensions;
 
-namespace Archipelago.RiskOfRain2.Handlers
+namespace Archipelago.RiskOfRain2.Services
 {
-    class LocationHandler : IHandler
+    class LocationService : IService
     {
         // NOTE every mention of a "location" refers to the archipelago location checks
         // NOTE every mention of a "environment" refers to the risk of rain 2 scenes that are loaded and played
@@ -140,12 +140,12 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
             public string Scene()
             {
-                SceneDef scene = LocationHandler.GetLocationScene();
+                SceneDef scene = LocationService.GetLocationScene();
                 /*                Log.LogDebug($"{scene.sceneDefIndex} scene this");*/
-                if (LocationNames.LocationsNames.ContainsKey(CurrentSceneIndex))
+                if (LocationExtensions.LocationDisplayName.ContainsKey(CurrentSceneIndex))
                 {
-                    ArchipelagoLocationsInEnvironmentController.CurrentScene = $"{LocationNames.LocationsNames[CurrentSceneIndex]}";
-                    return $"{LocationNames.LocationsNames[CurrentSceneIndex]}";
+                    ArchipelagoLocationsInEnvironmentController.CurrentScene = $"{LocationExtensions.LocationDisplayName[CurrentSceneIndex]}";
+                    return $"{LocationExtensions.LocationDisplayName[CurrentSceneIndex]}";
                 }
                 ArchipelagoLocationsInEnvironmentController.CurrentScene = $"Environment Location";
                 return $"Environment Location";
@@ -181,7 +181,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         private LocationInformationTemplate originallocationstemplate;
         private Dictionary<int, LocationInformationTemplate> currentlocations;
 
-        public LocationHandler(ArchipelagoSession session, LocationInformationTemplate locationstemplate)
+        public LocationService(ArchipelagoSession session, LocationInformationTemplate locationstemplate)
         {
             Log.LogDebug($"Location handler constructor.");
             this.session = session;
@@ -273,10 +273,10 @@ namespace Archipelago.RiskOfRain2.Handlers
             // Track completed environments for the scoreboard (✓ vs ☐)
             if (location.Total() == 0)
             {
-                StageBlockerHandler.CompletedEnvironments.Add(sceneName);
+                StageBlockerService.CompletedEnvironments.Add(sceneName);
             }
         }
-        public void Hook()
+        public void Register()
         {
             // Etc
             On.RoR2.SceneCatalog.OnActiveSceneChanged += SceneCatalog_OnActiveSceneChanged;
@@ -341,7 +341,7 @@ namespace Archipelago.RiskOfRain2.Handlers
                     orig(self, activator);
                 }*/
 
-        public void UnHook()
+        public void Unregister()
         {
             // Etc
             On.RoR2.SceneCatalog.OnActiveSceneChanged -= SceneCatalog_OnActiveSceneChanged;
@@ -415,7 +415,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
         public int GetSceneIndex(string sceneName)
         {
-            foreach (var scene in LocationNames.CachedLocationsNames)
+            foreach (var scene in LocationExtensions.InternalSceneName)
             {
                 if (scene.Value == sceneName)
                 {
@@ -518,7 +518,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             new SyncTotalCheckProgress(CurrentChecks, TotalChecks).Send(NetworkDestination.Clients);
             if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())
             {
-                StageBlockerHandler.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
+                StageBlockerService.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
                 // Keep objective visible so "All AP checks complete" message shows
                 UpdateClientsUI();
@@ -614,7 +614,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             UpdateClientsUI();
             if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())
             {
-                StageBlockerHandler.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
+                StageBlockerService.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
                 new AllChecksCompleteInStage().Send(NetworkDestination.Clients);
                 // Keep objective visible so "All AP checks complete" message shows
             }

@@ -1,16 +1,16 @@
 using RoR2;
 using System;
 
-namespace Archipelago.RiskOfRain2.Handlers
+namespace Archipelago.RiskOfRain2.Services
 {
-    class ShrineChanceHandler : IHandler
+    class ShrineChanceService : IService
     {
-        public void Hook()
+        public void Register()
         {
             RoR2.SceneDirector.onGenerateInteractableCardSelection += SceneDirector_onGenerateInteractableCardSelection;
         }
 
-        public void UnHook()
+        public void Unregister()
         {
             RoR2.SceneDirector.onGenerateInteractableCardSelection -= SceneDirector_onGenerateInteractableCardSelection;
         }
@@ -40,7 +40,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
             catch (Exception ex)
             {
-                Log.LogError($"ShrineChanceHandler.onGenerateInteractableCardSelection failed: {ex}");
+                Log.LogError($"ShrineChanceService.onGenerateInteractableCardSelection failed: {ex}");
             }
         }
     }
