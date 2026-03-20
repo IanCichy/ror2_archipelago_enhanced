@@ -631,14 +631,25 @@ namespace Archipelago.RiskOfRain2
                 ChatMessage.Send($"<style=cIsUtility>[AP]</style> Reconnection attempt #{attempt}");
                 yield return new WaitForSeconds(3f);
 
-                try
+                // Run Connect on a background thread so the UI doesn't freeze
+                // during the TCP handshake / TryConnectAndLogin call.
+                bool connectDone = false;
+                new Thread(() =>
                 {
-                    Connect(lastServerUrl, lastSlotName, lastPassword);
-                }
-                catch (Exception ex)
-                {
-                    Log.LogWarning($"Reconnection attempt {attempt} failed: {ex.Message}");
-                }
+                    try
+                    {
+                        Connect(lastServerUrl, lastSlotName, lastPassword);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.LogWarning($"Reconnection attempt {attempt} failed: {ex.Message}");
+                    }
+                    connectDone = true;
+                }).Start();
+
+                // Yield until the background thread finishes
+                while (!connectDone)
+                    yield return new WaitForSeconds(0.25f);
 
                 if (IsConnected)
                 {
