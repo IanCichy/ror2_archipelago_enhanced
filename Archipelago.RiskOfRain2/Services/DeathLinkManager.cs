@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Archipelago.RiskOfRain2.Services;
 
-internal class DeathLinkService : IService
+internal class DeathLinkManager : IService
 {
     private readonly DeathLinkService deathLink;
     private Thread thread;
@@ -16,7 +16,7 @@ internal class DeathLinkService : IService
     private bool recievedDeath = false; // used to prevent cyclical deaths
     private bool deathLinkActive = false;
 
-    public DeathLinkService(DeathLinkService deathLink)
+    public DeathLinkManager(DeathLinkService deathLink)
     {
         Log.LogDebug($"DeathLink handler constructor.");
         this.deathLink = deathLink;

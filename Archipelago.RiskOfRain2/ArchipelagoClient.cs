@@ -34,9 +34,9 @@ namespace Archipelago.RiskOfRain2
         public string lastPassword { get; set; }
         public bool IsConnected => session != null && session.Socket.Connected;
 
-        internal DeathLinkService Deathlinkhandler { get; private set; }
+        internal DeathLinkManager Deathlinkhandler { get; private set; }
         internal StageBlockerService Stageblockerhandler { get; private set; }
-        internal LocationService Locationhandler { get; private set; }
+        internal LocationCheckService Locationhandler { get; private set; }
         internal ShrineChanceService shrineChanceHelper { get; private set; }
         internal ItemPoolService ItemPoolService { get; private set; }
 
@@ -178,7 +178,7 @@ namespace Archipelago.RiskOfRain2
             // DeathLink (session-level)
             deathLinkService = DeathLinkProvider.CreateDeathLinkService(session);
             Log.LogDebug("Starting DeathLink service");
-            Deathlinkhandler = new DeathLinkService(deathLinkService);
+            Deathlinkhandler = new DeathLinkManager(deathLinkService);
             cachedDeathLinkEnabled = false;
             if (successResult.SlotData.TryGetValue("deathLink", out var enabledeathlink))
             {
@@ -315,7 +315,7 @@ namespace Archipelago.RiskOfRain2
                 Stageblockerhandler = new StageBlockerService();
                 ItemLogic.Stageblockerhandler = Stageblockerhandler;
                 Stageblockerhandler.BlockAll();
-                Locationhandler = new LocationService(session, LocationService.BuildTemplateFromSlotData(cachedSlotData));
+                Locationhandler = new LocationCheckService(session, LocationCheckService.BuildTemplateFromSlotData(cachedSlotData));
                 shrineChanceHelper = new ShrineChanceService();
 
                 ArchipelagoCheckCountdownController.ShrineStep = (int)cachedShrineUseStep;
@@ -647,7 +647,7 @@ namespace Archipelago.RiskOfRain2
                     // disconnected, isInGame may be stale (true) but the run is gone.
                     if (Locationhandler != null && isInGame && Run.instance != null)
                     {
-                        Locationhandler.CatchUpSceneLocations(LocationService.CurrentSceneDef.cachedName);
+                        Locationhandler.CatchUpSceneLocations(LocationCheckService.CurrentSceneDef.cachedName);
                         Locationhandler.LoadItemPickupHooks();
                     }
                     reconnecting = false;

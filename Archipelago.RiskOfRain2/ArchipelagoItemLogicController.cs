@@ -48,7 +48,7 @@ namespace Archipelago.RiskOfRain2
         private Queue<KeyValuePair<long, string>> trapReceivedQueue = new Queue<KeyValuePair<long, string>>();
         private Queue<KeyValuePair<long, string>> stageReceivedQueue = new Queue<KeyValuePair<long, string>>();
         private Queue<KeyValuePair<long, string>> poolReceivedQueue = new Queue<KeyValuePair<long, string>>();
-        // TODO get magic numbers from somewhere else (eg move to LocationService.cs)
+        // TODO get magic numbers from somewhere else (eg move to LocationCheckService.cs)
         private const long environmentRangeLower = 37700;
         private const long environmentRangeUpper = 37999;
         private const long fillerRangeLower = 37300;

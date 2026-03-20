@@ -16,7 +16,7 @@ using Archipelago.RiskOfRain2.Extensions;
 
 namespace Archipelago.RiskOfRain2.Services
 {
-    class LocationService : IService
+    class LocationCheckService : IService
     {
         // NOTE every mention of a "location" refers to the archipelago location checks
         // NOTE every mention of a "environment" refers to the risk of rain 2 scenes that are loaded and played
@@ -140,7 +140,7 @@ namespace Archipelago.RiskOfRain2.Services
             }
             public string Scene()
             {
-                SceneDef scene = LocationService.GetLocationScene();
+                SceneDef scene = LocationCheckService.GetLocationScene();
                 /*                Log.LogDebug($"{scene.sceneDefIndex} scene this");*/
                 if (LocationExtensions.LocationDisplayName.ContainsKey(CurrentSceneIndex))
                 {
@@ -181,7 +181,7 @@ namespace Archipelago.RiskOfRain2.Services
         private LocationInformationTemplate originallocationstemplate;
         private Dictionary<int, LocationInformationTemplate> currentlocations;
 
-        public LocationService(ArchipelagoSession session, LocationInformationTemplate locationstemplate)
+        public LocationCheckService(ArchipelagoSession session, LocationInformationTemplate locationstemplate)
         {
             Log.LogDebug($"Location handler constructor.");
             this.session = session;

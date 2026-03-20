@@ -72,7 +72,7 @@ namespace Archipelago.RiskOfRain2.UI
             }
         }
 
-        internal static LocationService.LocationInformationTemplate count = new LocationService.LocationInformationTemplate();
+        internal static LocationCheckService.LocationInformationTemplate count = new LocationCheckService.LocationInformationTemplate();
 
         public static string CurrentScene { get; set; }
         public static int CurrentChests { get; set; }
