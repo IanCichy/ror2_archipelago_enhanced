@@ -406,6 +406,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         private const long BazaarShopLocationIdStart = 82251; // Bazaar Shop 1 starts here
         private HashSet<ShopTerminalBehavior> apCheckTerminals = new HashSet<ShopTerminalBehavior>();
         private Dictionary<ShopTerminalBehavior, long> terminalLocationIds = new Dictionary<ShopTerminalBehavior, long>();
+        
 
         private void SceneInfo_Awake(On.RoR2.SceneInfo.orig_Awake orig, SceneInfo self)
         {
@@ -1168,7 +1169,14 @@ namespace Archipelago.RiskOfRain2.Handlers
                 if (!session.Locations.AllLocationsChecked.Contains(locationId))
                 {
                     bazaarShopCheckQueue.Enqueue(locationId);
+                    locationsToScout.Add(locationId);
                 }
+            }
+            // Scout all locations upfront so item names are available at replacement time
+            if (locationsToScout.Count > 0)
+            {
+                session.Locations.ScoutLocationsAsync
+                session.Locations.ScoutLocationsAsync(locationsToScout.ToArray());
             }
             Log.LogDebug($"Bazaar shop queue initialized with {bazaarShopCheckQueue.Count} checks.");
         }
