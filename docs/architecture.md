@@ -14,16 +14,17 @@ ror2_archipelago_enhanced/
 │   ├── Console/
 │   │   └── ArchipelagoConsoleCommand.cs   # In-game console commands
 │   ├── Extensions/                   # Utility extension methods
-│   ├── Handlers/
-│   │   ├── IHandler.cs               # Hook/UnHook interface
-│   │   ├── ClientItemsHandler.cs     # Client-side item bar (non-host)
-│   │   ├── DeathLinkHandler.cs       # Cross-game death synchronization
-│   │   ├── LocationHandler.cs        # Explore mode location detection
-│   │   ├── ShrineChanceHandler.cs    # Shrine reward modification
-│   │   ├── StageBlockerHandler.cs    # Stage unlock gating
-│   │   └── SeerPortal.cs            # Seer portal spawning
-│   ├── Lookup/
-│   │   └── LocationNames.cs          # Scene ID <-> name mappings
+│   │   ├── IEnumerableExtensions.cs  # PickRandom helper
+│   │   └── LocationExtensions.cs     # Scene ID <-> name mappings
+│   ├── Services/
+│   │   ├── IService.cs               # Register/Unregister interface
+│   │   ├── ClientItemsService.cs     # Client-side item bar (non-host)
+│   │   ├── DeathLinkManager.cs       # Cross-game death synchronization
+│   │   ├── LocationCheckService.cs   # Explore mode location detection
+│   │   ├── ShrineChanceService.cs    # Shrine reward modification
+│   │   ├── StageBlockerService.cs    # Stage unlock gating
+│   │   ├── ItemPoolService.cs        # Item pool limiting & expansion
+│   │   └── SeerPortal.cs             # Seer portal spawning
 │   ├── Net/                          # R2API multiplayer messages (13 types)
 │   │   ├── ArchipelagoStartMessage.cs
 │   │   ├── ArchipelagoEndMessage.cs
@@ -33,6 +34,8 @@ ror2_archipelago_enhanced/
 │   │   ├── ArchipelagoConnectButtonController.cs  # Lobby connect panel
 │   │   ├── ArchipelagoLocationCheckProgressBarUI.cs  # Progress bars
 │   │   ├── ArchipelagoLocationsInEnvironmentController.cs
+│   │   ├── ArchipelagoScoreboardController.cs     # 3-page scoreboard (checks, environments, pool)
+│   │   ├── ArchipelagoCheckCountdownController.cs # Per-check countdown HUD
 │   │   └── ArchipelagoTotalChecksObjectiveController.cs
 │   └── connectbundle                 # Unity AssetBundle (UI prefabs)
 ├── worlds/ror2/                      # Python AP world (server-side generation)
@@ -88,24 +91,25 @@ Item pickup tracking and AP check generation. Responsibilities:
 - Handles environment/stage unlock items via `Precollect()`
 - Tracks `CurrentChecks`, `TotalChecks`, `PickedUpItemCount`, `ItemPickupStep`
 
-### Handlers (implement `IHandler`)
+### Services (implement `IService`)
 
-All handlers implement the `IHandler` interface:
+All services implement the `IService` interface:
 
 ```csharp
-interface IHandler {
-    void Hook();    // Subscribe to game events
-    void UnHook();  // Unsubscribe from game events
+interface IService {
+    void Register();    // Subscribe to game events
+    void Unregister();  // Unsubscribe from game events
 }
 ```
 
-| Handler | Mode | Purpose |
+| Service | Mode | Purpose |
 |---------|------|---------|
-| `DeathLinkHandler` | Both | Sends/receives cross-game death events |
-| `LocationHandler` | Explore | Detects per-stage location checks (chests, shrines, etc.) |
-| `StageBlockerHandler` | Explore | Blocks stages until unlock items received |
-| `ShrineChanceHandler` | Explore | Modifies shrine spawn rules |
-| `ClientItemsHandler` | Both | Non-host client progress bar management |
+| `DeathLinkManager` | Both | Sends/receives cross-game death events |
+| `LocationCheckService` | Explore | Detects per-stage location checks (chests, shrines, etc.) |
+| `StageBlockerService` | Explore | Blocks stages until unlock items received |
+| `ShrineChanceService` | Explore | Modifies shrine spawn rules |
+| `ItemPoolService` | Both | Restricts item drops to an expandable pool per tier |
+| `ClientItemsService` | Both | Non-host client progress bar management |
 
 ### Net Messages
 

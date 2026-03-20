@@ -2,8 +2,18 @@
 
 **Priority:** Medium-High — major gameplay feature, creates "item randomizer" layer
 **Complexity:** Medium-High
-**New AP Item IDs:** 37100-37109 (Pool Expansion items)
+**New AP Item IDs:** 37101-37107 (Pool Expansion items)
 **Depends On:** Sprint 1 (DLC item tiers include Void/Meal items)
+**Status:** Implemented (branch `sprint-4-item-pool-limiting`)
+
+### Implementation Notes (vs. original plan)
+
+- Class is `Services/ItemPoolService.cs` (not `Handlers/ItemPoolHandler.cs`) — follows the Services pattern adopted during this sprint
+- Pool viewer is integrated into the existing scoreboard as a third page (Tab key cycles: Checks → Environments → Pool), not a separate F2 overlay
+- Uses explicit per-tier unlock cursors instead of `allowed.Count` for expansion tracking
+- 15 new YAML options added to `options.py` (pool toggle, 7 starting sizes, 7 per-expansion rates)
+- Tier total constants defined in `items.py` (`TIER_TOTAL_WHITE`, etc.) — used by both options and pool generation
+- Phases 5 (item class toggles) and 6 (UI) partially implemented: lunar/void toggles work; no separate boss/equipment disable toggles yet; no objective panel entry yet
 
 ## Goal
 

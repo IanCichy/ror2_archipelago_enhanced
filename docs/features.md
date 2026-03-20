@@ -81,8 +81,50 @@ Each environment has a fixed number of location checks (chests, shrines, scaveng
 ### Environment Unlocks (Explore mode)
 36+ environment items, one per stage. Receiving an environment item unlocks that stage for play. Examples: Titanic Plains, Abandoned Aqueduct, Rallypoint Delta, Sky Meadow, etc.
 
+### Pool Expansion (when Item Pool Limiting enabled)
+| Item | ID | Effect |
+|------|-----|--------|
+| White Pool Expansion | 37101 | Adds N white items to drop pool |
+| Green Pool Expansion | 37102 | Adds N green items to drop pool |
+| Red Pool Expansion | 37103 | Adds N red items to drop pool |
+| Boss Pool Expansion | 37104 | Adds N boss items to drop pool |
+| Lunar Pool Expansion | 37105 | Adds N lunar items to drop pool |
+| Void Pool Expansion | 37106 | Adds N void items to drop pool (SOTV) |
+| Equipment Pool Expansion | 37107 | Adds N equipment to drop pool |
+
 ### Stage Progression (Explore mode)
 - Stage 1, Stage 2, Stage 3, Stage 4 (or Progressive Stage x4)
+- **Progressive Stages** (default): Each "Progressive Stage" item unlocks the next tier sequentially (1→2→3→4)
+- **Non-progressive**: Specific "Stage N" items allow tier-skipping (can receive Stage 3 before Stage 2)
+
+## Item Pool Limiting
+
+When enabled, restricts which in-game items can drop to a limited starting pool per tier. AP "Pool Expansion" items gradually unlock more items.
+
+- **Deterministic**: Starting pool is seeded from the AP session seed — same seed always produces the same starting items
+- **Per-tier control**: Each rarity tier has configurable starting pool size and items-per-expansion
+- **Persists across runs**: Pool state survives run restarts within the same AP session
+- **Tier toggles**: Lunar pool is skipped when `enable_lunar` is off; Void pool requires `dlc_sotv`
+- **Scoreboard integration**: Pool page on the Tab scoreboard shows unlocked/total per tier
+- **Chat notifications**: Tier-colored messages announce newly unlocked items on expansion
+
+| Option | Range | Default |
+|--------|-------|---------|
+| `item_pool_limiting` | Toggle | off |
+| `starting_white_pool` | 1–36 | 5 |
+| `starting_green_pool` | 1–42 | 3 |
+| `starting_red_pool` | 0–36 | 1 |
+| `starting_boss_pool` | 0–22 | 1 |
+| `starting_lunar_pool` | 0–20 | 0 |
+| `starting_void_pool` | 0–14 | 0 |
+| `starting_equipment_pool` | 1–34 | 3 |
+| `items_per_white_expansion` | 1–8 | 3 |
+| `items_per_green_expansion` | 1–8 | 3 |
+| `items_per_red_expansion` | 1–4 | 3 |
+| `items_per_boss_expansion` | 1–4 | 2 |
+| `items_per_lunar_expansion` | 1–4 | 1 |
+| `items_per_void_expansion` | 1–4 | 1 |
+| `items_per_equipment_expansion` | 1–4 | 4 |
 
 ## Item Weight Presets
 

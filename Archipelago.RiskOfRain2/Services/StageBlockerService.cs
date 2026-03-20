@@ -443,6 +443,20 @@ namespace Archipelago.RiskOfRain2.Services
                 Log.LogDebug("SceneExitController_SetState forcefully reroll next stagescene");
                 manuallyPickingStage = false;
             }
+
+            // Catch-all: if a portal (e.g. AC encrypted portal / Sentry Key beacon)
+            // sets a fixed destinationScene that is blocked, redirect to a normal stage.
+            if (!self.useRunNextStageScene && self.destinationScene != null && CheckBlocked(self.destinationScene.cachedName))
+            {
+                Log.LogWarning($"Portal destination {self.destinationScene.cachedName} is blocked — redirecting to normal stage.");
+                ChatMessage.SendColored($"The path to {self.destinationScene.cachedName} is sealed. Redirecting...", Color.yellow);
+                self.destinationScene = null;
+                self.useRunNextStageScene = true;
+                manuallyPickingStage = true;
+                Run.instance.PickNextStageSceneFromCurrentSceneDestinations();
+                manuallyPickingStage = false;
+            }
+
             MostRecentStageGroup = SceneCatalog.mostRecentSceneDef.stageOrder;
             orig(self);
         }

@@ -29,7 +29,7 @@ Sprint 1: Full DLC Support               [MUST DO FIRST - all others depend on i
 | 1 | [Full DLC Support](sprint-1-dlc-support.md) | Medium | 0 | None (existing ranges) |
 | 2 | [Stage Check Prioritization](sprint-2-stage-check-prioritization.md) | Low | 0 | None |
 | 3 | [Portal/Hidden Realm Control](sprint-3-portal-control.md) | Medium | 0 | 37600-37609 |
-| 4 | [Item Pool Limiting](sprint-4-item-pool-limiting.md) | Medium-High | 1-2 | 37100-37109 |
+| 4 | [Item Pool Limiting](sprint-4-item-pool-limiting.md) | Medium-High | 1-2 | 37101-37107 | **Implemented** |
 | 5 | [Drone Randomizer](sprint-5-drone-randomizer.md) | Low | 1 | 37200-37215 |
 | 6 | [Stage Randomizer](sprint-6-stage-randomizer.md) | High | 1 | None |
 | 7 | [Skill Swap Randomizer](sprint-7-skill-randomizer.md) | Very High | 2 | 38500-38699 |
