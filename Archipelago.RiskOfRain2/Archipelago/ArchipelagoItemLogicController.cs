@@ -39,7 +39,7 @@ public partial class ArchipelagoItemLogicController : IDisposable
 
     private bool finishedAllChecks = false;
     private ArchipelagoSession session;
-    private ConcurrentQueue<KeyValuePair<long, string>> itemReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
+    private ConcurrentQueue<KeyValuePair<long, string>> itemReceivedQueue = new();
     private ConcurrentQueue<KeyValuePair<long, string>> environmentReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
     private ConcurrentQueue<KeyValuePair<long, string>> fillerReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
     private ConcurrentQueue<KeyValuePair<long, string>> trapReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();

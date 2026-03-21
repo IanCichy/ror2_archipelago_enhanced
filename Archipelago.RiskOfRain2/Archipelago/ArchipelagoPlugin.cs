@@ -19,7 +19,7 @@ namespace Archipelago.RiskOfRain2;
 public class ArchipelagoPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "ror2-Archipelago";
-    public const string PluginAuthor = "IanCichy";
+    public const string PluginAuthor = "chichi2020";
     public const string PluginName = "ror2-Archipelago";
     public const string PluginVersion = "2.0.0";
 
@@ -48,9 +48,9 @@ public class ArchipelagoPlugin : BaseUnityPlugin
     {
 
     }
+
     public void Awake()
     {
-
         Log.Init(Logger);
 
         CreateConfigurations();
@@ -209,8 +209,6 @@ public class ArchipelagoPlugin : BaseUnityPlugin
             isPlayingAP = true;
         }
     }
-
-
     private void Run_onRunDestroyGlobal(Run obj)
     {
         if (isPlayingAP)
@@ -254,12 +252,11 @@ public class ArchipelagoPlugin : BaseUnityPlugin
             "password",
             "",
             "Change the default password");
-
     }
+
     private string ChangePort(string newValue)
     {
         apServerPort = int.Parse(newValue);
         return newValue;
     }
 }
-
