@@ -79,8 +79,6 @@ namespace Archipelago.RiskOfRain2
             NetworkManagerSystem.onStopClientGlobal += GameNetworkManager_onStopClientGlobal;
             On.RoR2.UI.ChatBox.SubmitChat += ChatBox_SubmitChat;
             AssetBundleHelper.LoadBundle();         
-            LanguageAPI.Add("BAZAAR_AP_CHECK_NAME", "Archipelago Terminal");
-            LanguageAPI.Add("BAZAAR_AP_CHECK_CONTEXT", "Activate <style=cIsUtility>Archipelago Check</style>");
             
             CreateLobbyFields();
 

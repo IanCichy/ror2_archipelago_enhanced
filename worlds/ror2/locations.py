@@ -102,13 +102,8 @@ location_table.update(get_locations(
 # ============================================================
 ror2_locations_start_bazaar = ror2_locations_start_ordered_stage + (allocation * 1000)  # needs to be out of range
 
-bazaar_interactable_pickups: Dict[str, int] = {
-    "Bazaar Lunar Interactable": ror2_locations_start_bazaar,
-}
 bazaar_shop_pickups: Dict[str, int] = {
     f"Bazaar Shop {i + 1}": ror2_locations_start_bazaar + 1 + i
     for i in range(BazaarShopChecks.range_end)  # range_end = 20
 }
-print(bazaar_shop_pickups)
-location_table.update(bazaar_interactable_pickups)
 location_table.update(bazaar_shop_pickups)

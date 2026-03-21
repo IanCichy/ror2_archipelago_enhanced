@@ -85,14 +85,6 @@ class AltarsPerEnvironment(Range):
     range_end = 2
     default = 1
 
-
-class BazaarLunarCost(Range):
-    """Number of Lunar Coins required to purchase the Bazaar Archipelago interactable."""
-    display_name = "Bazaar Lunar Interactable Cost"
-    range_start = 1
-    range_end = 10
-    default = 2
-
 class BazaarShopChecks(Range):
     """Number of Archipelago checks available in the Bazaar Between Time shop.
     Each visit will replace up to 5 shop slots with AP checks until exhausted."""
@@ -419,7 +411,6 @@ ror2_option_groups = [
         AltarsPerEnvironment,
         RequireStages,
         ProgressiveStages,
-        BazaarLunarCost,
         BazaarShopChecks,
     ]),
     OptionGroup("Classic Mode Options", [
@@ -460,7 +451,6 @@ class ROR2Options(PerGameCommonOptions):
     scavengers_per_stage: ScavengersPerEnvironment
     scanner_per_stage: ScannersPerEnvironment
     altars_per_stage: AltarsPerEnvironment
-    bazaar_lunar_cost: BazaarLunarCost
     bazaar_shop_checks: BazaarShopChecks
     total_revivals: TotalRevivals
     start_with_revive: StartWithRevive
