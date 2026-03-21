@@ -1,8 +1,9 @@
-using System;
 using R2API.Utils;
 using RoR2;
+using System;
 
 namespace Archipelago.RiskOfRain2.Console;
+
 public static class ArchipelagoConsoleCommand
 {
     public delegate void ArchipelagoConsoleCommandHandler(string url, int port, string slot, string password);
@@ -54,7 +55,7 @@ public static class ArchipelagoConsoleCommand
     {
         OnArchipelagoDisconnectCommandCalled?.Invoke();
     }
-    
+
     [ConCommand(commandName = "archipelago_reconnect", flags = ConVarFlags.SenderMustBeServer,
      helpText = "Attempts to reconnect to Archipelago.")]
     private static void ArchipelagoReconnect(ConCommandArgs args)
@@ -77,7 +78,7 @@ public static class ArchipelagoConsoleCommand
         {
             ChatMessage.Send("Only accepts one argument!");
         }
-        else if(args.GetArgString(0) == "true" || args.GetArgString(0) == "false")
+        else if (args.GetArgString(0) == "true" || args.GetArgString(0) == "false")
         {
             bool link = Convert.ToBoolean(args.GetArgString(0));
             OnArchipelagoDeathLinkCommandCalled?.Invoke(link);

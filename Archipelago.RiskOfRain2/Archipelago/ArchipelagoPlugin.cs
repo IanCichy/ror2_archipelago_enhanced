@@ -1,32 +1,27 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using Archipelago.RiskOfRain2.Console;
-using Archipelago.RiskOfRain2.Net;
-using Archipelago.RiskOfRain2.UI;
+using Archipelago.RiskOfRain2.Network;
 using Archipelago.RiskOfRain2.Services;
+using Archipelago.RiskOfRain2.UI;
 using BepInEx;
-using BepInEx.Bootstrap;
-using R2API;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
 using RoR2;
 using RoR2.Networking;
-using UnityEngine;
 using RoR2.UI;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Archipelago.RiskOfRain2;
+
 [BepInDependency("com.bepis.r2api")]
 [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
-//[BepInDependency("com.KingEnderBrine.InLobbyConfig", BepInDependency.DependencyFlags.HardDependency)]
 public class ArchipelagoPlugin : BaseUnityPlugin
 {
-    public const string PluginGUID = "com.Ijwu.Archipelago";
-    public const string PluginAuthor = "Ijwu/Sneaki";
-    public const string PluginName = "Archipelago";
-    public const string PluginVersion = "1.5.3";
+    public const string PluginGUID = "ror2-Archipelago";
+    public const string PluginAuthor = "IanCichy";
+    public const string PluginName = "ror2-Archipelago";
+    public const string PluginVersion = "2.0.0";
 
     public static BepInEx.Configuration.ConfigEntry<bool> SatelliteEntry { get; set; }
     public static BepInEx.Configuration.ConfigEntry<string> SlotNameEntry { get; set; }
@@ -76,7 +71,7 @@ public class ArchipelagoPlugin : BaseUnityPlugin
         ArchipelagoConsoleCommand.OnArchipelagoDisconnectCommandCalled += ArchipelagoConsoleCommand_ArchipelagoDisconnectCommandCalled;
         NetworkManagerSystem.onStopClientGlobal += GameNetworkManager_onStopClientGlobal;
         On.RoR2.UI.ChatBox.SubmitChat += ChatBox_SubmitChat;
-        AssetBundleHelper.LoadBundle();         
+        AssetBundleHelper.LoadBundle();
 
         CreateLobbyFields();
 

@@ -1,20 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
 using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
 using Archipelago.MultiClient.Net.Enums;
 using Archipelago.MultiClient.Net.MessageLog.Messages;
-using Archipelago.MultiClient.Net.Packets;
 using Archipelago.RiskOfRain2.Console;
+using Archipelago.RiskOfRain2.Network;
 using Archipelago.RiskOfRain2.Services;
-using Archipelago.RiskOfRain2.Net;
 using Archipelago.RiskOfRain2.UI;
-using R2API;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
 using RoR2;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -41,10 +39,26 @@ public partial class ArchipelagoClient
             return;
         }
 
-        // Stale session: clean up before creating a new one
-        TeardownSession();
-
         ChatMessage.Send($"<style=cIsUtility>[AP]</style> Attempting to connect to Archipelago at {url}.");
+
+        var result = ConnectToServer(url, slotName, password);
+        if (result == null)
+        {
+            OnClientDisconnect?.Invoke("Failed to create session.");
+            return;
+        }
+
+        ProcessLoginResult(result);
+    }
+
+    /// <summary>
+    /// Network-only connection: creates session and attempts login.
+    /// Safe to call from any thread (no Unity API calls).
+    /// Returns null if session creation fails.
+    /// </summary>
+    private LoginResult ConnectToServer(string url, string slotName, string password)
+    {
+        TeardownSession();
 
         try
         {
@@ -52,8 +66,8 @@ public partial class ArchipelagoClient
         }
         catch (Exception e)
         {
-            OnClientDisconnect?.Invoke(e.Message);
-            return;
+            Log.LogWarning($"Failed to create session: {e.Message}");
+            return null;
         }
 
         // On fresh connect (not reconnecting), reset item index and cached run state
@@ -66,8 +80,15 @@ public partial class ArchipelagoClient
             hasCachedRunState = false;
         }
 
-        var result = session.TryConnectAndLogin("Risk of Rain 2", slotName, ItemsHandlingFlags.AllItems, new Version(0, 6, 4), password: password);
+        return session.TryConnectAndLogin("Risk of Rain 2", slotName, ItemsHandlingFlags.AllItems, new Version(0, 6, 4), password: password);
+    }
 
+    /// <summary>
+    /// Processes a login result. Must be called on the Unity main thread
+    /// (touches UI, Addressables, and creates per-run GameObjects).
+    /// </summary>
+    private void ProcessLoginResult(LoginResult result)
+    {
         if (!result.Successful)
         {
             LoginFailure failureResult = (LoginFailure)result;
@@ -300,25 +321,34 @@ public partial class ArchipelagoClient
             ChatMessage.Send($"<style=cIsUtility>[AP]</style> Reconnection attempt #{attempt}");
             yield return new WaitForSeconds(3f);
 
-            // Run Connect on a background thread so the UI doesn't freeze
-            // during the TCP handshake / TryConnectAndLogin call.
-            var connectSignal = new System.Threading.ManualResetEventSlim(false);
-            new Thread(() =>
+            // Run only the TCP handshake on a background thread so the UI
+            // doesn't freeze. All Unity API calls happen on the main thread below.
+            LoginResult loginResult = null;
+            using (var connectSignal = new ManualResetEventSlim(false))
             {
-                try
+                new Thread(() =>
                 {
-                    Connect(lastServerUrl, lastSlotName, lastPassword);
-                }
-                catch (Exception ex)
-                {
-                    Log.LogWarning($"Reconnection attempt {attempt} failed: {ex.Message}");
-                }
-                connectSignal.Set();
-            }).Start();
+                    try
+                    {
+                        loginResult = ConnectToServer(lastServerUrl, lastSlotName, lastPassword);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.LogWarning($"Reconnection attempt {attempt} failed: {ex.Message}");
+                    }
+                    connectSignal.Set();
+                }).Start();
 
-            // Yield until the background thread finishes
-            while (!connectSignal.IsSet)
-                yield return new WaitForSeconds(0.25f);
+                // Yield until the background thread finishes
+                while (!connectSignal.IsSet)
+                    yield return new WaitForSeconds(0.25f);
+            }
+
+            // Process the login result on the main thread (UI, Addressables, SetupRun)
+            if (loginResult != null)
+            {
+                ProcessLoginResult(loginResult);
+            }
 
             if (IsConnected)
             {

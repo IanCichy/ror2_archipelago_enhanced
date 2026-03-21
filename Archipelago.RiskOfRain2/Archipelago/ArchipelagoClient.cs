@@ -1,25 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Collections;
 using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.BounceFeatures.DeathLink;
-using Archipelago.MultiClient.Net.Enums;
-using Archipelago.MultiClient.Net.MessageLog.Messages;
-using Archipelago.MultiClient.Net.Packets;
-using Archipelago.RiskOfRain2.Console;
 using Archipelago.RiskOfRain2.Services;
-using Archipelago.RiskOfRain2.Net;
-using Archipelago.RiskOfRain2.UI;
-using R2API.Networking;
-using R2API.Networking.Interfaces;
-using R2API.Utils;
 using RoR2;
-using RoR2.UI;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.UI;
 
 namespace Archipelago.RiskOfRain2;
 

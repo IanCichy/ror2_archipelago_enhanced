@@ -1,16 +1,26 @@
-using Archipelago.RiskOfRain2.Services;
 using Archipelago.RiskOfRain2.Extensions;
+using Archipelago.RiskOfRain2.Services;
 using RoR2;
+using RoR2.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using RoR2.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Archipelago.RiskOfRain2.UI;
+
+/// <summary>
+/// Controls the display and behavior of the Archipelago scoreboard panel within the in-game HUD, providing session
+/// progress, environment status, and item pool information for Archipelago-integrated runs.
+/// </summary>
+/// <remarks>The Archipelago scoreboard panel is dynamically added to the game's scoreboard and presents multiple
+/// pages of information, including player progress, unlocked environments, and item pool status. The panel supports
+/// paging via mouse scroll while the scoreboard is open. Register this controller to enable the panel; unregister to
+/// remove it. The panel is intended for use in Archipelago-enabled sessions and is not visible in standard
+/// gameplay.</remarks>
 public class ArchipelagoScoreboardController : MonoBehaviour
 {
     private TextMeshProUGUI apText;
@@ -445,4 +455,3 @@ public class ArchipelagoScoreboardController : MonoBehaviour
         }
     }
 }
-

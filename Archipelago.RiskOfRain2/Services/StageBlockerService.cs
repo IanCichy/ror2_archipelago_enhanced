@@ -10,6 +10,15 @@ using UnityEngine.Networking;
 
 namespace Archipelago.RiskOfRain2.Services;
 
+/// <summary>
+/// Provides services for managing stage and environment progression, blocking, and unlocking within a run. Controls
+/// which stages and environments are accessible based on progression rules and external conditions.
+/// </summary>
+/// <remarks>StageBlockerService is responsible for enforcing environment locks and progression logic, such as
+/// blocking access to certain stages until specific conditions are met. It tracks which environments are available,
+/// unlocked, or completed, and integrates with various game systems to prevent or allow access to environments as
+/// appropriate. This service is typically used in scenarios where stage progression must be controlled dynamically,
+/// such as in randomizer or challenge modes. Thread safety is not guaranteed; use from the main game thread.</remarks>
 class StageBlockerService : IService
 {
 
@@ -23,8 +32,8 @@ class StageBlockerService : IService
         { "Stage 2", false },
         { "Stage 3", false },
         { "Stage 4", false },
-
     };
+
     public static int AmountOfStages = 0;
 
     // Static tracking for the scoreboard panel
@@ -79,7 +88,7 @@ class StageBlockerService : IService
     public static bool ShowSeerPortals = false;
     public static string RevertToBeginningMessage = "";
 
-    private SeerPortal seerPortal;
+    private SeerPortalService seerPortal;
 
     public StageBlockerService()
     {
@@ -181,7 +190,7 @@ class StageBlockerService : IService
         foreach (SceneDef scenedef in SceneCatalog.allSceneDefs)
         {
             Log.LogDebug($"scene index {SceneCatalog.FindSceneIndex(scenedef.cachedName)} scene name {scenedef.cachedName}");
-            Log.LogDebug($"blocked by loop? {scenedef.isLockedBeforeLooping}");               
+            Log.LogDebug($"blocked by loop? {scenedef.isLockedBeforeLooping}");
             scenedef.isLockedBeforeLooping = false; // this is only used for the bazaar to block them before the first loop which we dont want
 
             if (scenedef.sceneType == SceneType.Stage || scenedef.sceneType == SceneType.Intermission)
@@ -269,7 +278,8 @@ class StageBlockerService : IService
             if (!StageUnlocks[$"Stage {StageLookup[stageName]}"] && !ProgressiveStages)
             {
                 return true;
-            } else if(StageLookup[stageName] > AmountOfStages && ProgressiveStages)
+            }
+            else if (StageLookup[stageName] > AmountOfStages && ProgressiveStages)
             {
                 return true;
             }
@@ -345,13 +355,13 @@ class StageBlockerService : IService
                     self.tier3AlternateDestinationScene = Run.instance.nextStageScene;
                     self.destinationScene = Run.instance.nextStageScene;
                     break;
-                case 3:  
+                case 3:
                 case 4:
                 case 5:
                     runNextStage = CheckBlocked("meridian");
                     break;
             }
-           
+
 
             self.useRunNextStageScene = runNextStage;
         }
@@ -556,7 +566,8 @@ class StageBlockerService : IService
             self.GetComponent<PurchaseInteraction>().SetAvailable(false);
             Log.LogDebug($"Bazaar Seer attempted to pick scene {sceneName}; blocked.");
             return;
-        } else
+        }
+        else
         {
             Log.LogDebug($"Bazaar Seer picked scene {sceneName}");
         }
@@ -569,7 +580,7 @@ class StageBlockerService : IService
         try
         {
             seerPortal = null;
-            seerPortal = new SeerPortal();
+            seerPortal = new SeerPortalService();
             seerPortal.Initialize();
         }
         catch (Exception ex)
@@ -675,7 +686,7 @@ class StageBlockerService : IService
         bool hasHabitatFall = false;
 
         // Since hatitatfall is a stage you usually cant get to without an initial loop we need to add special handling for it
-        choices.choices.ForEachTry( choice =>
+        choices.choices.ForEachTry(choice =>
         {
             if (choice.value.cachedName == "habitat") hasHabitat = true;
             if (choice.value.cachedName == "habitatfall") hasHabitatFall = true;
@@ -701,14 +712,14 @@ class StageBlockerService : IService
             SceneCatalog.mostRecentSceneDef.stageOrder = 1;
             Log.LogDebug("Switching to stage 1");
             self.startingSceneGroup.AddToWeightedSelection(choices, self.CanPickStage);
-            
+
         }
 
         // there are 2 conditions when we should mess with this call:
         // - the call to PickNextStageScene should have originated from stage blocker
         //      (since it gets called at the beginning of the scene by the game, and at the end by the stage blocker)
         // - this should do nothing special unless the current scene happens to be an ordered stage
-        if (manuallyPickingStage && SceneCatalog.mostRecentSceneDef &&  1 <= SceneCatalog.mostRecentSceneDef.stageOrder && 5 >= SceneCatalog.mostRecentSceneDef.stageOrder)
+        if (manuallyPickingStage && SceneCatalog.mostRecentSceneDef && 1 <= SceneCatalog.mostRecentSceneDef.stageOrder && 5 >= SceneCatalog.mostRecentSceneDef.stageOrder)
         {
             //string nextStage = $"Stage {self.nextStageScene.stageOrder - 1}";
             //Log.LogDebug($"Stage {self.nextStageScene.stageOrder} == {StageUnlocks[nextStage]}");
@@ -728,14 +739,15 @@ class StageBlockerService : IService
                 else if (SceneCatalog.mostRecentSceneDef.stageOrder > AmountOfStages && ProgressiveStages)
                 {
                     reason = $"you need {SceneCatalog.mostRecentSceneDef.stageOrder} Progressive Stages";
-                } else
+                }
+                else
                 {
                     List<string> stagesNeeded = new List<string>();
                     reason = $"you are missing ";
                     foreach (KeyValuePair<string, int> entry in StageLookup)
                     {
 
-                        if(entry.Value == SceneCatalog.mostRecentSceneDef.stageOrder)
+                        if (entry.Value == SceneCatalog.mostRecentSceneDef.stageOrder)
                         {
                             stagesNeeded.Add(entry.Key);
                         }
@@ -848,5 +860,4 @@ class StageBlockerService : IService
         orig(self);
         voidPortalSpawned = false;
     }
-
 }

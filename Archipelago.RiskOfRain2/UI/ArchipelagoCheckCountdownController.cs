@@ -1,8 +1,18 @@
-using System.Collections.Generic;
 using RoR2.UI;
+using System.Collections.Generic;
 using static RoR2.UI.ObjectivePanelController;
 
 namespace Archipelago.RiskOfRain2.UI;
+
+/// <summary>
+/// Provides static methods and properties for managing and displaying countdowns to the next Archipelago item or shrine
+/// check within the objective panel.
+/// </summary>
+/// <remarks>This controller integrates with the objective panel system to track progress toward item and shrine
+/// checks in Archipelago multiplayer sessions. It exposes properties to configure and query the current countdown
+/// state, and methods to update or enable/disable the countdown objective. The controller is intended for use in
+/// environments where Archipelago integration is active. Thread safety is not guaranteed for the static
+/// members.</remarks>
 public class ArchipelagoCheckCountdownController
 {
     public class CheckCountdownTracker : ObjectiveTracker
@@ -121,4 +131,3 @@ public class ArchipelagoCheckCountdownController
         ShrineStep = step;
     }
 }
-

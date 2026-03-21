@@ -1,9 +1,18 @@
 using Archipelago.RiskOfRain2.Services;
-using System.Collections.Generic;
 using RoR2.UI;
+using System.Collections.Generic;
 using static RoR2.UI.ObjectivePanelController;
 
 namespace Archipelago.RiskOfRain2.UI;
+
+/// <summary>
+/// Provides static methods and properties for tracking and managing Archipelago location objectives within the current
+/// game environment.
+/// </summary>
+/// <remarks>This controller integrates with the objective panel system to display and update the status of
+/// Archipelago-related checks, such as chests, shrines, scavengers, scanners, and Newt Altars, for the current scene.
+/// Use the provided methods to enable or disable the display of these objectives. All properties and methods are static
+/// and affect the global state of Archipelago objectives in the environment.</remarks>
 public class ArchipelagoLocationsInEnvironmentController
 {
     public class ChecksInEnvironment : ObjectiveTracker
@@ -18,11 +27,11 @@ public class ArchipelagoLocationsInEnvironmentController
         public override string GenerateString()
         {
             var lines = new List<string>();
-            if (CurrentChests > 0)     lines.Add($"  <color=#E2E2E2>Chests: {CurrentChests} remaining</color>");
-            if (CurrentShrines > 0)    lines.Add($"  <color=#F2C94C>Shrines: {CurrentShrines} remaining</color>");
+            if (CurrentChests > 0) lines.Add($"  <color=#E2E2E2>Chests: {CurrentChests} remaining</color>");
+            if (CurrentShrines > 0) lines.Add($"  <color=#F2C94C>Shrines: {CurrentShrines} remaining</color>");
             if (CurrentScavangers > 0) lines.Add($"  <color=#BB86FC>Scav: {CurrentScavangers} remaining</color>");
-            if (CurrentScanners > 0)   lines.Add($"  <color=#6FCF97>Scanner: {CurrentScanners} remaining</color>");
-            if (CurrentNewts > 0)      lines.Add($"  <color=#56B4E9>Newt Altar: {CurrentNewts} remaining</color>");
+            if (CurrentScanners > 0) lines.Add($"  <color=#6FCF97>Scanner: {CurrentScanners} remaining</color>");
+            if (CurrentNewts > 0) lines.Add($"  <color=#56B4E9>Newt Altar: {CurrentNewts} remaining</color>");
 
             lastChests = CurrentChests;
             lastShrines = CurrentShrines;

@@ -6,7 +6,14 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.Networking;
 
 namespace Archipelago.RiskOfRain2.Services;
-internal class SeerPortal
+
+/// <summary>
+/// Provides functionality to initialize and create seer portals in the game world for specified scenes.
+/// </summary>
+/// <remarks>This service is intended for internal use within the game logic to manage the instantiation of seer
+/// portals around the teleporter. It should be initialized before creating portals. The class is not
+/// thread-safe.</remarks>
+internal class SeerPortalService
 {
     private GameObject portalPrefab;
 
@@ -25,6 +32,7 @@ internal class SeerPortal
                 Log.LogWarning("TeleporterBaseMesh not found!");
                 return;
             }
+
             GameObject teleporterGameObject = teleporterMesh.transform.parent.gameObject;
             if (teleporterGameObject == null)
             {

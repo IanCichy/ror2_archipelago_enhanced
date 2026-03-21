@@ -2,6 +2,14 @@ using RoR2;
 using System;
 
 namespace Archipelago.RiskOfRain2.Services;
+
+/// <summary>
+/// Provides functionality to modify shrine spawn chances and interactable credit values during scene generation events.
+/// </summary>
+/// <remarks>This service hooks into the scene director's interactable card selection process to adjust the cost
+/// and frequency of shrine-related interactables. To enable or disable its effects, call the Register or Unregister
+/// methods respectively. Intended for use in scenarios where shrine spawn rates or costs need to be programmatically
+/// altered during gameplay.</remarks>
 class ShrineChanceService : IService
 {
     public void Register()
@@ -13,6 +21,7 @@ class ShrineChanceService : IService
     {
         RoR2.SceneDirector.onGenerateInteractableCardSelection -= SceneDirector_onGenerateInteractableCardSelection;
     }
+
     private void SceneDirector_onGenerateInteractableCardSelection(SceneDirector arg1, DirectorCardCategorySelection arg2)
     {
         try
@@ -20,9 +29,11 @@ class ShrineChanceService : IService
             Log.LogDebug($"interactible credit {arg1.interactableCredit}");
             arg1.interactableCredit *= 2;
             Log.LogDebug($"interactible credit {arg1.interactableCredit}");
+
             foreach (var cata in arg2.categories)
             {
                 Log.LogDebug($"categories in arg2 {cata.name}");
+
                 if (cata.name == "Shrines")
                 {
                     foreach (var card in cata.cards)
@@ -43,4 +54,3 @@ class ShrineChanceService : IService
         }
     }
 }
-

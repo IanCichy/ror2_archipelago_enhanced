@@ -1,7 +1,14 @@
 using R2API.Networking.Interfaces;
 using UnityEngine.Networking;
 
-namespace Archipelago.RiskOfRain2.Net;
+namespace Archipelago.RiskOfRain2.Network;
+
+/// <summary>
+/// Represents a network message used to synchronize shrine check progress between clients in a multiplayer session.
+/// </summary>
+/// <remarks>This class is typically used in multiplayer scenarios to communicate the current state of shrine
+/// pickups, such as the number of shrines checked and the current step in the process. The static event OnShrineSynced
+/// is raised when a message is received, allowing subscribers to update local state accordingly.</remarks>
 public class SyncShrineCheckProgress : INetMessage
 {
     public delegate void ShrineCheckSyncHandler(int count, int step);
@@ -29,10 +36,7 @@ public class SyncShrineCheckProgress : INetMessage
 
     public void OnReceived()
     {
-        if (OnShrineSynced != null)
-        {
-            OnShrineSynced(itemPickupCount, itemPickupStep);
-        }
+        OnShrineSynced?.Invoke(itemPickupCount, itemPickupStep);
     }
 
     public void Serialize(NetworkWriter writer)

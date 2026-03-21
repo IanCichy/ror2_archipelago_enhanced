@@ -1,20 +1,31 @@
+using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using RoR2;
 
 namespace Archipelago.RiskOfRain2.Services;
 
+/// <summary>
+/// Provides management and control over item and equipment pools, including tier-based availability, expansion, and
+/// filtering for gameplay systems.
+/// </summary>
+/// <remarks>The ItemPoolService enables deterministic control over which items and equipment are available in the
+/// game at any given time, supporting features such as progressive unlocking, tier-based restrictions, and integration
+/// with UI and drop table systems. It exposes methods for querying allowed items, expanding pools, and retrieving tier
+/// summaries. The service is typically used to enforce custom item pool logic, such as in challenge modes or modded
+/// gameplay scenarios. Thread safety is not guaranteed; all interactions should occur on the main game thread. Use the
+/// static Instance property to access the current service instance, and subscribe to OnPoolChanged to react to pool
+/// updates.</remarks>
 public class ItemPoolService : IService
 {
     // Per-tier allowed sets (O(1) lookup)
-    private HashSet<ItemIndex> allowedWhite = new HashSet<ItemIndex>();
-    private HashSet<ItemIndex> allowedGreen = new HashSet<ItemIndex>();
-    private HashSet<ItemIndex> allowedRed = new HashSet<ItemIndex>();
-    private HashSet<ItemIndex> allowedBoss = new HashSet<ItemIndex>();
-    private HashSet<ItemIndex> allowedLunar = new HashSet<ItemIndex>();
-    private HashSet<ItemIndex> allowedVoid = new HashSet<ItemIndex>();
-    private HashSet<EquipmentIndex> allowedEquipment = new HashSet<EquipmentIndex>();
+    private readonly HashSet<ItemIndex> allowedWhite = [];
+    private readonly HashSet<ItemIndex> allowedGreen = [];
+    private readonly HashSet<ItemIndex> allowedRed = [];
+    private readonly HashSet<ItemIndex> allowedBoss = [];
+    private readonly HashSet<ItemIndex> allowedLunar = [];
+    private readonly HashSet<ItemIndex> allowedVoid = [];
+    private readonly HashSet<EquipmentIndex> allowedEquipment = [];
 
     // Deterministic shuffled orderings per tier (set once at init, never changes)
     private List<ItemIndex> shuffledWhite;
@@ -84,8 +95,8 @@ public class ItemPoolService : IService
 
     public TierInfo[] GetTierSummary()
     {
-        return new[]
-        {
+        return
+        [
             new TierInfo { Name = "White", Current = allowedWhite.Count, Total = shuffledWhite?.Count ?? 0 },
             new TierInfo { Name = "Green", Current = allowedGreen.Count, Total = shuffledGreen?.Count ?? 0 },
             new TierInfo { Name = "Red", Current = allowedRed.Count, Total = shuffledRed?.Count ?? 0 },
@@ -93,17 +104,19 @@ public class ItemPoolService : IService
             new TierInfo { Name = "Lunar", Current = allowedLunar.Count, Total = shuffledLunar?.Count ?? 0 },
             new TierInfo { Name = "Void", Current = allowedVoid.Count, Total = shuffledVoid?.Count ?? 0 },
             new TierInfo { Name = "Equipment", Current = allowedEquipment.Count, Total = shuffledEquipment?.Count ?? 0 },
-        };
+        ];
     }
 
     public int GetNonEmptyTierCount()
     {
         int count = 0;
-        var tiers = GetTierSummary();
-        foreach (var t in tiers)
-        {
-            if (t.Total > 0) count++;
-        }
+        if (shuffledWhite?.Count > 0) count++;
+        if (shuffledGreen?.Count > 0) count++;
+        if (shuffledRed?.Count > 0) count++;
+        if (shuffledBoss?.Count > 0) count++;
+        if (shuffledLunar?.Count > 0) count++;
+        if (shuffledVoid?.Count > 0) count++;
+        if (shuffledEquipment?.Count > 0) count++;
         return count;
     }
 
@@ -125,6 +138,7 @@ public class ItemPoolService : IService
             case 5: foreach (var i in shuffledVoid) result.Add(((int)i, allowedVoid.Contains(i))); break;
             case 6: foreach (var i in shuffledEquipment) result.Add(((int)i, allowedEquipment.Contains(i))); break;
         }
+
         return result;
     }
 

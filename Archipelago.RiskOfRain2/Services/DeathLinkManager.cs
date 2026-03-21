@@ -8,6 +8,15 @@ using UnityEngine;
 
 namespace Archipelago.RiskOfRain2.Services;
 
+/// <summary>
+/// Manages the registration and handling of DeathLink events, enabling synchronized player deaths across connected
+/// clients in a multiplayer environment.
+/// </summary>
+/// <remarks>The DeathLinkManager coordinates the sending and receiving of DeathLink signals to ensure that player
+/// deaths are propagated appropriately between clients. It prevents cyclical death events and manages event
+/// subscriptions for the duration of its activation. This class is intended to be used as part of the DeathLink
+/// integration and should be registered and unregistered according to the lifecycle of the multiplayer
+/// session.</remarks>
 internal class DeathLinkManager : IService
 {
     private readonly DeathLinkService deathLink;

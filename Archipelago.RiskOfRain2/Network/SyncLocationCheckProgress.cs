@@ -1,7 +1,15 @@
 using R2API.Networking.Interfaces;
 using UnityEngine.Networking;
 
-namespace Archipelago.RiskOfRain2.Net;
+namespace Archipelago.RiskOfRain2.Network;
+
+/// <summary>
+/// Represents a network message used to synchronize the progress of location checks, such as item pickups, between
+/// clients and servers.
+/// </summary>
+/// <remarks>This class is typically used in multiplayer scenarios to communicate the current state of item pickup
+/// progress. It provides serialization and deserialization methods for network transmission and raises the
+/// OnLocationSynced event when a synchronization message is received.</remarks>
 public class SyncLocationCheckProgress : INetMessage
 {
     public delegate void LocationCheckSyncHandler(int count, int step);
@@ -29,10 +37,7 @@ public class SyncLocationCheckProgress : INetMessage
 
     public void OnReceived()
     {
-        if (OnLocationSynced != null)
-        {
-            OnLocationSynced(itemPickupCount, itemPickupStep);
-        }
+        OnLocationSynced?.Invoke(itemPickupCount, itemPickupStep);
     }
 
     public void Serialize(NetworkWriter writer)

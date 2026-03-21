@@ -1,4 +1,4 @@
-﻿namespace Archipelago.RiskOfRain2.Services;
+﻿namespace Archipelago.RiskOfRain2;
 
 interface IService
 {

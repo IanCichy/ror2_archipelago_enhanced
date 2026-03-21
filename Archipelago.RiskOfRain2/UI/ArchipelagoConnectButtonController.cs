@@ -1,11 +1,21 @@
-using RoR2.UI;
 using RoR2;
+using RoR2.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace Archipelago.RiskOfRain2.UI;
+
+/// <summary>
+/// Controls the Archipelago connection UI elements and handles user interactions for connecting to an Archipelago
+/// server within the character select screen.
+/// </summary>
+/// <remarks>This controller manages the display and behavior of the Archipelago connection panel, including input
+/// fields for connection details and buttons for connecting or minimizing the panel. It exposes delegates for handling
+/// changes to connection parameters and button clicks, allowing other components to respond to user input. The
+/// controller is intended to be used in multiplayer or single-player lobbies where Archipelago integration is
+/// available.</remarks>
 public class ArchipelagoConnectButtonController : MonoBehaviour
 {
     public static CharacterSelectController contr { get; private set; }

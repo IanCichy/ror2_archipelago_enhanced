@@ -1,8 +1,17 @@
-using System.Collections.Generic;
 using RoR2.UI;
+using System.Collections.Generic;
 using static RoR2.UI.ObjectivePanelController;
 
 namespace Archipelago.RiskOfRain2.UI;
+
+/// <summary>
+/// Provides functionality to track and manage an objective for completing a total number of location checks in an
+/// Archipelago session.
+/// </summary>
+/// <remarks>This controller integrates with the objective panel system to display progress toward completing all
+/// required location checks. Use the static properties and methods to update or control the objective's visibility and
+/// progress. This class is intended for use in environments where objectives are tracked and displayed to the player,
+/// such as in modded gameplay scenarios.</remarks>
 public class ArchipelagoTotalChecksObjectiveController
 {
     public class TotalChecksObjectiveTracker : ObjectiveTracker

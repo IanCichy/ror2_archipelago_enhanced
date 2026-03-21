@@ -1,21 +1,32 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Packets;
-using Archipelago.RiskOfRain2.UI;
-using Archipelago.RiskOfRain2.Net;
 using Archipelago.RiskOfRain2.Console;
+using Archipelago.RiskOfRain2.Extensions;
+using Archipelago.RiskOfRain2.Network;
+using Archipelago.RiskOfRain2.UI;
+using R2API.Networking;
+using R2API.Networking.Interfaces;
+using R2API.Utils;
 using RoR2;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using UnityEngine.Networking;
-using R2API.Utils;
-using R2API.Networking;
-using R2API.Networking.Interfaces;
-using Archipelago.RiskOfRain2.Extensions;
 
 namespace Archipelago.RiskOfRain2.Services;
 
+/// <summary>
+/// Provides services for tracking, managing, and submitting location checks within Risk of Rain 2 environments for
+/// Archipelago integration. Handles the logic for associating in-game events (such as opening chests, using shrines, or
+/// interacting with special objects) with Archipelago location checks, ensuring progress is accurately synchronized
+/// with the Archipelago session.
+/// </summary>
+/// <remarks>The LocationCheckService coordinates the mapping between in-game actions and Archipelago location
+/// checks, supporting multiple environment types and location categories (such as chests, shrines, scavengers, radio
+/// scanners, and newt altars). It manages per-environment state, handles catch-up logic for completed checks, and
+/// integrates with various game hooks to intercept relevant events. This service is intended to be registered and
+/// unregistered as part of the mod's lifecycle, and should be used in conjunction with an active Archipelago session.
+/// Thread safety is not guaranteed; usage should be confined to the main game thread.</remarks>
 class LocationCheckService : IService
 {
     // NOTE every mention of a "location" refers to the archipelago location checks
@@ -111,39 +122,39 @@ class LocationCheckService : IService
     // TODO this should probably become generic so that environment sets can be passed in (e.g. normal environments, simulacrum environments, etc)
     private void InitialSetupLocationDict(LocationInformationTemplate locationstemplate)
     {
-        currentlocations.Add(EnvironmentIds.Ancientloft,      locationstemplate); // Aphelian Sanctuary
-        currentlocations.Add(EnvironmentIds.Blackbeach,       locationstemplate); // Distant Roost
-        currentlocations.Add(EnvironmentIds.Blackbeach2,      locationstemplate); // Distant Roost
-        currentlocations.Add(EnvironmentIds.Lakes,            locationstemplate); // Verdant Falls
-        currentlocations.Add(EnvironmentIds.Dampcavesimple,   locationstemplate); // Abyssal Depths
-        currentlocations.Add(EnvironmentIds.Foggyswamp,       locationstemplate); // Wetland Aspect
-        currentlocations.Add(EnvironmentIds.Frozenwall,       locationstemplate); // Rallypoint Delta
-        currentlocations.Add(EnvironmentIds.Golemplains,      locationstemplate); // Titanic Plains
-        currentlocations.Add(EnvironmentIds.Golemplains2,     locationstemplate); // Titanic Plains
-        currentlocations.Add(EnvironmentIds.Goolake,          locationstemplate); // Abandoned Aqueduct
-        currentlocations.Add(EnvironmentIds.Rootjungle,       locationstemplate); // Sundered Grove
-        currentlocations.Add(EnvironmentIds.Shipgraveyard,    locationstemplate); // Siren's Call
-        currentlocations.Add(EnvironmentIds.Skymeadow,        locationstemplate); // Sky Meadow
-        currentlocations.Add(EnvironmentIds.Snowyforest,      locationstemplate); // Siphoned Forest
-        currentlocations.Add(EnvironmentIds.Sulfurpools,      locationstemplate); // Sulfur Pools
-        currentlocations.Add(EnvironmentIds.Wispgraveyard,    locationstemplate); // Scorched Acres
+        currentlocations.Add(EnvironmentIds.Ancientloft, locationstemplate); // Aphelian Sanctuary
+        currentlocations.Add(EnvironmentIds.Blackbeach, locationstemplate); // Distant Roost
+        currentlocations.Add(EnvironmentIds.Blackbeach2, locationstemplate); // Distant Roost
+        currentlocations.Add(EnvironmentIds.Lakes, locationstemplate); // Verdant Falls
+        currentlocations.Add(EnvironmentIds.Dampcavesimple, locationstemplate); // Abyssal Depths
+        currentlocations.Add(EnvironmentIds.Foggyswamp, locationstemplate); // Wetland Aspect
+        currentlocations.Add(EnvironmentIds.Frozenwall, locationstemplate); // Rallypoint Delta
+        currentlocations.Add(EnvironmentIds.Golemplains, locationstemplate); // Titanic Plains
+        currentlocations.Add(EnvironmentIds.Golemplains2, locationstemplate); // Titanic Plains
+        currentlocations.Add(EnvironmentIds.Goolake, locationstemplate); // Abandoned Aqueduct
+        currentlocations.Add(EnvironmentIds.Rootjungle, locationstemplate); // Sundered Grove
+        currentlocations.Add(EnvironmentIds.Shipgraveyard, locationstemplate); // Siren's Call
+        currentlocations.Add(EnvironmentIds.Skymeadow, locationstemplate); // Sky Meadow
+        currentlocations.Add(EnvironmentIds.Snowyforest, locationstemplate); // Siphoned Forest
+        currentlocations.Add(EnvironmentIds.Sulfurpools, locationstemplate); // Sulfur Pools
+        currentlocations.Add(EnvironmentIds.Wispgraveyard, locationstemplate); // Scorched Acres
         // Seekers of the Storm
-        currentlocations.Add(EnvironmentIds.Lakesnight,       locationstemplate); // Viscous Falls
-        currentlocations.Add(EnvironmentIds.Village,          locationstemplate); // Shattered Abodes
-        currentlocations.Add(EnvironmentIds.Villagenight,     locationstemplate); // Disturbed Impact
-        currentlocations.Add(EnvironmentIds.Lemuriantemple,   locationstemplate); // Reformed Altar
-        currentlocations.Add(EnvironmentIds.Habitat,          locationstemplate); // Treeborn Colony
-        currentlocations.Add(EnvironmentIds.Habitatfall,      locationstemplate); // Golden Dieback
-        currentlocations.Add(EnvironmentIds.Helminthroost,    locationstemplate); // Helminth Hatchery
+        currentlocations.Add(EnvironmentIds.Lakesnight, locationstemplate); // Viscous Falls
+        currentlocations.Add(EnvironmentIds.Village, locationstemplate); // Shattered Abodes
+        currentlocations.Add(EnvironmentIds.Villagenight, locationstemplate); // Disturbed Impact
+        currentlocations.Add(EnvironmentIds.Lemuriantemple, locationstemplate); // Reformed Altar
+        currentlocations.Add(EnvironmentIds.Habitat, locationstemplate); // Treeborn Colony
+        currentlocations.Add(EnvironmentIds.Habitatfall, locationstemplate); // Golden Dieback
+        currentlocations.Add(EnvironmentIds.Helminthroost, locationstemplate); // Helminth Hatchery
         // Alloyed Collective
-        currentlocations.Add(EnvironmentIds.Nest,             locationstemplate); // Pretender's Precipice
-        currentlocations.Add(EnvironmentIds.Ironalluvium,     locationstemplate); // Iron Alluvium
-        currentlocations.Add(EnvironmentIds.Ironalluvium2,    locationstemplate); // Iron Auroras
+        currentlocations.Add(EnvironmentIds.Nest, locationstemplate); // Pretender's Precipice
+        currentlocations.Add(EnvironmentIds.Ironalluvium, locationstemplate); // Iron Alluvium
+        currentlocations.Add(EnvironmentIds.Ironalluvium2, locationstemplate); // Iron Auroras
         currentlocations.Add(EnvironmentIds.Repurposedcrater, locationstemplate); // Repurposed Crater
         // Conduit Canyon has no Newt Altar spawns — use a modified template with 0 altars
         var conduitTemplate = locationstemplate.Copy();
         conduitTemplate[LocationTypes.newt_altar] = 0;
-        currentlocations.Add(EnvironmentIds.Conduitcanyon,    conduitTemplate); // Conduit Canyon
+        currentlocations.Add(EnvironmentIds.Conduitcanyon, conduitTemplate); // Conduit Canyon
         // NOTE: Solutional Haunt (61) and Neural Sanctum (62) are excluded — boss/victory stages with no standard checks
         // TODO separate out the DLC locations
     }
@@ -155,7 +166,8 @@ class LocationCheckService : IService
     public void CatchUpSceneLocations(string sceneName)
     {
         int index = GetSceneIndex(sceneName);
-        if (!currentlocations.TryGetValue(index, out LocationInformationTemplate original)) {
+        if (!currentlocations.TryGetValue(index, out LocationInformationTemplate original))
+        {
             return;
         }
         LocationInformationTemplate location = original.Copy();
@@ -215,9 +227,9 @@ class LocationCheckService : IService
         On.RoR2.ChestBehavior.ItemDrop += ChestBehavior_ItemDrop_Scavenger;
         On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_Scavenger;
         // Void Triple Chest
-       /* On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
-        On.RoR2.OptionChestBehavior.ItemDrop += OptionChestBehavior_ItemDrop;
-        On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3;*/
+        /* On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
+         On.RoR2.OptionChestBehavior.ItemDrop += OptionChestBehavior_ItemDrop;
+         On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3;*/
         // Radio Scanners
         On.RoR2.SceneDirector.PopulateScene += SceneDirector_PopulateScene;
         On.RoR2.RadiotowerTerminal.GrantUnlock += RadiotowerTerminal_GrantUnlock;
@@ -226,32 +238,8 @@ class LocationCheckService : IService
         // Newt Altars
         On.RoR2.PortalStatueBehavior.GrantPortalEntry += PortalStatueBehavior_GrantPortalEntry_Blue;
         // Highlight Satellite
-        
+
     }
-
-
-
-    /*        private void PickupDropletController_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3(On.RoR2.PickupDropletController.orig_CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 orig, GenericPickupController.CreatePickupInfo pickupInfo, UnityEngine.Vector3 position, UnityEngine.Vector3 velocity)
-            {
-                throw new NotImplementedException();
-            }
-
-            private void OptionChestBehavior_ItemDrop(On.RoR2.OptionChestBehavior.orig_ItemDrop orig, OptionChestBehavior self)
-            {
-                if (blockVoidTriple)
-                {
-                    Log.LogDebug("Blocked triple spawn");
-                    return;
-                }
-                orig(self);
-            }*/
-
-    /*        private void PurchaseInteraction_OnInteractionBegin(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
-            {
-                Log.LogDebug($"Purchase Interaction {self.name} activator {activator.name}");
-                if (self.name == "VoidTriple(Clone)") blockVoidTriple = true;
-                orig(self, activator);
-            }*/
 
     public void Unregister()
     {
@@ -286,7 +274,7 @@ class LocationCheckService : IService
         ArchipelagoConsoleCommand.OnArchipelagoHighlightSatelliteCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoHighlightSatelliteCommandCalled;
         // Newt Altars
         On.RoR2.PortalStatueBehavior.GrantPortalEntry -= PortalStatueBehavior_GrantPortalEntry_Blue;
-        
+
     }
 
     // NOTE the counters are not used to store the actual count, they used for detecting when to send locations
@@ -321,10 +309,12 @@ class LocationCheckService : IService
     {
         return CurrentSceneDef;
     }
+
     public void GetCurrentSceneIndex()
     {
         CurrentSceneIndex = GetSceneIndex(CurrentSceneDef.cachedName);
     }
+
     public int GetSceneIndex(string sceneName)
     {
         foreach (var scene in LocationExtensions.InternalSceneName)
@@ -336,6 +326,7 @@ class LocationCheckService : IService
         }
         return 0;
     }
+
     private void updateBar(LocationTypes loctype)
     {
         int amount = 0;
@@ -343,14 +334,14 @@ class LocationCheckService : IService
         switch (loctype)
         {
             case LocationTypes.chest:
-                amount = (int) chestitemsPickedUp;
-                step = (int) ItemPickupStep;
+                amount = (int)chestitemsPickedUp;
+                step = (int)ItemPickupStep;
                 ArchipelagoCheckCountdownController.UpdateItemCountdown(amount % step, step);
                 new SyncLocationCheckProgress(amount % step, step).Send(NetworkDestination.Clients);
                 break;
             case LocationTypes.shrine:
-                amount = (int) shrinesUsed;
-                step = (int) ShrineUseStep;
+                amount = (int)shrinesUsed;
+                step = (int)ShrineUseStep;
                 ArchipelagoCheckCountdownController.UpdateShrineCountdown(amount % step, step);
                 new SyncShrineCheckProgress(amount % step, step).Send(NetworkDestination.Clients);
                 break;
@@ -364,7 +355,7 @@ class LocationCheckService : IService
         Log.LogDebug($"planning to send location {id}"); // XXX
         // Changed to Async.. lets see if it breaks something else
         session.Socket.SendPacketAsync(packet);
-        
+
     }
 
     /// <summary>
@@ -443,14 +434,14 @@ class LocationCheckService : IService
         }
 
         currentlocations[CurrentSceneIndex] = locationsinenvironment; // save changes to the count
-        
+
         sendLocation(next_index + offset_in_allocation + environment_start_id);
 
         return true; // a location must have been sent
         // (don't care if the item for said location has already be collected)
         // (don't care if the location has been sent before, though it shouldn't happen if everything is working)
-
     }
+
     private bool UpdateClientsUI()
     {
         if (!currentlocations.TryGetValue(CurrentSceneIndex, out var locationsinenvironment))
@@ -467,6 +458,7 @@ class LocationCheckService : IService
         ArchipelagoLocationsInEnvironmentController.CurrentNewts = locationsinenvironment[LocationTypes.newt_altar];
         new SyncCurrentEnvironmentCheckProgress(locationsinenvironment.Scene(), locationsinenvironment[LocationTypes.chest], locationsinenvironment[LocationTypes.shrine],
             locationsinenvironment[LocationTypes.scavenger], locationsinenvironment[LocationTypes.radio_scanner], locationsinenvironment[LocationTypes.newt_altar]).Send(NetworkDestination.Clients);
+
         return true;
     }
 
@@ -523,12 +515,15 @@ class LocationCheckService : IService
             On.RoR2.Artifacts.SacrificeArtifactManager.OnServerCharacterDeath += SacrificeArtifactManager_OnServerCharacterDeath;
             On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 += PickupDropletController_CreatePickupDroplet_ChestDrop;
         }
+
         // update the UI to match the new environment
         for (int type = 0; type < (int)LocationTypes.MAX; type++)
         {
             ArchipelagoLocationsInEnvironmentController.count[type] = checkAvailable((LocationTypes)type);
         }
+
         UpdateClientsUI();
+
         if (0 == ArchipelagoLocationsInEnvironmentController.count.Total())
         {
             StageBlockerService.CompletedEnvironments.Add(CurrentSceneDef.cachedName);
@@ -542,8 +537,8 @@ class LocationCheckService : IService
         }
 
         // TODO maybe the make sure the ArchipelagoTotalChecksObjectiveController.CurrentChecks gets synced here (since sending a location increments it and could possibly desync it?)
-
     }
+
     private void SceneExitController_OnDestroy(On.RoR2.SceneExitController.orig_OnDestroy orig, SceneExitController self)
     {
         On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Chest;
@@ -551,32 +546,41 @@ class LocationCheckService : IService
         On.RoR2.PickupDropletController.CreatePickupDroplet_CreatePickupInfo_Vector3_Vector3 -= PickupDropletController_CreatePickupDroplet_ChestDrop;
         orig(self);
     }
+
     private void SceneCollection_AddToWeightedSelection(On.RoR2.SceneCollection.orig_AddToWeightedSelection orig, SceneCollection self, WeightedSelection<SceneDef> dest, Func<SceneDef, bool> canAdd)
     {
         // In explore mode we will give help the player a little by adjusting the RNG to favor locations where checks need to still be performed.
         // This should help the player not get stuck in an RNG hell where they simply cannot roll into the stages they need to go to to complte things.
 
         orig(self, dest, canAdd);
-        if (null == dest) return; // prevent NRE
-        for (int i=0; i < dest.Count; i++)
+
+        if (null == dest)
+        {
+            return;
+        }
+
+        for (int i = 0; i < dest.Count; i++)
         {
             // add 5 weight to per location left in an environment
             string stageName = dest.choices[i].value.cachedName;
             int environment_index = GetSceneIndex(stageName);
             CatchUpSceneLocations(stageName);
             Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} has stage name {stageName}.");
+
             if (currentlocations.TryGetValue(environment_index, out var locations))
-            { 
+            {
                 int addweight = locations.Total() * 5;
                 Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} has {addweight / 5} locations, adjusting weight.");
                 dest.ModifyChoiceWeight(i, dest.choices[i].weight + addweight);
                 Log.LogDebug($"Adjusted weight to {dest.choices[i].weight}.");
+
                 if (dest.choices[i].weight <= 0)
                 {
                     Log.LogDebug($"Environment {environment_index} weight adjusted to 1 to prevent zero or negative weight.");
                     dest.ModifyChoiceWeight(i, 1);
                 }
             }
+
             else Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} does not have locations.");
         }
 
@@ -593,7 +597,7 @@ class LocationCheckService : IService
     /// Call on opening a chest. This accounts for the step in item pickups uses and submits locations.
     /// </summary>
     /// <returns>Returns true if a location was submitted.</returns>
-    private bool chestOpened()
+    private bool ChestOpened()
     {
         bool locationavailable = 0 < checkAvailable(LocationTypes.chest);
         // If no chests we dont need the hooks running.
@@ -626,14 +630,14 @@ class LocationCheckService : IService
         // Therefore we need to manually make sure the call here is not from the backpack.
         if (NetworkServer.active && self.currentPickup != UniquePickup.none && scavbackpackHash != self.GetHashCode())
         {
-            chestblockitem = chestOpened();
+            chestblockitem = ChestOpened();
         }
         if (!chestblockitem)
         {
             orig(self);
         }
 
-         // the original will end up calling PickupDropletController_CreatePickupDroplet as well as other things
+        // the original will end up calling PickupDropletController_CreatePickupDroplet as well as other things
         chestblockitem = false;
     }
 
@@ -652,13 +656,15 @@ class LocationCheckService : IService
         if (sacrificeitem)
         {
             // if the item is from sacrifice, treat it as opening a chest
-            if (chestOpened())
+            if (ChestOpened())
             {
                 Log.LogDebug($"sacrifice chest item {pickupInfo._pickupState} was used to satisfy a location and thus is consumed");
                 return;
             }
+
             Log.LogDebug($"sacrifice chest item {pickupInfo._pickupState} passed through");
         }
+
         orig(pickupInfo, position, velocity);
     }
 
@@ -691,7 +697,11 @@ class LocationCheckService : IService
         }
 
         // only send checks when rolling over
-        if (locationavailable && 0 == shrinesUsed % ShrineUseStep) return sendNextAvailable(LocationTypes.shrine);
+        if (locationavailable && 0 == shrinesUsed % ShrineUseStep)
+        {
+            return sendNextAvailable(LocationTypes.shrine);
+        }
+
         return false;
     }
 
@@ -711,7 +721,8 @@ class LocationCheckService : IService
     {
         orig(self);
         // using the gold shrine beats it; it already costs enough to use the shrine, so taking the portal away is just crule
-        if (self.portalType == PortalStatueBehavior.PortalType.Goldshores) shrineBeat();
+        if (self.portalType == PortalStatueBehavior.PortalType.Goldshores)
+            shrineBeat();
     }
 
 
@@ -731,8 +742,14 @@ class LocationCheckService : IService
     /// </summary>
     private void CharacterMaster_GiveMoney(On.RoR2.CharacterMaster.orig_GiveMoney orig, CharacterMaster self, uint amount)
     {
-        if (!bloodshrineblockgold) orig(self, amount);
-        else Log.LogDebug($"CharacterMaster_GiveMoney: Gold blocked because blood shrine."); // XXX
+        if (!bloodshrineblockgold)
+        {
+            orig(self, amount);
+        }
+        else
+        {
+            Log.LogDebug($"CharacterMaster_GiveMoney: Gold blocked because blood shrine."); // XXX
+        }
     }
 
     /// <summary>
@@ -763,6 +780,7 @@ class LocationCheckService : IService
             Log.LogDebug($"chance shrine item {pickupInfo._pickupState} was used to satisfy a location and thus is consumed");
             return;
         }
+
         orig(pickupInfo, position, velocity);
     }
 
@@ -832,6 +850,7 @@ class LocationCheckService : IService
             Log.LogDebug($"amount of shrine locations left {locationsinenvironment[LocationTypes.shrine]}");
             if (locationsinenvironment[1] == 0) return;
         }
+
         if (self.purchaseCount == 1) ChatMessage.Send("Hmm thats weird, maybe try again");
     }
 
@@ -864,7 +883,7 @@ class LocationCheckService : IService
     {
         // All chest like objects drop 1 item, this includes scavenger backpacks which just call this method several times.
         // Therefore we need to manually make sure the call here is from the backpack.
-        if(NetworkServer.active && self.currentPickup != UniquePickup.none && scavbackpackHash == self.GetHashCode())
+        if (NetworkServer.active && self.currentPickup != UniquePickup.none && scavbackpackHash == self.GetHashCode())
         {
             // TODO make an option to block scavenger backpacks from dropping items
             scavbackpackblockitem = scavbackpackWasLocation;
@@ -994,7 +1013,5 @@ class LocationCheckService : IService
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-
 }
-
 // TODO it may be interesting if Baazar seers could allow the player to travel to environments earlier in the loop (ie to give more control over where the player goes)

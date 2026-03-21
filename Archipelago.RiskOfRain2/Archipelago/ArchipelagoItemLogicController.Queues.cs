@@ -1,12 +1,5 @@
-using System.Collections.Generic;
-using System.Linq;
 using Archipelago.RiskOfRain2.Extensions;
-using Archipelago.RiskOfRain2.Net;
 using Archipelago.RiskOfRain2.Services;
-using Archipelago.RiskOfRain2.UI;
-using R2API;
-using R2API.Networking;
-using R2API.Networking.Interfaces;
 using R2API.Utils;
 using RoR2;
 
@@ -19,30 +12,34 @@ public partial class ArchipelagoItemLogicController
 {
     private void RoR2Application_Update(On.RoR2.RoR2Application.orig_Update orig, RoR2Application self)
     {
-        if (environmentReceivedQueue.Any())
+        if (!environmentReceivedQueue.IsEmpty)
         {
             HandleReceivedEnvironmentQueueItem();
         }
-        if (stageReceivedQueue.Any())
+
+        if (!stageReceivedQueue.IsEmpty)
         {
             HandleReceivedStageQueueItem();
         }
-        if (poolReceivedQueue.Any())
+
+        if (!poolReceivedQueue.IsEmpty)
         {
             HandleReceivedPoolQueueItem();
         }
+
         if (IsInGame)
         {
-            if (itemReceivedQueue.Any())
+            if (!itemReceivedQueue.IsEmpty)
             {
                 HandleReceivedItemQueueItem();
             }
 
-            if (fillerReceivedQueue.Any())
+            if (!fillerReceivedQueue.IsEmpty)
             {
                 HandleReceivedFillerQueueItem();
             }
-            if (trapReceivedQueue.Any())
+
+            if (!trapReceivedQueue.IsEmpty)
             {
                 HandleReceivedTrapQueueItem();
             }
@@ -53,7 +50,7 @@ public partial class ArchipelagoItemLogicController
 
     private void HandleReceivedEnvironmentQueueItem()
     {
-        KeyValuePair<long, string> itemReceived = environmentReceivedQueue.Dequeue();
+        if (!environmentReceivedQueue.TryDequeue(out var itemReceived)) return;
 
         long itemIdReceived = itemReceived.Key;
         string itemNameReceived = itemReceived.Value;
@@ -66,7 +63,7 @@ public partial class ArchipelagoItemLogicController
 
     private void HandleReceivedFillerQueueItem()
     {
-        KeyValuePair<long, string> itemReceived = fillerReceivedQueue.Dequeue();
+        if (!fillerReceivedQueue.TryDequeue(out var itemReceived)) return;
 
         long itemIdReceived = itemReceived.Key;
         string itemNameReceived = itemReceived.Value;
@@ -92,7 +89,7 @@ public partial class ArchipelagoItemLogicController
 
     private void HandleReceivedTrapQueueItem()
     {
-        KeyValuePair<long, string> itemReceived = trapReceivedQueue.Dequeue();
+        if (!trapReceivedQueue.TryDequeue(out var itemReceived)) return;
 
         long itemIdReceived = itemReceived.Key;
         string itemNameReceived = itemReceived.Value;
@@ -118,7 +115,7 @@ public partial class ArchipelagoItemLogicController
 
     private void HandleReceivedStageQueueItem()
     {
-        KeyValuePair<long, string> itemReceived = stageReceivedQueue.Dequeue();
+        if (!stageReceivedQueue.TryDequeue(out var itemReceived)) return;
 
         long itemIdRecieved = itemReceived.Key;
         string itemNameReceived = itemReceived.Value;
@@ -143,7 +140,7 @@ public partial class ArchipelagoItemLogicController
 
     private void HandleReceivedPoolQueueItem()
     {
-        KeyValuePair<long, string> itemReceived = poolReceivedQueue.Dequeue();
+        if (!poolReceivedQueue.TryDequeue(out var itemReceived)) return;
 
         long itemIdReceived = itemReceived.Key;
         string itemNameReceived = itemReceived.Value;
@@ -170,7 +167,7 @@ public partial class ArchipelagoItemLogicController
 
     private void HandleReceivedItemQueueItem()
     {
-        KeyValuePair<long, string> itemReceived = itemReceivedQueue.Dequeue();
+        if (!itemReceivedQueue.TryDequeue(out var itemReceived)) return;
 
         long itemIdRecieved = itemReceived.Key;
         string itemNameReceived = itemReceived.Value;

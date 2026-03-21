@@ -1,4 +1,4 @@
-﻿using Archipelago.RiskOfRain2.Net;
+﻿using Archipelago.RiskOfRain2.Network;
 using Archipelago.RiskOfRain2.UI;
 using KinematicCharacterController;
 using RoR2;
@@ -6,6 +6,14 @@ using UnityEngine;
 
 namespace Archipelago.RiskOfRain2.Services;
 
+/// <summary>
+/// Provides client-side management and event registration for item synchronization and related gameplay features in the
+/// Archipelago integration.
+/// </summary>
+/// <remarks>This service is responsible for subscribing to and handling various game events related to item and
+/// shrine synchronization, teleportation, and game mode transitions. It should be registered at the appropriate time in
+/// the application's lifecycle to ensure correct event handling, and unregistered when no longer needed to prevent
+/// unintended side effects. This class is not thread-safe.</remarks>
 class ClientItemsService : IService
 {
     public ClientItemsService()

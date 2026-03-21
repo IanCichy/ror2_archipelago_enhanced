@@ -1,18 +1,17 @@
-using System;
-using System.Threading;
-using System.Collections.Generic;
 using Archipelago.MultiClient.Net.Packets;
-using Archipelago.RiskOfRain2.Net;
+using Archipelago.RiskOfRain2.Network;
 using Archipelago.RiskOfRain2.UI;
-using R2API;
+using KinematicCharacterController;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
 using RoR2;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.AddressableAssets;
-using KinematicCharacterController;
+using UnityEngine.Networking;
 
 namespace Archipelago.RiskOfRain2;
 

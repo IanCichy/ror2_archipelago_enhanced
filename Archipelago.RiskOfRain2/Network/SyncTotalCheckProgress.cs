@@ -2,7 +2,15 @@ using Archipelago.RiskOfRain2.UI;
 using R2API.Networking.Interfaces;
 using UnityEngine.Networking;
 
-namespace Archipelago.RiskOfRain2.Net;
+namespace Archipelago.RiskOfRain2.Network;
+
+/// <summary>
+/// Represents a network message that communicates the progress of total checks synchronization between clients and the
+/// server.
+/// </summary>
+/// <remarks>This class is typically used in multiplayer scenarios to update clients on the current and total
+/// number of checks completed as part of a synchronization objective. It implements the INetMessage interface to
+/// support serialization and deserialization for network transmission.</remarks>
 public class SyncTotalCheckProgress : INetMessage
 {
     int currentChecks;
