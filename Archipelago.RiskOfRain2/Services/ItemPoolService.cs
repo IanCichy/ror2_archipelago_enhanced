@@ -369,6 +369,11 @@ public class ItemPoolService : IService
 
     private static void ExpandTier(HashSet<ItemIndex> allowed, List<ItemIndex> shuffled, int perExpansion, ref int cursor, List<string> newNames)
     {
+        // Skip past items already in the pool (e.g. from a duplicate delivery)
+        // so the cursor stays aligned with the true frontier.
+        while (cursor < shuffled.Count && allowed.Contains(shuffled[cursor]))
+            cursor++;
+
         int added = 0;
         while (added < perExpansion && cursor < shuffled.Count)
         {
@@ -387,6 +392,11 @@ public class ItemPoolService : IService
 
     private static void ExpandEquipmentTier(HashSet<EquipmentIndex> allowed, List<EquipmentIndex> shuffled, int perExpansion, ref int cursor, List<string> newNames)
     {
+        // Skip past items already in the pool (e.g. from a duplicate delivery)
+        // so the cursor stays aligned with the true frontier.
+        while (cursor < shuffled.Count && allowed.Contains(shuffled[cursor]))
+            cursor++;
+
         int added = 0;
         while (added < perExpansion && cursor < shuffled.Count)
         {

@@ -27,7 +27,7 @@ public class LocationExtensions
         {
             return locationName;
         }
-        return null;
+        return cachedName;
     }
 
     public static int GetSceneIndex(string cachedName)

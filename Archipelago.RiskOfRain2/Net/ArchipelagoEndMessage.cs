@@ -1,27 +1,25 @@
-﻿using System;
+using System;
 using R2API.Networking.Interfaces;
 using UnityEngine.Networking;
 
-namespace Archipelago.RiskOfRain2.Net
+namespace Archipelago.RiskOfRain2.Net;
+public class ArchipelagoEndMessage : INetMessage
 {
-    public class ArchipelagoEndMessage : INetMessage
+    public static event Action OnArchipelagoSessionEnd;
+
+    public void Deserialize(NetworkReader reader)
     {
-        public static event Action OnArchipelagoSessionEnd;
+    }
 
-        public void Deserialize(NetworkReader reader)
+    public void OnReceived()
+    {
+        if (OnArchipelagoSessionEnd != null)
         {
+            OnArchipelagoSessionEnd();
         }
+    }
 
-        public void OnReceived()
-        {
-            if (OnArchipelagoSessionEnd != null)
-            {
-                OnArchipelagoSessionEnd();
-            }
-        }
-
-        public void Serialize(NetworkWriter writer)
-        {
-        }
+    public void Serialize(NetworkWriter writer)
+    {
     }
 }
