@@ -87,7 +87,8 @@ class AltarsPerEnvironment(Range):
 
 class BazaarShopChecks(Range):
     """Number of Archipelago checks available in the Bazaar Between Time shop.
-    Each visit will replace up to 5 shop slots with AP checks until exhausted."""
+    Each visit will replace up to a maximum of 5 (all) shop slots, per visit with AP checks until exhausted.
+    Reroll terminal is purely a waste of lunar coins. Recommend using lower number unless you \"have a lot of coins\""""
     display_name = "Bazaar Shop Checks"
     range_start = 0
     range_end = 100
