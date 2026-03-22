@@ -90,7 +90,7 @@ class BazaarShopChecks(Range):
     Each visit will replace up to 5 shop slots with AP checks until exhausted."""
     display_name = "Bazaar Shop Checks"
     range_start = 0
-    range_end = 20
+    range_end = 100
     default = 5
 
 class TotalRevivals(Range):

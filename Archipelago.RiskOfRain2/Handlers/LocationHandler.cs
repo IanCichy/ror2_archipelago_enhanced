@@ -60,7 +60,6 @@ namespace Archipelago.RiskOfRain2.Handlers
         public const int ironalluvium2 = 58;    // Iron Auroras
         public const int repurposedcrater = 59; // Repurposed Crater
         public const int conduitcanyon = 60;    // Conduit Canyon (no Newt Altar)
-
         public static int CurrentSceneIndex = 0;
         public enum LocationTypes
         {
@@ -182,6 +181,7 @@ namespace Archipelago.RiskOfRain2.Handlers
         private ArchipelagoSession session;
         private LocationInformationTemplate originallocationstemplate;
         private Dictionary<int, LocationInformationTemplate> currentlocations;
+        public BazaarHandler BazaarHandler { get; private set; }
 
         public LocationHandler(ArchipelagoSession session, LocationInformationTemplate locationstemplate)
         {
@@ -190,8 +190,8 @@ namespace Archipelago.RiskOfRain2.Handlers
             originallocationstemplate = locationstemplate.Copy();
             currentlocations = new Dictionary<int, LocationInformationTemplate>();
 
-
             InitialSetupLocationDict(locationstemplate);
+            BazaarHandler = new BazaarHandler(session, sendLocation);
         }
 
         /// <summary>
@@ -295,8 +295,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.ShrineHealingBehavior.AddShrineStack += ShrineHealingBehavior_AddShrineStack;
             On.RoR2.ShrineColossusAccessBehavior.OnInteraction += ShrineColossusAccessBehavior_OnInteraction;
             // Bazaar
-            On.RoR2.SceneDirector.PopulateScene += SceneDirector_PopulateScene_Bazaar;
-            On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
+            BazaarHandler.Hook();
             // Scavengers
             On.EntityStates.ScavBackpack.Opening.OnEnter += Opening_OnEnter;
             On.RoR2.ChestBehavior.ItemDrop += ChestBehavior_ItemDrop_Scavenger;
@@ -364,8 +363,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             On.RoR2.ShrineHealingBehavior.AddShrineStack -= ShrineHealingBehavior_AddShrineStack;
             On.RoR2.ShrineColossusAccessBehavior.OnInteraction -= ShrineColossusAccessBehavior_OnInteraction;
             // Bazaar
-            On.RoR2.SceneDirector.PopulateScene -= SceneDirector_PopulateScene_Bazaar;
-            On.RoR2.PurchaseInteraction.OnInteractionBegin -= PurchaseInteraction_OnInteractionBegin;
+            BazaarHandler.UnHook();
             // Scavengers
             On.EntityStates.ScavBackpack.Opening.OnEnter -= Opening_OnEnter;
             On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Scavenger;
@@ -399,15 +397,6 @@ namespace Archipelago.RiskOfRain2.Handlers
         private bool highlightOn = false;
         public static SceneDef CurrentSceneDef { get; private set; } //used for the current scene loaded
         // bazaar shop stuff
-        private Queue<long> bazaarShopCheckQueue = new Queue<long>(); // remaining shop AP checks
-        private int bazaarShopChecksTotal = 0; // total configured checks
-        public const int BazaarShopSlotsPerVisit = 5; // always replace all 5 slots
-        private const long BazaarShopLocationIdStart = 82251; // Bazaar Shop 1 starts here
-        private HashSet<ShopTerminalBehavior> apCheckTerminals = new HashSet<ShopTerminalBehavior>();
-        private Dictionary<ShopTerminalBehavior, long> terminalLocationIds = new Dictionary<ShopTerminalBehavior, long>();
-        private Dictionary<long, ScoutedItemInfo> bazaarShopScoutedItems = new Dictionary<long, ScoutedItemInfo>();
-
-
         private void SceneInfo_Awake(On.RoR2.SceneInfo.orig_Awake orig, SceneInfo self)
         {
             orig(self);
@@ -456,7 +445,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             }
         }
 
-        private void sendLocation(int id)
+        internal void sendLocation(int id)
         {
             LocationChecksPacket packet = new LocationChecksPacket();
             packet.Locations = new List<long> { id }.ToArray();
@@ -598,13 +587,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             scavbackpackHash = 0;
             scavbackpackWasLocation = false;
             scavbackpackblockitem = false;
-            foreach (var kvp in terminalLocationIds)
-            {
-                Log.LogDebug($"Re-enqueuing unpurchased Bazaar shop check {kvp.Value}.");
-                bazaarShopCheckQueue.Enqueue(kvp.Value);
-            }
-            apCheckTerminals.Clear();
-            terminalLocationIds.Clear();
+            BazaarHandler.OnSceneChanged();
 
             // update the bars for the new scene
             updateBar(LocationTypes.chest);
@@ -632,7 +615,6 @@ namespace Archipelago.RiskOfRain2.Handlers
                 new NextStageObjectives().Send(NetworkDestination.Clients);
                 ArchipelagoLocationsInEnvironmentController.AddObjective();
             }
-            apCheckTerminals.Clear();
 
             // TODO maybe the make sure the ArchipelagoTotalChecksObjectiveController.CurrentChecks gets synced here (since sending a location increments it and could possibly desync it?)
 
@@ -1080,159 +1062,6 @@ namespace Archipelago.RiskOfRain2.Handlers
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Bazaar Between Time Special Pedastals
-
-        private void SceneDirector_PopulateScene_Bazaar(On.RoR2.SceneDirector.orig_PopulateScene orig, SceneDirector self)
-        {
-            orig(self);
-
-            if (CurrentSceneDef == null || CurrentSceneDef.cachedName != "bazaar") return;
-
-            ReplaceBazaarShopTerminals();
-        }
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// Bazaar Between Time: Lunar Shop Replacement aka AP Checks Shop
-        public void InitializeBazaarShopQueue(int totalChecks)
-        {
-            bazaarShopChecksTotal = totalChecks;
-            bazaarShopCheckQueue.Clear();
-            bazaarShopScoutedItems.Clear();
-
-            var locationsToScout = new List<long>();
-            for (int i = 0; i < totalChecks; i++)
-            {
-                long locationId = BazaarShopLocationIdStart + i;
-                if (!session.Locations.AllLocationsChecked.Contains(locationId))
-                {
-                    bazaarShopCheckQueue.Enqueue(locationId);
-                    locationsToScout.Add(locationId);
-                }
-            }
-
-            Log.LogDebug($"Bazaar shop queue initialized with {bazaarShopCheckQueue.Count} checks.");
-
-            // Scout locations async — results stored when Bazaar is visited
-            if (locationsToScout.Count > 0)
-            {
-                session.Locations.ScoutLocationsAsync(locationsToScout.ToArray())
-                    .ContinueWith(task =>
-                    {
-                        if (task.IsFaulted)
-                        {
-                            Log.LogError($"Failed to scout Bazaar shop locations: {task.Exception}");
-                            return;
-                        }
-                        bazaarShopScoutedItems = task.Result;
-                        Log.LogDebug($"Scouted {bazaarShopScoutedItems.Count} Bazaar shop locations.");
-                    });
-            }
-        }
-        private void ReplaceBazaarShopTerminals()
-        {
-            if (bazaarShopCheckQueue.Count == 0)
-            {
-                Log.LogDebug("No Bazaar shop checks remaining, skipping replacement.");
-                return;
-            }
-
-            var allTerminals = UnityEngine.Object.FindObjectsOfType<ShopTerminalBehavior>();
-            Log.LogDebug($"Found {allTerminals.Length} ShopTerminalBehavior instances in Bazaar.");
-
-            foreach (var terminal in allTerminals)
-            {
-                if (bazaarShopCheckQueue.Count == 0) break;
-
-                var purchaseInteraction = terminal.GetComponent<PurchaseInteraction>();
-                if (purchaseInteraction == null) continue;
-                if (purchaseInteraction.costType != CostTypeIndex.LunarCoin) continue;
-
-                Log.LogDebug($"Found Lunar Coin terminal: {terminal.gameObject.name}");
-
-                if (terminal.gameObject.name.Contains("Reroll") ||
-                    terminal.gameObject.name.Contains("Cleanse") ||
-                    terminal.gameObject.name.Contains("Scrapper"))
-                {
-                    Log.LogDebug($"Skipping terminal: {terminal.gameObject.name}");
-                    continue;
-                }
-
-                // Mark as AP check
-                long locationId = bazaarShopCheckQueue.Dequeue();
-                terminalLocationIds[terminal] = locationId;
-
-                string displayName = GetBazaarShopTerminalName(locationId);
-                string tokenKey = $"BAZAAR_AP_CHECK_{locationId}_NAME";
-                string tokenContext = $"BAZAAR_AP_CHECK_{locationId}_CONTEXT";
-                LanguageAPI.Add(tokenKey, displayName);
-                LanguageAPI.Add(tokenContext, $"Purchase <style=cIsUtility>{displayName}</style>");
-
-                apCheckTerminals.Add(terminal);
-                purchaseInteraction.displayNameToken = tokenKey;      // changed from hardcoded token
-                purchaseInteraction.contextToken = tokenContext;       // changed from hardcoded token
-                terminal.SetPickup(UniquePickup.none, true);
-
-                Log.LogDebug($"Replaced {terminal.gameObject.name} with AP check ID {locationId} ({displayName}). {bazaarShopCheckQueue.Count} remaining in queue.");
-            }
-        }
-        private void PurchaseInteraction_OnInteractionBegin(
-            On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig,
-            PurchaseInteraction self,
-            Interactor interactor)
-        {
-            if (CurrentSceneDef?.cachedName == "bazaar")
-            {
-                var shopTerminal = self.GetComponent<ShopTerminalBehavior>();
-                if (shopTerminal != null && apCheckTerminals.Contains(shopTerminal))
-                {
-                    if (terminalLocationIds.TryGetValue(shopTerminal, out long locationId))
-                    {
-                        Log.LogDebug($"Bazaar shop AP check purchased, sending location {locationId}.");
-
-                        apCheckTerminals.Remove(shopTerminal);
-                        terminalLocationIds.Remove(shopTerminal);
-
-                        // Deduct lunar coins from the interacting player
-                        var characterBody = interactor.GetComponent<CharacterBody>();
-                        if (characterBody != null)
-                        {
-                            var networkUser = Util.LookUpBodyNetworkUser(characterBody);
-                            if (networkUser != null)
-                            {
-                                networkUser.DeductLunarCoins((uint)self.cost);
-                            }
-                        }
-
-                        // Update UI
-                        ArchipelagoTotalChecksObjectiveController.CurrentChecks++;
-                        int currentChecks = ArchipelagoTotalChecksObjectiveController.CurrentChecks;
-                        int totalChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
-                        new SyncTotalCheckProgress(currentChecks, totalChecks).Send(NetworkDestination.Clients);
-
-                        sendLocation((int)locationId);
-
-                        // Lock the terminal
-                        shopTerminal.SetPickup(UniquePickup.none, false);
-                        shopTerminal.SetHasBeenPurchased(true);
-                    }
-                    return; // never call orig for AP check terminals
-                }
-            }
-
-            orig(self, interactor);
-        }
-        private string GetBazaarShopTerminalName(long locationId)
-        {
-            if (bazaarShopScoutedItems.TryGetValue(locationId, out var scoutedItem))
-            {
-                string itemName = scoutedItem.ItemName ?? "Unknown Item";
-                string playerName = session.Players.GetPlayerName(scoutedItem.Player) ?? "Unknown Player";
-                return $"{playerName}'s {itemName}";
-            }
-            return "Archipelago Item";
-        }
 
     }
 

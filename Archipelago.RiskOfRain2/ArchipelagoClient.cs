@@ -317,7 +317,7 @@ namespace Archipelago.RiskOfRain2
                 // Initialize Bazaar shop queue
                 if (cachedSlotData.TryGetValue("bazaarShopChecks", out var bazaarShopChecks))
                 {
-                    Locationhandler.InitializeBazaarShopQueue(Convert.ToInt32(bazaarShopChecks));
+                    Locationhandler.BazaarHandler.InitializeBazaarShopQueue(Convert.ToInt32(bazaarShopChecks));
                 }
             }
             else

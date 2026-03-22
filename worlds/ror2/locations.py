@@ -104,6 +104,6 @@ ror2_locations_start_bazaar = ror2_locations_start_ordered_stage + (allocation *
 
 bazaar_shop_pickups: Dict[str, int] = {
     f"Bazaar Shop {i + 1}": ror2_locations_start_bazaar + 1 + i
-    for i in range(BazaarShopChecks.range_end)  # range_end = 20
+    for i in range(BazaarShopChecks.range_end)  # range_end = 100
 }
 location_table.update(bazaar_shop_pickups)
