@@ -46,6 +46,14 @@ public partial class ArchipelagoClient : IDisposable
     //public static ReleaseClick OnButtonClick;
     public static string ConnectedPlayerName;
     public static string victoryCondition;
+
+    // Victory condition constants — must match AP slot data values
+    public const string VictoryMithrix = "Mithrix";
+    public const string VictoryVoidling = "Voidling";
+    public const string VictoryLimbo = "Limbo";
+    public const string VictoryRebirth = "Rebirth";
+    public const string VictorySolusHeart = "Solus Heart";
+    public const string VictoryAny = "any";
     // Acceptable ending types
     private GameEndingDef[] acceptableEndings;
     // Acceptable stages to die on

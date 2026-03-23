@@ -172,25 +172,25 @@ public partial class ArchipelagoClient
                 case "1":
                     acceptableEndings = new[] { RoR2Content.GameEndings.MainEnding };
                     acceptableLosses = new[] { "moon", "moon2" };
-                    victoryCondition = "Mithrix";
+                    victoryCondition = VictoryMithrix;
                     break;
                 // Voidling
                 case "2":
                     acceptableEndings = new[] { DLC1Content.GameEndings.VoidEnding };
                     acceptableLosses = new[] { "voidraid" };
-                    victoryCondition = "Voidling";
+                    victoryCondition = VictoryVoidling;
                     break;
                 // Limbo
                 case "3":
                     acceptableEndings = new[] { RoR2Content.GameEndings.LimboEnding };
                     acceptableLosses = new[] { "mysteryspace", "limbo" };
-                    victoryCondition = "Limbo";
+                    victoryCondition = VictoryLimbo;
                     break;
                 // False Son (Rebirth)
                 case "4":
                     acceptableEndings = new[] { DLC2Content.GameEndings.RebirthEndingDef };
                     acceptableLosses = new[] { "meridian" };
-                    victoryCondition = "Rebirth";
+                    victoryCondition = VictoryRebirth;
                     break;
                 // Solus Heart — defeat Solus Heart in Neural Sanctum (scene: solusweb)
                 // Path: Solutional Haunt (Solus Wing) → Computational Exchange → Neural Sanctum (Solus Heart)
@@ -198,7 +198,7 @@ public partial class ArchipelagoClient
                 case "5":
                     acceptableEndings = new GameEndingDef[] { };
                     acceptableLosses = new[] { "solusweb" };
-                    victoryCondition = "Solus Heart";
+                    victoryCondition = VictorySolusHeart;
                     break;
                 default:
                     SetAnyVictoryCondition();

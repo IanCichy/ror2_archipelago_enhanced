@@ -1,7 +1,6 @@
 using Archipelago.MultiClient.Net.Packets;
 using Archipelago.RiskOfRain2.Network;
 using Archipelago.RiskOfRain2.UI;
-using KinematicCharacterController;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
@@ -184,40 +183,12 @@ public partial class ArchipelagoItemLogicController
         spawnedMonster = false;
     }
 
-    // TODO The currently spawns players to the center of the map aka (0, 0, 0) where we would want it to be a random location.
     private void TeleportPlayer()
     {
         if (!teleportedRecently)
         {
-            foreach (NetworkUser local in NetworkUser.readOnlyLocalPlayersList)
-            {
-                if (local)
-                {
-                    SpawnCard spawnCard = ScriptableObject.CreateInstance<SpawnCard>();
-                    spawnCard = LegacyResourcesAPI.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscBarrel1");
-
-                    Xoroshiro128Plus xoroshiro128PlusRadioScanner = new Xoroshiro128Plus(RoR2Application.rng);
-                    if (DirectorCore.instance != null)
-                    {
-                        var card = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(spawnCard, new DirectorPlacementRule
-                        {
-                            placementMode = DirectorPlacementRule.PlacementMode.Random
-                        }, xoroshiro128PlusRadioScanner));
-                        var position = card.transform.position;
-                        var directorPlacement = new DirectorPlacementRule
-                        {
-                            placementMode = DirectorPlacementRule.PlacementMode.Random,
-                            minDistance = 5f,
-                            maxDistance = 20f,
-                        };
-                        Log.LogDebug($"directorPlacemnet {directorPlacement.targetPosition} card position {position + new Vector3(0, 10, 0)} player position {local.master.transform.position}");
-                        var body = local.master.GetBody();
-                        body.GetComponentInChildren<KinematicCharacterMotor>().SetPosition(position + new Vector3(0, 10, 0));
-                        new ArchipelagoTeleportClient().Send(NetworkDestination.Clients);
-                        card.SetActive(false);
-                    }
-                }
-            }
+            Services.ClientItemsService.TeleportLocalPlayersToRandomPosition();
+            new ArchipelagoTeleportClient().Send(NetworkDestination.Clients);
         }
     }
 

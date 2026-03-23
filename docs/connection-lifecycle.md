@@ -25,8 +25,8 @@ Created by `SetupRun()`, destroyed by `CleanupRun()`:
 - `LocationCheckService` (Explore mode) — Per-stage location tracking
 - `ShrineChanceService` (Explore mode) — Shrine modification
 - `ItemPoolService` (when pool limiting enabled) — Per-tier drop filtering
-- `itemCheckBar` / `shrineCheckBar` — Progress bar UI
-- Game hooks — Chat, run destroy, game over, item drops
+- `ArchipelagoCheckCountdownController` — Per-check countdown HUD
+- Game hooks — Chat, run destroy, game over, item drops, boss-kill victory detection
 
 ## Connection Flow
 
@@ -70,9 +70,9 @@ User clicks "Connect" in lobby (or uses console command)
 Called on first connect and when reusing an existing session for a new run:
 
 1. Creates `ArchipelagoItemLogicController` with current session
-2. **Explore mode**: Creates `StageBlockerService`, `LocationCheckService`, `ShrineChanceService`, two progress bars
-3. **Classic mode**: Creates single progress bar, subscribes to `SyncLocationCheckProgress`
-4. Sets `ItemPickupStep` on bars from cached slot data
+2. **Explore mode**: Creates `StageBlockerService`, `LocationCheckService`, `ShrineChanceService`
+3. **Classic mode**: Removes environment objective, disables shrine countdown
+4. Configures `ArchipelagoCheckCountdownController` from cached slot data
 5. Restores cached ItemLogic state if `hasCachedRunState` is true (run 2+)
 6. Subscribes to `OnItemDropProcessed` event
 7. Hooks DeathLink if enabled
@@ -89,7 +89,7 @@ Called when a run ends (player dies, exits to menu) or on disconnect:
 3. Caches ItemLogic state for potential session reuse:
    - `cachedItemLogicPickupStep`, `cachedItemLogicTotalChecks`
    - `cachedItemLogicCurrentChecks`, `cachedItemLogicPickedUpItemCount`
-4. Disposes ItemLogic, progress bars
+4. Disposes ItemLogic, removes countdown objective
 5. Nullifies per-run service references (`StageBlockerService`, `LocationCheckService`, `ShrineChanceService`, `ItemPoolService`)
 
 ## TeardownSession()

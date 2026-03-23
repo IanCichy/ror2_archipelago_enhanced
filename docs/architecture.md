@@ -8,35 +8,45 @@ This is a mono-repo containing two components that together enable Risk of Rain 
 ror2_archipelago_enhanced/
 ├── Archipelago.RiskOfRain2/          # C# BepInEx mod (game client)
 │   ├── Archipelago.RiskOfRain2.csproj
-│   ├── ArchipelagoPlugin.cs          # BepInEx entry point
-│   ├── ArchipelagoClient.cs          # AP session & connection lifecycle
-│   ├── ArchipelagoItemLogicController.cs  # Item pickup tracking & checks
+│   ├── Archipelago/                  # Core partial classes
+│   │   ├── ArchipelagoPlugin.cs          # BepInEx entry point
+│   │   ├── ArchipelagoClient.cs          # AP session state & fields
+│   │   ├── ArchipelagoClient.Connection.cs    # Connect, slot data, reconnection
+│   │   ├── ArchipelagoClient.RunLifecycle.cs  # SetupRun, CleanupRun, victory, hooks
+│   │   ├── ArchipelagoItemLogicController.cs       # Item pickup tracking & checks
+│   │   ├── ArchipelagoItemLogicController.ItemGrant.cs  # Item granting & traps
+│   │   └── ArchipelagoItemLogicController.Queues.cs     # Item queue processing
 │   ├── Console/
 │   │   └── ArchipelagoConsoleCommand.cs   # In-game console commands
 │   ├── Extensions/                   # Utility extension methods
 │   │   ├── IEnumerableExtensions.cs  # PickRandom helper
 │   │   └── LocationExtensions.cs     # Scene ID <-> name mappings
+│   ├── Interfaces/
+│   │   └── IService.cs               # Register/Unregister interface
 │   ├── Services/
-│   │   ├── IService.cs               # Register/Unregister interface
 │   │   ├── ClientItemsService.cs     # Client-side item bar (non-host)
 │   │   ├── DeathLinkManager.cs       # Cross-game death synchronization
 │   │   ├── LocationCheckService.cs   # Explore mode location detection
+│   │   ├── LocationInformationTemplate.cs  # Per-environment check counts
 │   │   ├── ShrineChanceService.cs    # Shrine reward modification
 │   │   ├── StageBlockerService.cs    # Stage unlock gating
 │   │   ├── ItemPoolService.cs        # Item pool limiting & expansion
-│   │   └── SeerPortal.cs             # Seer portal spawning
-│   ├── Net/                          # R2API multiplayer messages (13 types)
+│   │   └── SeerPortalService.cs      # Seer portal spawning
+│   ├── Network/                      # R2API multiplayer messages (13 types)
 │   │   ├── ArchipelagoStartMessage.cs
 │   │   ├── ArchipelagoEndMessage.cs
 │   │   ├── SyncLocationCheckProgress.cs
 │   │   └── ... (10 more message types)
+│   ├── Utilities/
+│   │   ├── EnvironmentIds.cs         # AP environment ID constants
+│   │   └── Log.cs                    # Centralized logging
 │   ├── UI/
 │   │   ├── ArchipelagoConnectButtonController.cs  # Lobby connect panel
-│   │   ├── ArchipelagoLocationCheckProgressBarUI.cs  # Progress bars
 │   │   ├── ArchipelagoLocationsInEnvironmentController.cs
 │   │   ├── ArchipelagoScoreboardController.cs     # 3-page scoreboard (checks, environments, pool)
 │   │   ├── ArchipelagoCheckCountdownController.cs # Per-check countdown HUD
-│   │   └── ArchipelagoTotalChecksObjectiveController.cs
+│   │   ├── ArchipelagoTotalChecksObjectiveController.cs
+│   │   └── AssetBundleHelper.cs      # Asset bundle loading
 │   └── connectbundle                 # Unity AssetBundle (UI prefabs)
 ├── worlds/ror2/                      # Python AP world (server-side generation)
 │   ├── __init__.py                   # RiskOfRainWorld class
@@ -57,39 +67,37 @@ ror2_archipelago_enhanced/
 
 ## Key Classes
 
-### ArchipelagoPlugin (`ArchipelagoPlugin.cs`)
+### ArchipelagoPlugin (`Archipelago/ArchipelagoPlugin.cs`)
 
 BepInEx entry point. GUID: `com.Ijwu.Archipelago`. Responsibilities:
 
 - Initializes `ArchipelagoClient`, config entries, and lobby UI
-- Registers all 12 R2API network message types
+- Registers all 13 R2API network message types
 - Routes events between UI, console commands, and `ArchipelagoClient`
 - Manages reconnection coroutine on disconnect
 - Handles client-only concerns (non-host players)
 
-### ArchipelagoClient (`ArchipelagoClient.cs`)
+### ArchipelagoClient (`Archipelago/ArchipelagoClient*.cs`)
 
-Core session and connection manager. Owns the `ArchipelagoSession` object. Responsibilities:
+Core session and connection manager, split into partial classes. Owns the `ArchipelagoSession` object.
 
-- Connection lifecycle: `Connect()` → `SetupRun()` → `CleanupRun()` → `TeardownSession()`
-- Slot data parsing and caching (survives across runs)
-- Victory condition evaluation
-- Game hook management (`HookGame()` / `UnhookGame()`)
-- Chat relay to/from AP server
-- Release/Collect UI at game end screen
+| File | Responsibility |
+|------|---------------|
+| `ArchipelagoClient.cs` | Fields, properties, session-level state |
+| `ArchipelagoClient.Connection.cs` | `Connect()`, slot data parsing, reconnection, message handling |
+| `ArchipelagoClient.RunLifecycle.cs` | `SetupRun()`, `CleanupRun()`, `HookGame()`/`UnhookGame()`, victory detection |
 
 See [connection-lifecycle.md](connection-lifecycle.md) for details.
 
-### ArchipelagoItemLogicController (`ArchipelagoItemLogicController.cs`)
+### ArchipelagoItemLogicController (`Archipelago/ArchipelagoItemLogicController*.cs`)
 
-Item pickup tracking and AP check generation. Responsibilities:
+Item pickup tracking and AP check generation, split into partial classes.
 
-- Intercepts item drops via `On.RoR2.PickupDropletController.CreatePickupDroplet`
-- Counts pickups and sends location checks at configured intervals
-- Receives items from AP and spawns them in-game
-- Manages item queue (processes on Unity main thread)
-- Handles environment/stage unlock items via `Precollect()`
-- Tracks `CurrentChecks`, `TotalChecks`, `PickedUpItemCount`, `ItemPickupStep`
+| File | Responsibility |
+|------|---------------|
+| `ArchipelagoItemLogicController.cs` | Core logic, pickup counting, check sending, `Precollect()` |
+| `ArchipelagoItemLogicController.ItemGrant.cs` | Item granting, traps, pickup notifications |
+| `ArchipelagoItemLogicController.Queues.cs` | Item queue processing on Unity main thread |
 
 ### Services (implement `IService`)
 
@@ -110,8 +118,9 @@ interface IService {
 | `ShrineChanceService` | Explore | Modifies shrine spawn rules |
 | `ItemPoolService` | Both | Restricts item drops to an expandable pool per tier |
 | `ClientItemsService` | Both | Non-host client progress bar management |
+| `SeerPortalService` | Explore | Spawns seer portals showing unlocked destinations |
 
-### Net Messages
+### Network Messages
 
 13 R2API network message types handle multiplayer synchronization. See [multiplayer.md](multiplayer.md).
 

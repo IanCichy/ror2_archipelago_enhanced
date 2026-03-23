@@ -122,39 +122,32 @@ class LocationCheckService : IService
     // TODO this should probably become generic so that environment sets can be passed in (e.g. normal environments, simulacrum environments, etc)
     private void InitialSetupLocationDict(LocationInformationTemplate locationstemplate)
     {
-        currentlocations.Add(EnvironmentIds.Ancientloft, locationstemplate); // Aphelian Sanctuary
-        currentlocations.Add(EnvironmentIds.Blackbeach, locationstemplate); // Distant Roost
-        currentlocations.Add(EnvironmentIds.Blackbeach2, locationstemplate); // Distant Roost
-        currentlocations.Add(EnvironmentIds.Lakes, locationstemplate); // Verdant Falls
-        currentlocations.Add(EnvironmentIds.Dampcavesimple, locationstemplate); // Abyssal Depths
-        currentlocations.Add(EnvironmentIds.Foggyswamp, locationstemplate); // Wetland Aspect
-        currentlocations.Add(EnvironmentIds.Frozenwall, locationstemplate); // Rallypoint Delta
-        currentlocations.Add(EnvironmentIds.Golemplains, locationstemplate); // Titanic Plains
-        currentlocations.Add(EnvironmentIds.Golemplains2, locationstemplate); // Titanic Plains
-        currentlocations.Add(EnvironmentIds.Goolake, locationstemplate); // Abandoned Aqueduct
-        currentlocations.Add(EnvironmentIds.Rootjungle, locationstemplate); // Sundered Grove
-        currentlocations.Add(EnvironmentIds.Shipgraveyard, locationstemplate); // Siren's Call
-        currentlocations.Add(EnvironmentIds.Skymeadow, locationstemplate); // Sky Meadow
-        currentlocations.Add(EnvironmentIds.Snowyforest, locationstemplate); // Siphoned Forest
-        currentlocations.Add(EnvironmentIds.Sulfurpools, locationstemplate); // Sulfur Pools
-        currentlocations.Add(EnvironmentIds.Wispgraveyard, locationstemplate); // Scorched Acres
-        // Seekers of the Storm
-        currentlocations.Add(EnvironmentIds.Lakesnight, locationstemplate); // Viscous Falls
-        currentlocations.Add(EnvironmentIds.Village, locationstemplate); // Shattered Abodes
-        currentlocations.Add(EnvironmentIds.Villagenight, locationstemplate); // Disturbed Impact
-        currentlocations.Add(EnvironmentIds.Lemuriantemple, locationstemplate); // Reformed Altar
-        currentlocations.Add(EnvironmentIds.Habitat, locationstemplate); // Treeborn Colony
-        currentlocations.Add(EnvironmentIds.Habitatfall, locationstemplate); // Golden Dieback
-        currentlocations.Add(EnvironmentIds.Helminthroost, locationstemplate); // Helminth Hatchery
-        // Alloyed Collective
-        currentlocations.Add(EnvironmentIds.Nest, locationstemplate); // Pretender's Precipice
-        currentlocations.Add(EnvironmentIds.Ironalluvium, locationstemplate); // Iron Alluvium
-        currentlocations.Add(EnvironmentIds.Ironalluvium2, locationstemplate); // Iron Auroras
-        currentlocations.Add(EnvironmentIds.Repurposedcrater, locationstemplate); // Repurposed Crater
+        // Each environment gets its own copy so CatchUpSceneLocations can mutate independently
+        int[] standardEnvs = {
+            EnvironmentIds.Ancientloft, EnvironmentIds.Blackbeach, EnvironmentIds.Blackbeach2,
+            EnvironmentIds.Lakes, EnvironmentIds.Dampcavesimple, EnvironmentIds.Foggyswamp,
+            EnvironmentIds.Frozenwall, EnvironmentIds.Golemplains, EnvironmentIds.Golemplains2,
+            EnvironmentIds.Goolake, EnvironmentIds.Rootjungle, EnvironmentIds.Shipgraveyard,
+            EnvironmentIds.Skymeadow, EnvironmentIds.Snowyforest, EnvironmentIds.Sulfurpools,
+            EnvironmentIds.Wispgraveyard,
+            // Seekers of the Storm
+            EnvironmentIds.Lakesnight, EnvironmentIds.Village, EnvironmentIds.Villagenight,
+            EnvironmentIds.Lemuriantemple, EnvironmentIds.Habitat, EnvironmentIds.Habitatfall,
+            EnvironmentIds.Helminthroost,
+            // Alloyed Collective
+            EnvironmentIds.Nest, EnvironmentIds.Ironalluvium, EnvironmentIds.Ironalluvium2,
+            EnvironmentIds.Repurposedcrater,
+        };
+
+        foreach (int envId in standardEnvs)
+        {
+            currentlocations.Add(envId, locationstemplate.Copy());
+        }
+
         // Conduit Canyon has no Newt Altar spawns — use a modified template with 0 altars
         var conduitTemplate = locationstemplate.Copy();
         conduitTemplate[LocationTypes.newt_altar] = 0;
-        currentlocations.Add(EnvironmentIds.Conduitcanyon, conduitTemplate); // Conduit Canyon
+        currentlocations.Add(EnvironmentIds.Conduitcanyon, conduitTemplate);
         // NOTE: Solutional Haunt (61) and Neural Sanctum (62) are excluded — boss/victory stages with no standard checks
         // TODO separate out the DLC locations
     }
@@ -317,14 +310,7 @@ class LocationCheckService : IService
 
     public int GetSceneIndex(string sceneName)
     {
-        foreach (var scene in LocationExtensions.InternalSceneName)
-        {
-            if (scene.Value == sceneName)
-            {
-                return scene.Key;
-            }
-        }
-        return 0;
+        return LocationExtensions.GetSceneIndex(sceneName);
     }
 
     private void updateBar(LocationTypes loctype)

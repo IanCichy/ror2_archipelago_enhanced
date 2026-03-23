@@ -38,7 +38,7 @@ Each environment has a fixed number of location checks (chests, shrines, scaveng
 | Voidling | `voidraid` | SOTV | Defeat the Voidling in The Planetarium |
 | Limbo | `mysteryspace` / `limbo` | Base | Defeat the Scavenger in A Moment, Whole |
 | Rebirth | `meridian` | SOTS | Defeat the False Son in Prime Meridian |
-| Solus Wing | — | AC | Defeat the Solus Wing in Neural Sanctum (Rebirth ending) |
+| Solus Heart | — | AC | Defeat the Solus Heart in Neural Sanctum |
 
 **Final Stage Death**: Optional toggle. When enabled, dying on the final stage associated with your victory condition counts as a win. Also counts obliteration for Limbo.
 
@@ -151,7 +151,7 @@ Alternatively, set `item_pool_presets: false` and configure individual item weig
 |-----|------|------|
 | Survivors of the Void (SOTV) | `dlc_sotv` | Void items, Voidling victory, SOTV environments |
 | Seekers of the Storm (SOTS) | `dlc_sots` | Rebirth/False Son victory, SOTS environments, Colossus portals |
-| Alloyed Collective (AC) | `dlc_ac` | Solus Wing victory, AC environments |
+| Alloyed Collective (AC) | `dlc_ac` | Solus Heart victory, AC environments |
 
 DLC toggles affect: environment availability, victory condition validation, void item pool.
 

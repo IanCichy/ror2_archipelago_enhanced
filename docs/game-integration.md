@@ -49,6 +49,8 @@ All hooks follow the Register/Unregister pattern (via the `IService` interface).
 | `On.RoR2.UI.GameEndReportPanelController.Awake` | Injects Release/Collect buttons into end screen |
 | `On.RoR2.SceneObjectToggleGroup.Awake` | Modifies Newt Statue spawn rules (ensures altars spawn) |
 | `On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter` | Displays victory condition info at portal dialer |
+| `On.RoR2.BossGroup.OnDefeatedServer` | Detects boss kill on victory-eligible stages (Rebirth, Solus Heart) |
+| `Stage.onStageStartGlobal` (VictoryCheck) | Sends victory after leaving a stage where boss was defeated |
 
 ### Death Link (`DeathLinkManager`)
 
@@ -171,7 +173,10 @@ The mod hooks `SceneObjectToggleGroup.Awake` to ensure Newt Statues (which lead 
 
 ## Victory Detection
 
-`Run_BeginGameOver` checks `IsEndingAcceptable()`:
+Two code paths detect victory, both calling the shared `SendVictory()` helper:
+
+1. **`Run_BeginGameOver`** — Standard game-over hook. Checks `IsEndingAcceptable()` for victories with a `GameEndingDef` (Mithrix, Voidling, Limbo).
+2. **`BossGroup_OnDefeatedServer` + `Stage_onStageStartGlobal_VictoryCheck`** — Boss-kill hook for victories without a standard `GameEndingDef` (Rebirth/False Son on Prime Meridian, Solus Heart on Neural Sanctum). Flags when a boss is defeated on a victory-eligible stage, then sends victory when the next stage loads.
 
 ```csharp
 bool IsEndingAcceptable(GameEndingDef def)
@@ -182,10 +187,11 @@ bool IsEndingAcceptable(GameEndingDef def)
 }
 ```
 
-On acceptable ending:
+`SendVictory()`:
 1. Sends `StatusUpdatePacket` with `ClientGoal` status to AP
-2. Broadcasts `ArchipelagoEndMessage` to all clients
-3. End screen shows Release/Collect buttons based on room permissions
+2. Marks all checks complete in the UI
+3. Broadcasts `ArchipelagoEndMessage` to all clients
+4. End screen shows Release/Collect buttons based on room permissions
 
 ## Release / Collect
 

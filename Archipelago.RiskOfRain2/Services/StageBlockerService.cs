@@ -40,11 +40,15 @@ class StageBlockerService : IService
     public static HashSet<string> AllSessionEnvironments { get; } = new HashSet<string>();
     public static HashSet<string> UnlockedEnvironments { get; } = new HashSet<string>();
     public static HashSet<string> CompletedEnvironments { get; } = new HashSet<string>();
-    // Stage group mapping: scene name → AP stage group (1-4).
+    // Stage group mapping: scene name → AP stage group (0-4).
     // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
-    // Starting stages (game ordered stage 1) are not in this lookup.
-    public readonly Dictionary<string, int> StageLookup = new()
+    // Group 0 = starting stages (no stage key required).
+    public static readonly Dictionary<string, int> StageLookup = new()
     {
+        // Starting stages (group 0)
+        { "blackbeach", 0 }, { "blackbeach2", 0 }, { "golemplains", 0 }, { "golemplains2", 0 },
+        { "lakes", 0 }, { "snowyforest", 0 },
+        { "village", 0 }, { "villagenight", 0 }, { "lakesnight", 0 },
         // Vanilla + SOTV
         { "ancientloft", 1 },
         { "foggyswamp", 1 },
@@ -78,8 +82,8 @@ class StageBlockerService : IService
     // uses scene names: https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/Developer-Reference/Scene-Names/
     List<int> blockedStages;
     List<int> unblockedStages;
-    List<string> blockedStringStages;
-    List<string> unblockedStringStages;
+    HashSet<string> blockedStringStages;
+    HashSet<string> unblockedStringStages;
     List<SceneDef> availableStages;
     private bool manuallyPickingStage = false; // used to keep track of when the call to PickNextStageScene is from the StageBlocker
     private bool voidPortalSpawned = false; // used for the deep void portal in Void Locus.
@@ -95,8 +99,8 @@ class StageBlockerService : IService
         Log.LogDebug($"StageBlocker handler constructor.");
         blockedStages = new List<int>();
         unblockedStages = new List<int>();
-        blockedStringStages = new List<string>();
-        unblockedStringStages = new List<string>();
+        blockedStringStages = new HashSet<string>();
+        unblockedStringStages = new HashSet<string>();
         availableStages = new List<SceneDef>();
         AmountOfStages = 0;
         AllSessionEnvironments.Clear();
@@ -284,13 +288,7 @@ class StageBlockerService : IService
                 return true;
             }
         }
-        // Checking the list linearly should be fine.
-        // Hooking update methods were avoided as much as they could be and the list itself is short.
-        foreach (string block in blockedStringStages)
-        {
-            if (stageName == block) return true;
-        }
-        return false;
+        return blockedStringStages.Contains(stageName);
     }
     private void ArchipelagoConsoleCommand_OnArchipelagoShowUnlockedStagesCommandCalled()
     {
