@@ -10,7 +10,7 @@ The mod uses R2API's networking layer to synchronize Archipelago state between t
 
 ## Network Message Types
 
-All 12 message types are registered in `ArchipelagoPlugin.Awake()`:
+All 13 message types are registered in `ArchipelagoPlugin.Awake()`:
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|

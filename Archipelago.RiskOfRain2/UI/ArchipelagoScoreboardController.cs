@@ -32,28 +32,8 @@ public class ArchipelagoScoreboardController : MonoBehaviour
     private int lastPage = -1;
     private string cachedText;
 
-    // Stage group mapping: scene name → AP stage key (1-4).
-    // Mirrors StageBlockerService.StageLookup but static for scoreboard access.
-    // AP Stage 1 = game ordered stage 2 (first advancement after starting stages).
-    private static readonly Dictionary<string, int> StageGroups = new()
-    {
-        // Starting stages (group 0) — no Stage Key required
-        { "blackbeach", 0 }, { "blackbeach2", 0 }, { "golemplains", 0 }, { "golemplains2", 0 },
-        { "lakes", 0 }, { "snowyforest", 0 },
-        { "village", 0 }, { "villagenight", 0 }, { "lakesnight", 0 },
-        // Group 1 (Stage Key 1 = game Stage 2)
-        { "ancientloft", 1 }, { "foggyswamp", 1 }, { "goolake", 1 },
-        { "lemuriantemple", 1 }, { "nest", 1 },
-        // Group 2 (Stage Key 2 = game Stage 3)
-        { "frozenwall", 2 }, { "sulfurpools", 2 }, { "wispgraveyard", 2 },
-        { "habitat", 2 }, { "habitatfall", 2 },
-        { "ironalluvium", 2 }, { "ironalluvium2", 2 },
-        // Group 3 (Stage Key 3 = game Stage 4)
-        { "dampcavesimple", 3 }, { "rootjungle", 3 }, { "shipgraveyard", 3 },
-        { "meridian", 3 }, { "repurposedcrater", 3 }, { "conduitcanyon", 3 },
-        // Group 4 (Stage Key 4 = game Stage 5)
-        { "skymeadow", 4 }, { "helminthroost", 4 }, { "solutionalhaunt", 4 },
-    };
+    // Reuse the canonical stage group mapping from StageBlockerService (includes group 0 starting stages).
+    private static Dictionary<string, int> StageGroups => StageBlockerService.StageLookup;
 
     // Scene name → display name, built from LocationNames static data.
     private static readonly Dictionary<string, string> DisplayNames;

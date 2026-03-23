@@ -65,7 +65,7 @@ Each environment region contains locations like `{EnvName}: Chest {N}`, `{EnvNam
 ```python
 {
     "goal": 0|1,                    # 0=classic, 1=explore
-    "victory": 0-5,                 # 0=any, 1=mithrix, 2=voidling, 3=limbo, 4=false_son, 5=solus_wing
+    "victory": 0-5,                 # 0=any, 1=mithrix, 2=voidling, 3=limbo, 4=false_son, 5=solus_heart
     "itemPickupStep": int,          # Pickups before check (0-5)
     "shrineUseStep": int,           # Shrines before check (0-3)
     "totalLocations": int,          # Classic: total location count

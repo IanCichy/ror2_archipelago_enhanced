@@ -303,21 +303,25 @@ public partial class ArchipelagoClient
         if (IsEndingAcceptable(gameEndingDef))
         {
             isEndingAcceptable = true;
-
-            var packet = new StatusUpdatePacket();
-            packet.Status = ArchipelagoClientState.ClientGoal;
-            session.Socket.SendPacketAsync(packet);
-
-            // Mark all checks complete in the UI so the scoreboard/objective panel reflects victory
-            ArchipelagoTotalChecksObjectiveController.CurrentChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
-            new SyncTotalCheckProgress(
-                ArchipelagoTotalChecksObjectiveController.CurrentChecks,
-                ArchipelagoTotalChecksObjectiveController.TotalChecks
-            ).Send(NetworkDestination.Clients);
-
-            new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+            SendVictory();
         }
         orig(self, gameEndingDef);
+    }
+
+    private void SendVictory()
+    {
+        var packet = new StatusUpdatePacket();
+        packet.Status = ArchipelagoClientState.ClientGoal;
+        session.Socket.SendPacketAsync(packet);
+
+        // Mark all checks complete in the UI so the scoreboard/objective panel reflects victory
+        ArchipelagoTotalChecksObjectiveController.CurrentChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
+        new SyncTotalCheckProgress(
+            ArchipelagoTotalChecksObjectiveController.CurrentChecks,
+            ArchipelagoTotalChecksObjectiveController.TotalChecks
+        ).Send(NetworkDestination.Clients);
+
+        new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
     }
 
     private bool IsEndingAcceptable(GameEndingDef gameEndingDef)
@@ -352,24 +356,12 @@ public partial class ArchipelagoClient
 
         Log.LogInfo($"Victory achieved via boss kill on victory stage (now on {stage.sceneDef.cachedName}).");
         isEndingAcceptable = true;
-
-        var packet = new StatusUpdatePacket();
-        packet.Status = ArchipelagoClientState.ClientGoal;
-        session.Socket.SendPacketAsync(packet);
-
-        // Mark all checks complete in the UI so the scoreboard/objective panel reflects victory
-        ArchipelagoTotalChecksObjectiveController.CurrentChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
-        new SyncTotalCheckProgress(
-            ArchipelagoTotalChecksObjectiveController.CurrentChecks,
-            ArchipelagoTotalChecksObjectiveController.TotalChecks
-        ).Send(NetworkDestination.Clients);
-
-        new ArchipelagoEndMessage().Send(NetworkDestination.Clients);
+        SendVictory();
     }
 
     private void SetAnyVictoryCondition()
     {
-        victoryCondition = "any";
+        victoryCondition = VictoryAny;
         acceptableEndings = new[] {
             RoR2Content.GameEndings.MainEnding,
             RoR2Content.GameEndings.LimboEnding,
@@ -391,10 +383,10 @@ public partial class ArchipelagoClient
     private bool IsVictoryStageForBossKill(string sceneName)
     {
         // False Son on Prime Meridian
-        if ((victoryCondition == "Rebirth" || victoryCondition == "any") && sceneName == "meridian")
+        if ((victoryCondition == VictoryRebirth || victoryCondition == VictoryAny) && sceneName == "meridian")
             return true;
         // Solus Heart on Neural Sanctum
-        if ((victoryCondition == "Solus Heart" || victoryCondition == "any") && sceneName == "solusweb")
+        if ((victoryCondition == VictorySolusHeart || victoryCondition == VictoryAny) && sceneName == "solusweb")
             return true;
         return false;
     }

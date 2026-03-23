@@ -56,20 +56,28 @@ class ClientItemsService : IService
 
     private void ArchipelagoTeleportClient_OnArchipelagoTeleportClient()
     {
+        TeleportLocalPlayersToRandomPosition();
+    }
+
+    /// <summary>
+    /// Teleports all local players to a random valid position on the current stage
+    /// by spawning an invisible barrel as a placement anchor.
+    /// </summary>
+    public static void TeleportLocalPlayersToRandomPosition()
+    {
         foreach (NetworkUser local in NetworkUser.readOnlyLocalPlayersList)
         {
             if (local)
             {
-                SpawnCard spawnCard = ScriptableObject.CreateInstance<SpawnCard>();
-                spawnCard = LegacyResourcesAPI.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscBarrel1");
+                SpawnCard spawnCard = LegacyResourcesAPI.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscBarrel1");
 
-                Xoroshiro128Plus xoroshiro128PlusRadioScanner = new(RoR2Application.rng);
+                Xoroshiro128Plus rng = new(RoR2Application.rng);
                 if (DirectorCore.instance != null)
                 {
                     var card = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(spawnCard, new DirectorPlacementRule
                     {
                         placementMode = DirectorPlacementRule.PlacementMode.Random
-                    }, xoroshiro128PlusRadioScanner));
+                    }, rng));
                     var position = card.transform.position;
                     Log.LogDebug($"teleport position {position + new Vector3(0, 10, 0)}");
                     var body = local.master.GetBody();
