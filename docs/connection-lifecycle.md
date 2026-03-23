@@ -10,8 +10,8 @@ Managed by `ArchipelagoClient`. Created once on `Connect()`, destroyed on `Teard
 
 - `ArchipelagoSession` — WebSocket connection to AP server
 - Credentials — `lastServerUrl`, `lastSlotName`, `lastPassword`
-- Slot data cache — `cachedGoalIsExplore`, `cachedDeathLinkEnabled`, `cachedItemPickupStep`, `cachedShrineUseStep`, `cachedSlotData`
-- `DeathLinkHandler` + `DeathLinkService`
+- Slot data cache — `cachedGoalIsExplore`, `cachedDeathLinkEnabled`, `cachedItemPickupStep`, `cachedShrineUseStep`, `cachedItemPoolLimiting`, `cachedSlotData`
+- `DeathLinkManager` + `DeathLinkService`
 - Victory conditions — `acceptableEndings[]`, `acceptableLosses[]`
 - Session event subscriptions — `OnMessageReceived`, `SocketClosed`, `ErrorReceived`
 - `lastReceivedItemindex` — Prevents duplicate item delivery across reconnects
@@ -21,9 +21,10 @@ Managed by `ArchipelagoClient`. Created once on `Connect()`, destroyed on `Teard
 Created by `SetupRun()`, destroyed by `CleanupRun()`:
 
 - `ArchipelagoItemLogicController` (ItemLogic) — Pickup counting and check sending
-- `StageBlockerHandler` (Explore mode) — Stage access gating
-- `LocationHandler` (Explore mode) — Per-stage location tracking
-- `ShrineChanceHandler` (Explore mode) — Shrine modification
+- `StageBlockerService` (Explore mode) — Stage access gating
+- `LocationCheckService` (Explore mode) — Per-stage location tracking
+- `ShrineChanceService` (Explore mode) — Shrine modification
+- `ItemPoolService` (when pool limiting enabled) — Per-tier drop filtering
 - `itemCheckBar` / `shrineCheckBar` — Progress bar UI
 - Game hooks — Chat, run destroy, game over, item drops
 
@@ -56,7 +57,7 @@ User clicks "Connect" in lobby (or uses console command)
     - victory condition, progressive stages, seer portals
          │
          ▼
-  Create DeathLinkService + DeathLinkHandler
+  Create DeathLinkService + DeathLinkManager
   Subscribe session-level events
   Initialize stage unlocks
          │
@@ -69,7 +70,7 @@ User clicks "Connect" in lobby (or uses console command)
 Called on first connect and when reusing an existing session for a new run:
 
 1. Creates `ArchipelagoItemLogicController` with current session
-2. **Explore mode**: Creates `StageBlockerHandler`, `LocationHandler`, `ShrineChanceHandler`, two progress bars
+2. **Explore mode**: Creates `StageBlockerService`, `LocationCheckService`, `ShrineChanceService`, two progress bars
 3. **Classic mode**: Creates single progress bar, subscribes to `SyncLocationCheckProgress`
 4. Sets `ItemPickupStep` on bars from cached slot data
 5. Restores cached ItemLogic state if `hasCachedRunState` is true (run 2+)
@@ -89,7 +90,7 @@ Called when a run ends (player dies, exits to menu) or on disconnect:
    - `cachedItemLogicPickupStep`, `cachedItemLogicTotalChecks`
    - `cachedItemLogicCurrentChecks`, `cachedItemLogicPickedUpItemCount`
 4. Disposes ItemLogic, progress bars
-5. Nullifies per-run handler references (`Stageblockerhandler`, `Locationhandler`, `shrineChanceHelper`)
+5. Nullifies per-run service references (`StageBlockerService`, `LocationCheckService`, `ShrineChanceService`, `ItemPoolService`)
 
 ## TeardownSession()
 
@@ -97,7 +98,7 @@ Destroys session-level state. Only called on intentional disconnect or unrecover
 
 1. Unsubscribes session events (`OnMessageReceived`, `SocketClosed`, `ErrorReceived`)
 2. Optionally disconnects socket (if `disconnect: true`)
-3. Nullifies session, DeathLinkHandler, DeathLinkService
+3. Nullifies session, DeathLinkManager, DeathLinkService
 4. Does NOT clear `hasCachedRunState` — preserves cached run state for reconnection
 
 ## Reconnection
@@ -118,14 +119,14 @@ Socket error/close detected
          │
          ▼
   Loop (max 5 attempts, 3 second delay each):
-    Connect(lastServerUrl, lastSlotName, lastPassword)
+    Connect() on background thread (ManualResetEventSlim for signaling)
       │
       ├── reconnecting=true prevents clearing lastReceivedItemindex
       │   and hasCachedRunState, so:
       │   - Items won't be re-delivered
       │   - Run progress is restored from cache
       │
-      ├── Connected? ──▶ Restore LocationHandler state, break
+      ├── Connected? ──▶ Restore LocationCheckService state, break
       │
       └── Failed? ──▶ Next attempt
          │

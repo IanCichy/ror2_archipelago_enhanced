@@ -2,8 +2,18 @@
 
 **Priority:** Medium-High — major gameplay feature, creates "item randomizer" layer
 **Complexity:** Medium-High
-**New AP Item IDs:** 37100-37109 (Pool Expansion items)
+**New AP Item IDs:** 37101-37107 (Pool Expansion items)
 **Depends On:** Sprint 1 (DLC item tiers include Void/Meal items)
+**Status:** Implemented (branch `sprint-4-item-pool-limiting`)
+
+### Implementation Notes (vs. original plan)
+
+- Class is `Services/ItemPoolService.cs` (not `Handlers/ItemPoolHandler.cs`) — follows the Services pattern adopted during this sprint
+- Pool viewer is integrated into the existing scoreboard as a third page (Tab key cycles: Checks → Environments → Pool), not a separate F2 overlay
+- Uses explicit per-tier unlock cursors instead of `allowed.Count` for expansion tracking
+- 15 new YAML options added to `options.py` (pool toggle, 7 starting sizes, 7 per-expansion rates)
+- Tier total constants defined in `items.py` (`TIER_TOTAL_WHITE`, etc.) — used by both options and pool generation
+- Phases 5 (item class toggles) and 6 (UI) partially implemented: lunar/void toggles work; no separate boss/equipment disable toggles yet; no objective panel entry yet
 
 ## Goal
 
@@ -200,17 +210,58 @@ When a pool expansion is received, show newly unlocked items in chat with tier-c
 
 Use `ItemCatalog.GetItemDef(itemIndex).nameToken` resolved via `Language.GetString()` for display names.
 
-### Console Command
-Add `ap_pool` console command:
-```
-White:  8/36  [Soldier's Syringe, Tougher Times, Crowbar, ...]
-Green:  5/42  [Ukulele, AtG Missile Mk. 1, ...]
-Red:    2/36  [Brilliant Behemoth, 57 Leaf Clover]
-...
-```
+### Item Pool Viewer (Keybind + Command-Style Grid)
 
-### HUD (Optional)
-Objective panel entry showing pool sizes: "Item Pool: White 8/36, Green 5/42, Red 2/36"
+A dedicated keybind (default `F2`) opens a full-screen overlay showing the current item pool as a Command Artifact-style icon grid. Scroll wheel cycles through rarity tiers.
+
+**Behavior:**
+- `F2` toggles the viewer open/closed (not held — press to open, press again to close)
+- Mouse wheel scrolls through rarity pages: White → Green → Red → Boss → Lunar → Void → Equipment
+- Each page shows one tier's items as pickup icons in a grid layout
+- **Unlocked items**: full-color icons (normal appearance)
+- **Locked items**: grayed-out / darkened icons (visible but clearly unavailable)
+- Page header shows tier name in tier color + count: e.g., `"White Items: 8 / 36"`
+- Viewer pauses gameplay input (like the Command grid does) or overlays without blocking — TBD based on what RoR2 supports cleanly
+
+**Implementation approach:**
+1. New file: `UI/ItemPoolViewerController.cs`
+2. Hook into `HUD.Awake` (same pattern as `ArchipelagoScoreboardController`)
+3. Create a panel with a `GridLayoutGroup` for icon layout
+4. For each item in the tier's deterministic list:
+   - Use `ItemCatalog.GetItemDef(itemIndex).pickupIconTexture` for the icon
+   - If item is in the allowed set → normal icon
+   - If item is not in the allowed set → apply a dark tint (multiply color by ~0.3) or overlay a lock icon
+5. Toggle visibility on `F2` keypress via `Input.GetKeyDown(KeyCode.F2)` in `Update()`
+6. Scroll wheel changes `currentTierPage` (same pattern as scoreboard pagination)
+7. Rebuild grid only when tier page changes or pool state changes (dirty flag)
+
+**Tier page colors** (match RoR2 item tier colors):
+| Tier | Color |
+|------|-------|
+| White | `#FFFFFF` |
+| Green | `#77FF20` |
+| Red | `#E5533F` |
+| Boss | `#FFFF00` |
+| Lunar | `#307FFF` |
+| Void | `#C455E0` |
+| Equipment | `#FF8000` |
+
+**Grid layout:**
+- Icon size: ~64x64 pixels
+- Grid: 8-10 columns, auto-rows
+- Panel centered on screen, similar size to scoreboard panel (~800x600)
+- Dark background (same `Color(0, 0, 0, 0.85f)` as scoreboard)
+
+**Key files:**
+- New: `Archipelago.RiskOfRain2/UI/ItemPoolViewerController.cs`
+- Modified: `Archipelago.RiskOfRain2/ArchipelagoPlugin.cs` (hook/unhook)
+
+### Objective Panel Entry
+Add an `ObjectiveTracker` showing pool summary in the HUD objective panel:
+```
+Item Pool: White 8/36 | Green 5/42 | Red 2/36
+```
+Only shown when `itemPoolLimiting` is enabled. Uses the existing `ObjectiveTracker` pattern from `ArchipelagoTotalChecksObjectiveController`.
 
 ## Python AP World Changes
 
