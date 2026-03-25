@@ -189,6 +189,7 @@ namespace Archipelago.RiskOfRain2.Handlers
 
                         shopTerminal.SetPickup(UniquePickup.none, false);
                         shopTerminal.SetHasBeenPurchased(true);
+                        self.enabled = false; // corrects second lunar coin interaction issue
                     }
                     return;
                 }
