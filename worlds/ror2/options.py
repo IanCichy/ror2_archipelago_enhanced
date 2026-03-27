@@ -171,6 +171,20 @@ class DLC_AC(Toggle):
     display_name = "Enable DLC - AC"
 
 
+class DroneRandomizer(Toggle):
+    """Restrict which drone types can spawn as broken interactables.
+    AP checks unlock more drone types. Healing and Gunner drones are always available."""
+    display_name = "Drone Randomizer"
+
+
+class StartingDroneCount(Range):
+    """Number of extra drone types available at start (in addition to Healing and Gunner)."""
+    display_name = "Starting Drone Count"
+    range_start = 0
+    range_end = 13
+    default = 2
+
+
 class ItemPoolLimiting(Toggle):
     """Restrict which in-game items can drop to a limited starting pool.
     AP checks gradually expand the available pool by adding items of each rarity tier."""
@@ -525,6 +539,10 @@ ror2_option_groups = [
         RequireStages,
         ProgressiveStages,
     ]),
+    OptionGroup("Drone Randomizer", [
+        DroneRandomizer,
+        StartingDroneCount,
+    ], start_collapsed=True),
     OptionGroup("Item Pool Limiting", [
         ItemPoolLimiting,
         StartingWhitePool,
@@ -588,6 +606,8 @@ class ROR2Options(PerGameCommonOptions):
     dlc_ac: DLC_AC
     require_stages: RequireStages
     progressive_stages: ProgressiveStages
+    drone_randomizer: DroneRandomizer
+    starting_drone_count: StartingDroneCount
     death_link: DeathLink
     item_pickup_step: ItemPickupStep
     shrine_use_step: ShrineUseStep

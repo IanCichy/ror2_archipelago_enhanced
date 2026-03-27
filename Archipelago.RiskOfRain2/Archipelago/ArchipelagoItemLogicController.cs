@@ -30,6 +30,7 @@ public partial class ArchipelagoItemLogicController : IDisposable
 
     internal StageBlockerService StageBlockerService { get; set; }
     internal ItemPoolService ItemPoolService { get; set; }
+    internal DronePoolService DronePoolService { get; set; }
 
     public long[] ChecksTogether { get; set; }
     public long[] MissingChecks { get; set; }
@@ -45,6 +46,7 @@ public partial class ArchipelagoItemLogicController : IDisposable
     private ConcurrentQueue<KeyValuePair<long, string>> trapReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
     private ConcurrentQueue<KeyValuePair<long, string>> stageReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
     private ConcurrentQueue<KeyValuePair<long, string>> poolReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
+    private ConcurrentQueue<KeyValuePair<long, string>> droneReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
     // TODO get magic numbers from somewhere else (eg move to LocationCheckService.cs)
     private const long environmentRangeLower = 37700;
     private const long environmentRangeUpper = 37999;
@@ -54,6 +56,8 @@ public partial class ArchipelagoItemLogicController : IDisposable
     private const long trapRangeUpper = 37499;
     private const long poolRangeLower = 37100;
     private const long poolRangeUpper = 37199;
+    private const long droneRangeLower = 37200;
+    private const long droneRangeUpper = 37299;
     private const long stageRangeLower = 37500;
     private const long stageRangeUpper = 37599;
     private bool spawnedMonster = false;
@@ -365,6 +369,10 @@ public partial class ArchipelagoItemLogicController : IDisposable
         else if (poolRangeLower <= itemId && itemId <= poolRangeUpper)
         {
             poolReceivedQueue.Enqueue(new KeyValuePair<long, string>(itemId, itemName));
+        }
+        else if (droneRangeLower <= itemId && itemId <= droneRangeUpper)
+        {
+            droneReceivedQueue.Enqueue(new KeyValuePair<long, string>(itemId, itemName));
         }
         else if (stageRangeLower <= itemId && itemId <= stageRangeUpper)
         {
