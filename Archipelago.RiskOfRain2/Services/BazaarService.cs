@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Models;
-using Archipelago.RiskOfRain2.Net;
+using Archipelago.RiskOfRain2.Network;
 using Archipelago.RiskOfRain2.UI;
 using R2API;
 using R2API.Networking;
@@ -15,9 +15,9 @@ using R2API.Networking.Interfaces;
 using RoR2;
 using UnityEngine.Networking;
 
-namespace Archipelago.RiskOfRain2.Handlers
+namespace Archipelago.RiskOfRain2.Services
 {
-    public class BazaarHandler : IHandler
+    public class BazaarService : IService
     {
         private const long BazaarShopLocationIdStart = 82251;
 
@@ -30,19 +30,19 @@ namespace Archipelago.RiskOfRain2.Handlers
         private Dictionary<ShopTerminalBehavior, long> terminalLocationIds = new Dictionary<ShopTerminalBehavior, long>();
         private Dictionary<long, ScoutedItemInfo> bazaarShopScoutedItems = new Dictionary<long, ScoutedItemInfo>();
 
-        public BazaarHandler(ArchipelagoSession session, Action<int> sendLocation)
+        public BazaarService(ArchipelagoSession session, Action<int> sendLocation)
         {
             this.session = session;
             this.sendLocation = sendLocation;
         }
 
-        public void Hook()
+        public void Register()
         {
             On.RoR2.SceneDirector.PopulateScene += SceneDirector_PopulateScene_Bazaar;
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
         }
 
-        public void UnHook()
+        public void Unregister()
         {
             On.RoR2.SceneDirector.PopulateScene -= SceneDirector_PopulateScene_Bazaar;
             On.RoR2.PurchaseInteraction.OnInteractionBegin -= PurchaseInteraction_OnInteractionBegin;
@@ -89,8 +89,8 @@ namespace Archipelago.RiskOfRain2.Handlers
         {
             orig(self);
 
-            if (LocationHandler.CurrentSceneDef == null ||
-                LocationHandler.CurrentSceneDef.cachedName != "bazaar") return;
+            if (LocationCheckService.CurrentSceneDef == null ||
+                LocationCheckService.CurrentSceneDef.cachedName != "bazaar") return;
 
             ReplaceBazaarShopTerminals();
         }
@@ -158,7 +158,7 @@ namespace Archipelago.RiskOfRain2.Handlers
             PurchaseInteraction self,
             Interactor interactor)
         {
-            if (LocationHandler.CurrentSceneDef?.cachedName == "bazaar")
+            if (LocationCheckService.CurrentSceneDef?.cachedName == "bazaar")
             {
                 var shopTerminal = self.GetComponent<ShopTerminalBehavior>();
                 if (shopTerminal != null && apCheckTerminals.Contains(shopTerminal))

@@ -71,7 +71,7 @@ public partial class ArchipelagoClient
             // Initialize Bazaar shop queue
             if (cachedSlotData.TryGetValue("bazaarShopChecks", out var bazaarShopChecks))
             {
-                Locationhandler.BazaarHandler.InitializeBazaarShopQueue(Convert.ToInt32(bazaarShopChecks));
+                LocationCheckService.BazaarService.InitializeBazaarShopQueue(Convert.ToInt32(bazaarShopChecks));
             }
         }
         else

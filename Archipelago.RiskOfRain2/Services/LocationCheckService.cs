@@ -105,7 +105,7 @@ class LocationCheckService : IService
     private ArchipelagoSession session;
     private LocationInformationTemplate originallocationstemplate;
     private Dictionary<int, LocationInformationTemplate> currentlocations;
-    public BazaarHandler BazaarHandler { get; private set; }
+    public BazaarService BazaarService { get; private set; }
 
 
     public LocationCheckService(ArchipelagoSession session, LocationInformationTemplate locationstemplate)
@@ -117,7 +117,7 @@ class LocationCheckService : IService
 
 
         InitialSetupLocationDict(locationstemplate);
-        BazaarHandler = new BazaarHandler(session, sendLocation);
+        BazaarService = new BazaarService(session, sendLocation);
     }
 
     /// <summary>
@@ -221,7 +221,7 @@ class LocationCheckService : IService
         On.RoR2.ShrineHealingBehavior.AddShrineStack += ShrineHealingBehavior_AddShrineStack;
         On.RoR2.ShrineColossusAccessBehavior.OnInteraction += ShrineColossusAccessBehavior_OnInteraction;
         // Bazaar
-        BazaarHandler.Register();
+        BazaarService.Register();
         // Scavengers
         On.EntityStates.ScavBackpack.Opening.OnEnter += Opening_OnEnter;
         On.RoR2.ChestBehavior.ItemDrop += ChestBehavior_ItemDrop_Scavenger;
@@ -265,7 +265,7 @@ class LocationCheckService : IService
         On.RoR2.ShrineHealingBehavior.AddShrineStack -= ShrineHealingBehavior_AddShrineStack;
         On.RoR2.ShrineColossusAccessBehavior.OnInteraction -= ShrineColossusAccessBehavior_OnInteraction;
         // Bazaar
-        BazaarHandler.Unregister();
+        BazaarService.Unregister();
         // Scavengers
         On.EntityStates.ScavBackpack.Opening.OnEnter -= Opening_OnEnter;
         On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Scavenger;
@@ -500,7 +500,7 @@ class LocationCheckService : IService
         scavbackpackHash = 0;
         scavbackpackWasLocation = false;
         scavbackpackblockitem = false;
-        BazaarHandler.OnSceneChanged();
+        BazaarService.OnSceneChanged();
 
         // update the bars for the new scene
         updateBar(LocationTypes.chest);

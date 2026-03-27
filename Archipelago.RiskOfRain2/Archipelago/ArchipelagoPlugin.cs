@@ -6,6 +6,7 @@ using BepInEx;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
+using R2API;
 using RoR2;
 using RoR2.Networking;
 using RoR2.UI;
