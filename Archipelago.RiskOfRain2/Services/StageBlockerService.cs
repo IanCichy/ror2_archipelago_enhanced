@@ -278,14 +278,19 @@ class StageBlockerService : IService
     {
         if (Run.instance.nextStageScene != null && StageLookup.ContainsKey(stageName))
         {
-            // Checks to make sure you have the Stage item required to get to the next set of stages
-            if (!StageUnlocks[$"Stage {StageLookup[stageName]}"] && !ProgressiveStages)
+            int tier = StageLookup[stageName];
+            // Tier 0 = starting stages — never block by tier, only by individual environment unlock
+            if (tier > 0)
             {
-                return true;
-            }
-            else if (StageLookup[stageName] > AmountOfStages && ProgressiveStages)
-            {
-                return true;
+                string stageKey = $"Stage {tier}";
+                if (!ProgressiveStages && StageUnlocks.ContainsKey(stageKey) && !StageUnlocks[stageKey])
+                {
+                    return true;
+                }
+                else if (ProgressiveStages && tier > AmountOfStages)
+                {
+                    return true;
+                }
             }
         }
         return blockedStringStages.Contains(stageName);
