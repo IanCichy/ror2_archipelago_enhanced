@@ -60,6 +60,8 @@ public partial class ArchipelagoClient
             }
 
             LocationCheckService = new LocationCheckService(session, LocationCheckService.BuildTemplateFromSlotData(cachedSlotData));
+            if (cachedSlotData.TryGetValue("stageCheckPriority", out var scpObj))
+                LocationCheckService.StageCheckPriority = Convert.ToInt32(scpObj);
             ShrineChanceService = new ShrineChanceService();
 
             ArchipelagoCheckCountdownController.ShrineStep = (int)cachedShrineUseStep;

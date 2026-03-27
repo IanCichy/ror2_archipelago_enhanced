@@ -104,6 +104,11 @@ class LocationCheckService : IService
     private LocationInformationTemplate originallocationstemplate;
     private Dictionary<int, LocationInformationTemplate> currentlocations;
 
+    /// <summary>
+    /// 0 = off, 1 = soft (+weight per check), 2 = hard (near-zero weight for check-less stages).
+    /// </summary>
+    public int StageCheckPriority { get; set; } = 1;
+
     public LocationCheckService(ArchipelagoSession session, LocationInformationTemplate locationstemplate)
     {
         Log.LogDebug($"Location handler constructor.");
@@ -540,14 +545,14 @@ class LocationCheckService : IService
 
         orig(self, dest, canAdd);
 
-        if (null == dest)
+        if (null == dest || StageCheckPriority == 0)
         {
             return;
         }
 
+        // Soft mode: add +5 weight per remaining location check
         for (int i = 0; i < dest.Count; i++)
         {
-            // add 5 weight to per location left in an environment
             string stageName = dest.choices[i].value.cachedName;
             int environment_index = GetSceneIndex(stageName);
             CatchUpSceneLocations(stageName);
@@ -570,6 +575,35 @@ class LocationCheckService : IService
             else Log.LogDebug($"Environment {environment_index} with weight {dest.choices[i].weight} does not have locations.");
         }
 
+        // Hard mode: near-zero weight for stages with no remaining checks (when at least one stage has checks)
+        if (StageCheckPriority == 2)
+        {
+            bool anyStageHasChecks = false;
+            for (int i = 0; i < dest.Count; i++)
+            {
+                string stageName = dest.choices[i].value.cachedName;
+                int envIndex = GetSceneIndex(stageName);
+                if (currentlocations.TryGetValue(envIndex, out var locs) && locs.Total() > 0)
+                {
+                    anyStageHasChecks = true;
+                    break;
+                }
+            }
+
+            if (anyStageHasChecks)
+            {
+                for (int i = 0; i < dest.Count; i++)
+                {
+                    string stageName = dest.choices[i].value.cachedName;
+                    int envIndex = GetSceneIndex(stageName);
+                    if (!currentlocations.TryGetValue(envIndex, out var locs) || locs.Total() == 0)
+                    {
+                        Log.LogDebug($"Hard mode: near-zero weight for {stageName} (no remaining checks).");
+                        dest.ModifyChoiceWeight(i, 0.001f);
+                    }
+                }
+            }
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
