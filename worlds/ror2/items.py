@@ -20,6 +20,7 @@ filler_offset: int = offset + 300
 trap_offset: int = offset + 400
 stage_offset: int = offset + 500
 pool_offset: int = offset + 100
+drone_offset: int = offset + 200
 environment_offset: int = offset + 700
 # Upgrade item ids 37002 - 37012
 upgrade_table: Dict[str, RiskOfRainItemData] = {
@@ -83,7 +84,26 @@ TIER_TOTAL_LUNAR: int = 20
 TIER_TOTAL_VOID: int = 14
 TIER_TOTAL_EQUIPMENT: int = 34
 
-item_table = {**upgrade_table, **other_table, **filler_table, **trap_table, **stage_table, **pool_table}
+# Drone unlock item ids 37201 - 37215
+drone_table: Dict[str, RiskOfRainItemData] = {
+    "Drone: Gunner":       RiskOfRainItemData("Drone", 1 + drone_offset, ItemClassification.filler),
+    "Drone: Healing":      RiskOfRainItemData("Drone", 2 + drone_offset, ItemClassification.useful),
+    "Drone: Turret":       RiskOfRainItemData("Drone", 3 + drone_offset, ItemClassification.filler),
+    "Drone: Missile":      RiskOfRainItemData("Drone", 4 + drone_offset, ItemClassification.useful),
+    "Drone: Emergency":    RiskOfRainItemData("Drone", 5 + drone_offset, ItemClassification.useful),
+    "Drone: Equipment":    RiskOfRainItemData("Drone", 6 + drone_offset, ItemClassification.filler),
+    "Drone: Incinerator":  RiskOfRainItemData("Drone", 7 + drone_offset, ItemClassification.filler),
+    "Drone: TC-280":       RiskOfRainItemData("Drone", 8 + drone_offset, ItemClassification.useful),
+    "Drone: Cleanup":      RiskOfRainItemData("Drone", 9 + drone_offset, ItemClassification.filler),
+    "Drone: Barrier":      RiskOfRainItemData("Drone", 10 + drone_offset, ItemClassification.filler),
+    "Drone: Jailer":       RiskOfRainItemData("Drone", 11 + drone_offset, ItemClassification.filler),
+    "Drone: Bombardment":  RiskOfRainItemData("Drone", 12 + drone_offset, ItemClassification.useful),
+    "Drone: Freeze":       RiskOfRainItemData("Drone", 13 + drone_offset, ItemClassification.filler),
+    "Drone: Transport":    RiskOfRainItemData("Drone", 14 + drone_offset, ItemClassification.filler),
+    "Drone: Junk":         RiskOfRainItemData("Drone", 15 + drone_offset, ItemClassification.filler),
+}
+
+item_table = {**upgrade_table, **other_table, **filler_table, **trap_table, **stage_table, **pool_table, **drone_table}
 # Environment item ids 37700 - 37746
 ##################################################
 # environments

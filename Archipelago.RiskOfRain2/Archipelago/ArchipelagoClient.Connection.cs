@@ -155,6 +155,14 @@ public partial class ArchipelagoClient
         }
         Log.LogDebug($"itemPoolLimiting: {cachedItemPoolLimiting}");
 
+        // Drone randomizer
+        cachedDroneRandomizer = false;
+        if (successResult.SlotData.TryGetValue("droneRandomizer", out var droneRandomizerObj))
+        {
+            cachedDroneRandomizer = Convert.ToBoolean(droneRandomizerObj);
+        }
+        Log.LogDebug($"droneRandomizer: {cachedDroneRandomizer}");
+
         // Cache goal mode and slot data for run reuse
         cachedGoalIsExplore = false;
         if (successResult.SlotData.TryGetValue("goal", out var classicmode))

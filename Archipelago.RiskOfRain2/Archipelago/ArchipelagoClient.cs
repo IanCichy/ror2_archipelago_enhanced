@@ -24,6 +24,7 @@ public partial class ArchipelagoClient : IDisposable
     internal LocationCheckService LocationCheckService { get; private set; }
     internal ShrineChanceService ShrineChanceService { get; private set; }
     internal ItemPoolService ItemPoolService { get; private set; }
+    internal DronePoolService DronePoolService { get; private set; }
 
     public ArchipelagoItemLogicController ItemLogic;
 
@@ -63,6 +64,7 @@ public partial class ArchipelagoClient : IDisposable
 
     // Cached slot data for session reuse across runs
     private bool cachedItemPoolLimiting;
+    private bool cachedDroneRandomizer;
     private bool cachedLegacyStagesUnlocked;
     private bool cachedGoalIsExplore;
     private bool cachedDeathLinkEnabled;

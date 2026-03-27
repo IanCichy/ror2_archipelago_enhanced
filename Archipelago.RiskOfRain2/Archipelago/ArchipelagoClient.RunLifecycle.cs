@@ -87,6 +87,14 @@ public partial class ArchipelagoClient
             ItemLogic.ItemPoolService = ItemPoolService;
         }
 
+        // Drone randomizer
+        if (cachedDroneRandomizer)
+        {
+            DronePoolService = new DronePoolService();
+            DronePoolService.Initialize(cachedSlotData);
+            ItemLogic.DronePoolService = DronePoolService;
+        }
+
         // Initialize ItemLogic location tracking from session state.
         // On first connect, Session_PacketReceived won't fire because ItemLogic
         // is created after TryConnectAndLogin. On session reuse, restore cached state.
@@ -160,6 +168,7 @@ public partial class ArchipelagoClient
         LocationCheckService = null;
         ShrineChanceService = null;
         ItemPoolService = null;
+        DronePoolService = null;
         bossDefeatedOnVictoryStage = false;
     }
 
@@ -181,6 +190,7 @@ public partial class ArchipelagoClient
         LocationCheckService?.Register();
         ShrineChanceService?.Register();
         ItemPoolService?.Register();
+        DronePoolService?.Register();
         ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
         ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
         On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter += PortalDialerPreDialState_OnEnter;
@@ -205,6 +215,7 @@ public partial class ArchipelagoClient
         LocationCheckService?.Unregister();
         ShrineChanceService?.Unregister();
         ItemPoolService?.Unregister();
+        DronePoolService?.Unregister();
         ArchipelagoConsoleCommand.OnArchipelagoDeathLinkCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoDeathLinkCommandCalled;
         ArchipelagoConsoleCommand.OnArchipelagoFinalStageDeathCommandCalled -= ArchipelagoConsoleCommand_OnArchipelagoFinalStageDeathCommandCalled;
         On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter -= PortalDialerPreDialState_OnEnter;

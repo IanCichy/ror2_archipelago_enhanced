@@ -27,6 +27,11 @@ public partial class ArchipelagoItemLogicController
             HandleReceivedPoolQueueItem();
         }
 
+        if (!droneReceivedQueue.IsEmpty)
+        {
+            HandleReceivedDroneQueueItem();
+        }
+
         if (IsInGame)
         {
             if (!itemReceivedQueue.IsEmpty)
@@ -154,6 +159,18 @@ public partial class ArchipelagoItemLogicController
             string tierName = itemNameReceived?.Replace(" Pool Expansion", "") ?? "Unknown";
             string itemList = string.Join(", ", newItems);
             ChatMessage.Send($"<style=cIsUtility>[AP]</style> <color={tierColor}>{tierName}</color> pool expanded! Now available: <color={tierColor}>{itemList}</color>");
+        }
+    }
+
+    private void HandleReceivedDroneQueueItem()
+    {
+        if (!droneReceivedQueue.TryDequeue(out var itemReceived)) return;
+        if (DronePoolService == null) return;
+
+        string droneName = DronePoolService.UnlockDrone(itemReceived.Key);
+        if (droneName != null)
+        {
+            ChatMessage.Send($"<style=cIsUtility>[AP]</style> Drone unlocked: <color=#00FFFF>{droneName}</color>");
         }
     }
 

@@ -2,6 +2,7 @@ import math
 import string
 
 from .items import (RiskOfRainItem, item_table, item_pool_weights, offset, filler_table, environment_offset,
+                     drone_table,
                      TIER_TOTAL_WHITE, TIER_TOTAL_GREEN, TIER_TOTAL_RED, TIER_TOTAL_BOSS,
                      TIER_TOTAL_LUNAR, TIER_TOTAL_VOID, TIER_TOTAL_EQUIPMENT)
 from .locations import RiskOfRainLocation, item_pickups, get_locations
@@ -50,6 +51,7 @@ class RiskOfRainWorld(World):
         "Fillers": {name for name, data in item_table.items() if data.category == "Filler"},
         "Traps": {name for name, data in item_table.items() if data.category == "Trap"},
         "Pool": {name for name, data in item_table.items() if data.category == "Pool"},
+        "Drones": {name for name, data in item_table.items() if data.category == "Drone"},
     }
     location_name_to_id = item_pickups
 
@@ -204,6 +206,28 @@ class RiskOfRainWorld(World):
                     num_expansions = math.ceil(remaining / per_expansion)
                     itempool += [name] * num_expansions
 
+        # Add drone unlock items when drone randomizer is enabled
+        if self.options.drone_randomizer:
+            guaranteed_drones = {"Drone: Healing", "Drone: Gunner"}
+            dlc_drones = {"Drone: Cleanup", "Drone: Barrier", "Drone: Jailer",
+                          "Drone: Bombardment", "Drone: Freeze", "Drone: Transport", "Drone: Junk"}
+            available_drones = [name for name in drone_table
+                                if name not in guaranteed_drones]
+            # Filter out DLC drones if SOTV is not enabled
+            if not self.options.dlc_sotv:
+                available_drones = [d for d in available_drones if d not in dlc_drones]
+
+            self.random.shuffle(available_drones)
+            starting = min(self.options.starting_drone_count.value, len(available_drones))
+            # Starting drones get precollected, remaining go into the pool as unlock items
+            for drone_name in available_drones[:starting]:
+                self.multiworld.push_precollected(self.create_item(drone_name))
+            for drone_name in available_drones[starting:]:
+                itempool.append(drone_name)
+            # Guaranteed drones are always precollected
+            for drone_name in guaranteed_drones:
+                self.multiworld.push_precollected(self.create_item(drone_name))
+
         # Create junk items
         junk_pool = self.create_junk_pool()
         # Fill remaining items with randomly generated junk
@@ -278,7 +302,9 @@ class RiskOfRainWorld(World):
                                             "chests_per_stage", "shrines_per_stage", "scavengers_per_stage",
                                             "scanner_per_stage", "altars_per_stage", "total_revivals",
                                             "start_with_revive", "final_stage_death", "death_link", "require_stages",
-                                            "progressive_stages", "dlc_sotv", "dlc_sots", "dlc_ac",
+                                            "progressive_stages",
+                                            "drone_randomizer", "starting_drone_count",
+                                            "dlc_sotv", "dlc_sots", "dlc_ac",
                                             "item_pool_limiting", "starting_white_pool", "starting_green_pool",
                                             "starting_red_pool", "starting_boss_pool", "starting_lunar_pool",
                                             "starting_void_pool", "starting_equipment_pool",
