@@ -1,9 +1,11 @@
 ﻿using Archipelago.MultiClient.Net;
 using Archipelago.MultiClient.Net.Packets;
+using Archipelago.MultiClient.Net.Models;
 using Archipelago.RiskOfRain2.Console;
 using Archipelago.RiskOfRain2.Extensions;
 using Archipelago.RiskOfRain2.Network;
 using Archipelago.RiskOfRain2.UI;
+using R2API;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
@@ -103,6 +105,8 @@ class LocationCheckService : IService
     private ArchipelagoSession session;
     private LocationInformationTemplate originallocationstemplate;
     private Dictionary<int, LocationInformationTemplate> currentlocations;
+    public BazaarService BazaarService { get; private set; }
+
 
     public LocationCheckService(ArchipelagoSession session, LocationInformationTemplate locationstemplate)
     {
@@ -113,6 +117,7 @@ class LocationCheckService : IService
 
 
         InitialSetupLocationDict(locationstemplate);
+        BazaarService = new BazaarService(session, sendLocation);
     }
 
     /// <summary>
@@ -215,6 +220,8 @@ class LocationCheckService : IService
         On.RoR2.BossGroup.DropRewards += BossGroup_DropRewards;
         On.RoR2.ShrineHealingBehavior.AddShrineStack += ShrineHealingBehavior_AddShrineStack;
         On.RoR2.ShrineColossusAccessBehavior.OnInteraction += ShrineColossusAccessBehavior_OnInteraction;
+        // Bazaar
+        BazaarService.Register();
         // Scavengers
         On.EntityStates.ScavBackpack.Opening.OnEnter += Opening_OnEnter;
         On.RoR2.ChestBehavior.ItemDrop += ChestBehavior_ItemDrop_Scavenger;
@@ -257,6 +264,8 @@ class LocationCheckService : IService
         On.RoR2.BossGroup.DropRewards -= BossGroup_DropRewards;
         On.RoR2.ShrineHealingBehavior.AddShrineStack -= ShrineHealingBehavior_AddShrineStack;
         On.RoR2.ShrineColossusAccessBehavior.OnInteraction -= ShrineColossusAccessBehavior_OnInteraction;
+        // Bazaar
+        BazaarService.Unregister();
         // Scavengers
         On.EntityStates.ScavBackpack.Opening.OnEnter -= Opening_OnEnter;
         On.RoR2.ChestBehavior.ItemDrop -= ChestBehavior_ItemDrop_Scavenger;
@@ -491,6 +500,7 @@ class LocationCheckService : IService
         scavbackpackHash = 0;
         scavbackpackWasLocation = false;
         scavbackpackblockitem = false;
+        BazaarService.OnSceneChanged();
 
         // update the bars for the new scene
         updateBar(LocationTypes.chest);

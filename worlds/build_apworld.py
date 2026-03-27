@@ -26,8 +26,8 @@ def parse_args():
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("RiskOfRain2.apworld"),
-        help="Output .apworld file name (default: RiskOfRain2.apworld)"
+        default=Path("ror2.apworld"),
+        help="Output .apworld file name (default: ror2.apworld)"
     )
     return parser.parse_args()
 

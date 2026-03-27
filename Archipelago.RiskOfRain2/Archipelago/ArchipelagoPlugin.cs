@@ -6,6 +6,7 @@ using BepInEx;
 using R2API.Networking;
 using R2API.Networking.Interfaces;
 using R2API.Utils;
+using R2API;
 using RoR2;
 using RoR2.Networking;
 using RoR2.UI;
@@ -16,6 +17,7 @@ namespace Archipelago.RiskOfRain2;
 
 [BepInDependency("com.bepis.r2api")]
 [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
+[R2APISubmoduleDependency(nameof(LanguageAPI))]
 public class ArchipelagoPlugin : BaseUnityPlugin
 {
     public const string PluginGUID = "ror2-Archipelago";

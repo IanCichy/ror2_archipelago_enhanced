@@ -68,6 +68,11 @@ public partial class ArchipelagoClient
 
             LocationCheckService.ItemPickupStep = cachedItemPickupStep;
             LocationCheckService.ShrineUseStep = cachedShrineUseStep;
+            // Initialize Bazaar shop queue
+            if (cachedSlotData.TryGetValue("bazaarShopChecks", out var bazaarShopChecks))
+            {
+                LocationCheckService.BazaarService.InitializeBazaarShopQueue(Convert.ToInt32(bazaarShopChecks));
+            }
         }
         else
         {

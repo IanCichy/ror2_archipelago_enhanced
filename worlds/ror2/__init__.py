@@ -4,7 +4,7 @@ import string
 from .items import (RiskOfRainItem, item_table, item_pool_weights, offset, filler_table, environment_offset,
                      TIER_TOTAL_WHITE, TIER_TOTAL_GREEN, TIER_TOTAL_RED, TIER_TOTAL_BOSS,
                      TIER_TOTAL_LUNAR, TIER_TOTAL_VOID, TIER_TOTAL_EQUIPMENT)
-from .locations import RiskOfRainLocation, item_pickups, get_locations
+from .locations import RiskOfRainLocation, item_pickups, get_locations, bazaar_shop_pickups  
 from .rules import set_rules
 from .ror2environments import environment_vanilla_table, environment_vanilla_orderedstages_table, \
     environment_sotv_orderedstages_table, environment_sotv_table, \
@@ -17,6 +17,7 @@ from .options import ItemWeights, ROR2Options, ror2_option_groups
 from worlds.AutoWorld import World, WebWorld
 from .regions import create_explore_regions, create_classic_regions
 from typing import List, Dict, Any
+
 
 
 class RiskOfWeb(WebWorld):
@@ -51,7 +52,7 @@ class RiskOfRainWorld(World):
         "Traps": {name for name, data in item_table.items() if data.category == "Trap"},
         "Pool": {name for name, data in item_table.items() if data.category == "Pool"},
     }
-    location_name_to_id = item_pickups
+    location_name_to_id = {**item_pickups, **bazaar_shop_pickups}
 
     required_client_version = (0, 5, 0)
     web = RiskOfWeb()
@@ -74,6 +75,8 @@ class RiskOfRainWorld(World):
                     dlc_ac=bool(self.options.dlc_ac.value)
                 )
             )
+            # Account for Bazaar locations in revival calculation
+            total_locations += self.options.bazaar_shop_checks.value
         self.total_revivals = int(self.options.total_revivals.value / 100 *
                                   total_locations)
         if self.options.start_with_revive:
@@ -93,6 +96,17 @@ class RiskOfRainWorld(World):
         else:
             # explore mode
             create_explore_regions(self)
+            # adds bazaar shop interactible as location
+            bazaar_region = self.multiworld.get_region("Hidden Realm: Bazaar Between Time", self.player)
+            # Bazaar shop checks — only register up to the configured number
+            for i in range(self.options.bazaar_shop_checks.value):
+                shop_location = RiskOfRainLocation(
+                    self.player,
+                    f"Bazaar Shop {i + 1}",
+                    bazaar_shop_pickups[f"Bazaar Shop {i + 1}"],
+                    bazaar_region
+                )
+                bazaar_region.locations.append(shop_location)
 
         self.create_events()
 
@@ -157,7 +171,6 @@ class RiskOfRainWorld(World):
             total_locations = self.options.total_locations.value
         else:
             # explore mode
-
             # Add Stage items to the pool
             if self.options.require_stages:
                 itempool += ["Stage 1", "Stage 2", "Stage 3", "Stage 4"] if not self.options.progressive_stages else \
@@ -175,6 +188,8 @@ class RiskOfRainWorld(World):
                     dlc_ac=bool(self.options.dlc_ac.value)
                 )
             )
+            # Add Bazaar locations to the total so junk fills them
+            total_locations += self.options.bazaar_shop_checks.value  # Bazaar shop slots
         # Add pool expansion items when item pool limiting is enabled
         if self.options.item_pool_limiting:
             pool_tiers = [
@@ -205,6 +220,8 @@ class RiskOfRainWorld(World):
                     itempool += [name] * num_expansions
 
         # Create junk items
+        print(f"total_locations: {total_locations}")
+        print(f"itempool size before filler: {len(itempool)}")
         junk_pool = self.create_junk_pool()
         # Fill remaining items with randomly generated junk
         filler = self.random.choices(*zip(*junk_pool.items()), k=total_locations - len(itempool))
@@ -285,7 +302,9 @@ class RiskOfRainWorld(World):
                                             "items_per_white_expansion", "items_per_green_expansion",
                                             "items_per_red_expansion", "items_per_boss_expansion",
                                             "items_per_lunar_expansion", "items_per_void_expansion",
-                                            "items_per_equipment_expansion", casing="camel")
+                                            "items_per_equipment_expansion",
+                                            "bazaar_shop_checks",
+                                            casing="camel")
         return {
             **options_dict,
             "seed": "".join(self.random.choice(string.digits) for _ in range(16)),

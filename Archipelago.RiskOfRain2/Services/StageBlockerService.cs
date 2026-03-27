@@ -278,6 +278,9 @@ class StageBlockerService : IService
     {
         if (Run.instance.nextStageScene != null && StageLookup.ContainsKey(stageName))
         {
+            // guard for if the stage is in Stage Tier 0 such as the bazaar
+            // if (StageLookup[stageName] == 0)
+            //     return blockedStringStages.Contains(stageName);
             // Checks to make sure you have the Stage item required to get to the next set of stages
             if (!StageUnlocks[$"Stage {StageLookup[stageName]}"] && !ProgressiveStages)
             {

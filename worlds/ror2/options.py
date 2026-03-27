@@ -85,6 +85,14 @@ class AltarsPerEnvironment(Range):
     range_end = 2
     default = 1
 
+class BazaarShopChecks(Range):
+    """Number of Archipelago checks available in the Bazaar Between Time shop.
+    Each visit will replace up to a maximum of 5 (all) shop slots, per visit with AP checks until exhausted.
+    Reroll terminal is purely a waste of lunar coins. Recommend using lower number unless you \"have a lot of coins\""""
+    display_name = "Bazaar Shop Checks"
+    range_start = 0
+    range_end = 100
+    default = 5
 
 class TotalRevivals(Range):
     """Total Percentage of `Dio's Best Friend` item put in the item pool."""
@@ -524,6 +532,7 @@ ror2_option_groups = [
         AltarsPerEnvironment,
         RequireStages,
         ProgressiveStages,
+        BazaarShopChecks,
     ]),
     OptionGroup("Item Pool Limiting", [
         ItemPoolLimiting,
@@ -580,6 +589,7 @@ class ROR2Options(PerGameCommonOptions):
     scavengers_per_stage: ScavengersPerEnvironment
     scanner_per_stage: ScannersPerEnvironment
     altars_per_stage: AltarsPerEnvironment
+    bazaar_shop_checks: BazaarShopChecks
     total_revivals: TotalRevivals
     start_with_revive: StartWithRevive
     final_stage_death: FinalStageDeath

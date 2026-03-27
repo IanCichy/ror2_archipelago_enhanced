@@ -1,7 +1,8 @@
+import time
 from typing import Dict
 from BaseClasses import Location
 from .options import TotalLocations, ChestsPerEnvironment, ShrinesPerEnvironment, ScavengersPerEnvironment, \
-    ScannersPerEnvironment, AltarsPerEnvironment
+    ScannersPerEnvironment, AltarsPerEnvironment, BazaarShopChecks 
 from .ror2environments import compress_dict_list_horizontal, environment_vanilla_orderedstages_table, \
     environment_sotv_orderedstages_table, environment_sots_orderedstages_table, environment_ac_orderedstages_table
 
@@ -25,6 +26,8 @@ location_table = item_pickups
 
 # this is so we can easily calculate the environment and location "offset" ids
 ror2_locations_start_ordered_stage = ror2_locations_start_id + TotalLocations.range_end
+
+
 
 # TODO is there a better, more generic way to do this?
 offset_chests = 0
@@ -93,3 +96,14 @@ location_table.update(get_locations(
     dlc_sots=True,
     dlc_ac=True,
 ))
+
+# ============================================================
+# Bazaar Between Time interactable locations
+# ============================================================
+ror2_locations_start_bazaar = ror2_locations_start_ordered_stage + (allocation * 1000)  # needs to be out of range
+
+bazaar_shop_pickups: Dict[str, int] = {
+    f"Bazaar Shop {i + 1}": ror2_locations_start_bazaar + 1 + i
+    for i in range(BazaarShopChecks.range_end)  # range_end = 100
+}
+location_table.update(bazaar_shop_pickups)
