@@ -16,9 +16,16 @@ def has_entrance_access_rule(multiworld: MultiWorld, stage: str, region: str, pl
         entrance.access_rule = rule
 
 
-def has_stage_access_rule(multiworld: MultiWorld, stage: str, amount: int, region: str, player: int) -> None:
-    rule = lambda state: state.has(region, player) and \
-        (state.has(stage, player) or state.count("Progressive Stage", player) >= amount)
+def has_stage_access_rule(multiworld: MultiWorld, stage: str, amount: int, region: str, player: int,
+                          progressive: bool = False) -> None:
+    if progressive:
+        # Linear: need Progressive Stage count >= amount (enforces 1→2→3→4)
+        rule = lambda state, amt=amount: state.has(region, player) and \
+            state.count("Progressive Stage", player) >= amt
+    else:
+        # Any-order: only need the specific "Stage N" item (allows tier-skipping)
+        rule = lambda state, amt=amount: state.has(region, player) and \
+            state.has(f"Stage {amt}", player)
     for entrance in multiworld.get_region(region, player).entrances:
         entrance.access_rule = rule
 
@@ -104,6 +111,7 @@ def set_rules(ror2_world: "RiskOfRainWorld") -> None:
         newts = ror2_options.altars_per_stage.value
         scavengers = ror2_options.scavengers_per_stage.value
         scanners = ror2_options.scanner_per_stage.value
+        progressive = bool(ror2_options.progressive_stages.value)
         for i in range(len(environment_vanilla_orderedstages_table)):
             for environment_name, _ in environment_vanilla_orderedstages_table[i].items():
                 # Make sure to go through each location
@@ -119,7 +127,7 @@ def set_rules(ror2_world: "RiskOfRainWorld") -> None:
                     for newt in range(1, newts + 1):
                         has_location_access_rule(multiworld, environment_name, player, newt, "Newt Altar")
                 if i > 0:
-                    has_stage_access_rule(multiworld, f"Stage {i}", i, environment_name, player)
+                    has_stage_access_rule(multiworld, f"Stage {i}", i, environment_name, player, progressive)
 
         if ror2_options.dlc_sotv:
             for i in range(len(environment_sotv_orderedstages_table)):
@@ -137,7 +145,7 @@ def set_rules(ror2_world: "RiskOfRainWorld") -> None:
                         for newt in range(1, newts + 1):
                             has_location_access_rule(multiworld, environment_name, player, newt, "Newt Altar")
                     if i > 0:
-                        has_stage_access_rule(multiworld, f"Stage {i}", i, environment_name, player)
+                        has_stage_access_rule(multiworld, f"Stage {i}", i, environment_name, player, progressive)
         if ror2_options.dlc_sots:
             for i in range(len(environment_sots_orderedstages_table)):
                 for environment_name, _ in environment_sots_orderedstages_table[i].items():
@@ -153,7 +161,7 @@ def set_rules(ror2_world: "RiskOfRainWorld") -> None:
                         for newt in range(1, newts + 1):
                             has_location_access_rule(multiworld, environment_name, player, newt, "Newt Altar")
                     if i > 0:
-                        has_stage_access_rule(multiworld, f"Stage {i}", i, environment_name, player)
+                        has_stage_access_rule(multiworld, f"Stage {i}", i, environment_name, player, progressive)
         if ror2_options.dlc_ac:
             for i in range(len(environment_ac_orderedstages_table)):
                 for environment_name, _ in environment_ac_orderedstages_table[i].items():
@@ -170,10 +178,10 @@ def set_rules(ror2_world: "RiskOfRainWorld") -> None:
                         for newt in range(1, newts + 1):
                             has_location_access_rule(multiworld, environment_name, player, newt, "Newt Altar")
                     if i > 0:
-                        has_stage_access_rule(multiworld, f"Stage {i}", i, environment_name, player)
+                        has_stage_access_rule(multiworld, f"Stage {i}", i, environment_name, player, progressive)
         has_entrance_access_rule(multiworld, "Hidden Realm: A Moment, Fractured", "Hidden Realm: A Moment, Whole",
                                  player)
-        has_stage_access_rule(multiworld, "Stage 1", 1, "Hidden Realm: Bazaar Between Time", player)
+        has_stage_access_rule(multiworld, "Stage 1", 1, "Hidden Realm: Bazaar Between Time", player, progressive)
         has_entrance_access_rule(multiworld, "Hidden Realm: Bazaar Between Time", "Void Fields", player)
         has_entrance_access_rule(multiworld, "Stage 5", "Commencement", player)
         has_entrance_access_rule(multiworld, "Stage 5", "Hidden Realm: A Moment, Fractured", player)

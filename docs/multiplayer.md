@@ -10,11 +10,11 @@ The mod uses R2API's networking layer to synchronize Archipelago state between t
 
 ## Network Message Types
 
-All 12 message types are registered in `ArchipelagoPlugin.Awake()`:
+All 13 message types are registered in `ArchipelagoPlugin.Awake()`:
 
 | Message | Direction | Purpose |
 |---------|-----------|---------|
-| `ArchipelagoStartMessage` | Host → Clients | Signals AP session started, clients create `ClientItemsHandler` |
+| `ArchipelagoStartMessage` | Host → Clients | Signals AP session started, clients create `ClientItemsService` |
 | `ArchipelagoStartClassic` | Host → Clients | Initialize Classic mode UI/objectives |
 | `ArchipelagoStartExplore` | Host → Clients | Initialize Explore mode UI/objectives |
 | `ArchipelagoEndMessage` | Host → Clients | Session ended, clients clean up UI/handlers |
@@ -49,12 +49,12 @@ if (NetworkServer.active && RoR2Application.isInMultiPlayer || isSinglePlayer)
 
 Non-host clients:
 
-1. Receive `ArchipelagoStartMessage` → create `ClientItemsHandler` which manages their local progress bar
+1. Receive `ArchipelagoStartMessage` → create `ClientItemsService` which manages their local progress bar
 2. Receive sync messages → update local UI (progress bars, objectives)
 3. Submit chat → forward to host via `ArchipelagoChatMessage`, host relays to AP server
 4. Receive `ArchipelagoEndMessage` → clean up local UI
 
-`ClientItemsHandler` implements `IHandler` and manages the client-side item check progress bar. It hooks `SyncLocationCheckProgress.OnLocationSynced` to update the bar when the host reports progress.
+`ClientItemsService` implements `IService` and manages the client-side item check progress bar. It hooks `SyncLocationCheckProgress.OnLocationSynced` to update the bar when the host reports progress.
 
 ## Chat Flow
 

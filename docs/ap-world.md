@@ -7,7 +7,7 @@ The `worlds/ror2/` directory contains the server-side Archipelago world definiti
 | File | Purpose |
 |------|---------|
 | `__init__.py` | `RiskOfRainWorld` class — main world definition |
-| `items.py` | Item table, filler table, pool weight presets |
+| `items.py` | Item table, filler table, pool weight presets, tier total constants |
 | `locations.py` | Location ID generation and mapping |
 | `options.py` | `ROR2Options` dataclass — all player YAML settings |
 | `regions.py` | Region graph builders for Classic and Explore modes |
@@ -30,7 +30,7 @@ class RiskOfRainWorld(World):
 
 - **`generate_early()`** — Calculates total revivals, validates DLC-dependent victory conditions (falls back to "any" if DLC not enabled)
 - **`create_regions()`** — Delegates to `create_classic_regions()` or `create_explore_regions()` based on goal option
-- **`create_items()`** — Builds the item pool: Dio's, Beads, Radar Scanner, environment unlocks, stage items, weighted junk fill
+- **`create_items()`** — Builds the item pool: Dio's, Beads, Radar Scanner, environment unlocks, stage items, pool expansion items (when pool limiting enabled), weighted junk fill
 - **`create_junk_pool()`** — Generates weighted filler items from presets or manual weights
 - **`fill_slot_data()`** — Returns configuration dict sent to the C# client on login
 - **`create_events()`** — Classic: milestone events every 25 locations. Explore: Stage 5 access event + Victory event.
@@ -65,7 +65,7 @@ Each environment region contains locations like `{EnvName}: Chest {N}`, `{EnvNam
 ```python
 {
     "goal": 0|1,                    # 0=classic, 1=explore
-    "victory": 0-5,                 # 0=any, 1=mithrix, 2=voidling, 3=limbo, 4=false_son, 5=solus_wing
+    "victory": 0-5,                 # 0=any, 1=mithrix, 2=voidling, 3=limbo, 4=false_son, 5=solus_heart
     "itemPickupStep": int,          # Pickups before check (0-5)
     "shrineUseStep": int,           # Shrines before check (0-3)
     "totalLocations": int,          # Classic: total location count
@@ -80,14 +80,27 @@ Each environment region contains locations like `{EnvName}: Chest {N}`, `{EnvNam
     "deathLink": bool,
     "requireStages": bool,
     "progressiveStages": bool,
+    "dlcSotv": bool,
     "dlcSots": bool,
     "dlcAc": bool,
+    "itemPoolLimiting": bool,
+    "startingWhitePool": int,       # Pool limiting: starting items per tier
+    "startingGreenPool": int,
+    "startingRedPool": int,
+    "startingBossPool": int,
+    "startingLunarPool": int,
+    "startingVoidPool": int,
+    "startingEquipmentPool": int,
+    "itemsPerWhiteExpansion": int,  # Pool limiting: items added per expansion
+    "itemsPerGreenExpansion": int,
+    "itemsPerRedExpansion": int,
+    "itemsPerBossExpansion": int,
+    "itemsPerLunarExpansion": int,
+    "itemsPerVoidExpansion": int,
+    "itemsPerEquipmentExpansion": int,
     "seed": str,                    # 16-digit random seed
     "offset": int                   # Item ID offset
 }
-```
-
-Note: `dlc_sotv` is checked implicitly by the item pool but not included in slot data by name — SOTV affects void item availability.
 
 ## Item ID Ranges
 
@@ -95,11 +108,11 @@ Defined in `items.py` with offsets:
 
 | Range | Category | Examples |
 |-------|----------|---------|
-| `37001–37099` | Upgrades | Common Item, Uncommon Item, Equipment, etc. |
-| `37100–37199` | Special | Dio's Best Friend, Beads of Fealty, Radar Scanner |
-| `37300–37399` | Filler | Money, Lunar Coin, 1000 Exp |
-| `37400–37499` | Traps | Mountain, Time Warp, Combat, Teleport |
-| `37500–37599` | Stages | Stage 1–4, Progressive Stage |
+| `37001–37014` | Upgrades & Special | Common Item, Uncommon Item, Equipment, Dio's, Beads, Radar Scanner |
+| `37101–37107` | Pool Expansion | White/Green/Red/Boss/Lunar/Void/Equipment Pool Expansion |
+| `37301–37303` | Filler | Money, Lunar Coin, 1000 Exp |
+| `37401–37404` | Traps | Mountain, Time Warp, Combat, Teleport |
+| `37501–37505` | Stages | Stage 1–4, Progressive Stage |
 | `37700–37999` | Environments | Per-environment unlock items |
 
 ## Options Reference
@@ -107,6 +120,8 @@ Defined in `items.py` with offsets:
 All options are defined in `options.py` as classes inheriting from `Choice`, `Range`, `Toggle`, or `DefaultOnToggle`. Grouped in the YAML editor:
 
 **Explore Mode Options:** `ChestsPerEnvironment`, `ShrinesPerEnvironment`, `ScavengersPerEnvironment`, `ScannersPerEnvironment`, `AltarsPerEnvironment`, `RequireStages`, `ProgressiveStages`
+
+**Item Pool Limiting:** `ItemPoolLimiting`, `StartingWhitePool`, `StartingGreenPool`, `StartingRedPool`, `StartingBossPool`, `StartingLunarPool`, `StartingVoidPool`, `StartingEquipmentPool`, `ItemsPerWhiteExpansion`, `ItemsPerGreenExpansion`, `ItemsPerRedExpansion`, `ItemsPerBossExpansion`, `ItemsPerLunarExpansion`, `ItemsPerVoidExpansion`, `ItemsPerEquipmentExpansion`
 
 **Classic Mode Options:** `TotalLocations`
 
@@ -134,7 +149,7 @@ cd worlds/ror2
 python -m pytest test/
 ```
 
-Tests cover: Classic mode generation, various victory goal configurations.
+Tests cover: Classic mode generation, various victory goal configurations, item pool limiting (with/without lunar/void).
 
 ## Packaging as .apworld
 

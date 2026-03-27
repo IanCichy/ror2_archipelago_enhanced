@@ -20,7 +20,7 @@ void Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEnding
 }
 ```
 
-All hooks follow the Hook/UnHook pattern. Per-run hooks are managed by `HookGame()` / `UnhookGame()` in `ArchipelagoClient`.
+All hooks follow the Register/Unregister pattern (via the `IService` interface). Per-run hooks are managed by `HookGame()` / `UnhookGame()` in `ArchipelagoClient`.
 
 ## Hook Points by Category
 
@@ -49,8 +49,10 @@ All hooks follow the Hook/UnHook pattern. Per-run hooks are managed by `HookGame
 | `On.RoR2.UI.GameEndReportPanelController.Awake` | Injects Release/Collect buttons into end screen |
 | `On.RoR2.SceneObjectToggleGroup.Awake` | Modifies Newt Statue spawn rules (ensures altars spawn) |
 | `On.RoR2.PortalDialerController.PortalDialerPreDialState.OnEnter` | Displays victory condition info at portal dialer |
+| `On.RoR2.BossGroup.OnDefeatedServer` | Detects boss kill on victory-eligible stages (Rebirth, Solus Heart) |
+| `Stage.onStageStartGlobal` (VictoryCheck) | Sends victory after leaving a stage where boss was defeated |
 
-### Death Link (`DeathLinkHandler`)
+### Death Link (`DeathLinkManager`)
 
 | Hook | Purpose |
 |------|---------|
@@ -58,7 +60,7 @@ All hooks follow the Hook/UnHook pattern. Per-run hooks are managed by `HookGame
 | `On.RoR2.SceneInfo.Awake` | Subscribes deathlink on scene load |
 | `SceneExitController.Begin` | Unsubscribes deathlink on scene exit |
 
-### Location Detection — Explore Mode (`LocationHandler`)
+### Location Detection — Explore Mode (`LocationCheckService`)
 
 | Hook | Purpose |
 |------|---------|
@@ -66,12 +68,18 @@ All hooks follow the Hook/UnHook pattern. Per-run hooks are managed by `HookGame
 | Scene change hooks | Loads location data for current environment |
 | Interactable hooks | Detects shrine uses, scanner activations, newt altar interactions |
 
-### Stage Blocking — Explore Mode (`StageBlockerHandler`)
+### Stage Blocking — Explore Mode (`StageBlockerService`)
 
 | Hook | Purpose |
 |------|---------|
 | Stage transition hooks | Blocks access to stages the player hasn't unlocked |
 | Seer portal hooks | Spawns portals showing unlocked destinations |
+
+### Item Pool Filtering (`ItemPoolService`)
+
+| Hook | Purpose |
+|------|---------|
+| `On.RoR2.BasicPickupDropTable.GenerateWeightedSelection` | Zeros weight of items not in the allowed pool; restores table if all items would be filtered |
 
 ## Item Drop Processing Pipeline
 
@@ -104,22 +112,23 @@ Items received via session.Items callback:
   1. Queued in itemReceivedQueue
   2. Processed on next Update():
      - Parse item ID to determine category
-     - 37700-37999: Environment unlock → StageBlockerHandler
+     - 37100-37199: Pool expansion → ItemPoolService.ExpandPool()
      - 37300-37399: Filler (money, exp, lunar coins)
      - 37400-37499: Trap (mountain, time warp, combat, teleport)
      - 37500-37599: Stage progression item
+     - 37700-37999: Environment unlock → StageBlockerService
      - Other: Standard RoR2 item → spawn as pickup
 ```
 
 ## Location Check Detection (Explore Mode)
 
-In Explore mode, `LocationHandler` tracks specific interactable types per stage:
+In Explore mode, `LocationCheckService` tracks specific interactable types per stage:
 
 ```
 Player enters a stage
          │
          ▼
-LocationHandler.CatchUpSceneLocations(sceneName)
+LocationCheckService.CatchUpSceneLocations(sceneName)
   - Loads LocationInformationTemplate for this environment
   - Sets available check counts (chests, shrines, etc.)
          │
@@ -127,7 +136,7 @@ LocationHandler.CatchUpSceneLocations(sceneName)
 Player interacts with chest/shrine/scanner/altar/scavenger
          │
          ▼
-LocationHandler detects interaction via hooked events
+LocationCheckService detects interaction via hooked events
   - Decrements remaining count for that location type
   - Sends location check to AP: session.Locations.CompleteLocationChecksAsync(locationId)
   - Updates per-environment progress UI
@@ -140,7 +149,7 @@ All locations in stage complete?
 
 ## Stage Blocking System (Explore Mode)
 
-`StageBlockerHandler` maintains a dictionary of unlocked stages:
+`StageBlockerService` maintains a dictionary of unlocked stages:
 
 ```csharp
 static Dictionary<string, bool> stageUnlocks = {
@@ -164,7 +173,10 @@ The mod hooks `SceneObjectToggleGroup.Awake` to ensure Newt Statues (which lead 
 
 ## Victory Detection
 
-`Run_BeginGameOver` checks `IsEndingAcceptable()`:
+Two code paths detect victory, both calling the shared `SendVictory()` helper:
+
+1. **`Run_BeginGameOver`** — Standard game-over hook. Checks `IsEndingAcceptable()` for victories with a `GameEndingDef` (Mithrix, Voidling, Limbo).
+2. **`BossGroup_OnDefeatedServer` + `Stage_onStageStartGlobal_VictoryCheck`** — Boss-kill hook for victories without a standard `GameEndingDef` (Rebirth/False Son on Prime Meridian, Solus Heart on Neural Sanctum). Flags when a boss is defeated on a victory-eligible stage, then sends victory when the next stage loads.
 
 ```csharp
 bool IsEndingAcceptable(GameEndingDef def)
@@ -175,10 +187,11 @@ bool IsEndingAcceptable(GameEndingDef def)
 }
 ```
 
-On acceptable ending:
+`SendVictory()`:
 1. Sends `StatusUpdatePacket` with `ClientGoal` status to AP
-2. Broadcasts `ArchipelagoEndMessage` to all clients
-3. End screen shows Release/Collect buttons based on room permissions
+2. Marks all checks complete in the UI
+3. Broadcasts `ArchipelagoEndMessage` to all clients
+4. End screen shows Release/Collect buttons based on room permissions
 
 ## Release / Collect
 

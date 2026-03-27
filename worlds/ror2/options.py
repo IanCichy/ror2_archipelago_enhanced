@@ -179,6 +179,126 @@ class DLC_AC(Toggle):
     display_name = "Enable DLC - AC"
 
 
+class ItemPoolLimiting(Toggle):
+    """Restrict which in-game items can drop to a limited starting pool.
+    AP checks gradually expand the available pool by adding items of each rarity tier."""
+    display_name = "Item Pool Limiting"
+
+
+class StartingWhitePool(Range):
+    """Number of white (common) items available at the start when Item Pool Limiting is enabled."""
+    display_name = "Starting White Pool"
+    range_start = 1
+    range_end = 36
+    default = 5
+
+
+class StartingGreenPool(Range):
+    """Number of green (uncommon) items available at the start when Item Pool Limiting is enabled."""
+    display_name = "Starting Green Pool"
+    range_start = 1
+    range_end = 42
+    default = 3
+
+
+class StartingRedPool(Range):
+    """Number of red (legendary) items available at the start when Item Pool Limiting is enabled."""
+    display_name = "Starting Red Pool"
+    range_start = 0
+    range_end = 36
+    default = 1
+
+
+class StartingBossPool(Range):
+    """Number of boss (yellow) items available at the start when Item Pool Limiting is enabled."""
+    display_name = "Starting Boss Pool"
+    range_start = 0
+    range_end = 22
+    default = 1
+
+
+class StartingLunarPool(Range):
+    """Number of lunar items available at the start when Item Pool Limiting is enabled.
+    Set to 0 to disable lunar items entirely."""
+    display_name = "Starting Lunar Pool"
+    range_start = 0
+    range_end = 20
+    default = 0
+
+
+class StartingVoidPool(Range):
+    """Number of void items available at the start when Item Pool Limiting is enabled.
+    Requires DLC - SOTV. Set to 0 to disable void items."""
+    display_name = "Starting Void Pool"
+    range_start = 0
+    range_end = 14
+    default = 0
+
+
+class StartingEquipmentPool(Range):
+    """Number of equipment items available at the start when Item Pool Limiting is enabled."""
+    display_name = "Starting Equipment Pool"
+    range_start = 1
+    range_end = 34
+    default = 3
+
+
+class ItemsPerWhiteExpansion(Range):
+    """Number of white items added to the pool per White Pool Expansion check."""
+    display_name = "Items Per White Expansion"
+    range_start = 1
+    range_end = 8
+    default = 3
+
+
+class ItemsPerGreenExpansion(Range):
+    """Number of green items added to the pool per Green Pool Expansion check."""
+    display_name = "Items Per Green Expansion"
+    range_start = 1
+    range_end = 8
+    default = 3
+
+
+class ItemsPerRedExpansion(Range):
+    """Number of red items added to the pool per Red Pool Expansion check."""
+    display_name = "Items Per Red Expansion"
+    range_start = 1
+    range_end = 4
+    default = 3
+
+
+class ItemsPerBossExpansion(Range):
+    """Number of boss items added to the pool per Boss Pool Expansion check."""
+    display_name = "Items Per Boss Expansion"
+    range_start = 1
+    range_end = 4
+    default = 2
+
+
+class ItemsPerLunarExpansion(Range):
+    """Number of lunar items added to the pool per Lunar Pool Expansion check."""
+    display_name = "Items Per Lunar Expansion"
+    range_start = 1
+    range_end = 4
+    default = 1
+
+
+class ItemsPerVoidExpansion(Range):
+    """Number of void items added to the pool per Void Pool Expansion check."""
+    display_name = "Items Per Void Expansion"
+    range_start = 1
+    range_end = 4
+    default = 1
+
+
+class ItemsPerEquipmentExpansion(Range):
+    """Number of equipment items added to the pool per Equipment Pool Expansion check."""
+    display_name = "Items Per Equipment Expansion"
+    range_start = 1
+    range_end = 4
+    default = 4
+
+
 class RequireStages(DefaultOnToggle):
     """Add Stage items to the pool to block access to the next set of environments."""
     display_name = "Require Stages"
@@ -414,6 +534,23 @@ ror2_option_groups = [
         ProgressiveStages,
         BazaarShopChecks,
     ]),
+    OptionGroup("Item Pool Limiting", [
+        ItemPoolLimiting,
+        StartingWhitePool,
+        StartingGreenPool,
+        StartingRedPool,
+        StartingBossPool,
+        StartingLunarPool,
+        StartingVoidPool,
+        StartingEquipmentPool,
+        ItemsPerWhiteExpansion,
+        ItemsPerGreenExpansion,
+        ItemsPerRedExpansion,
+        ItemsPerBossExpansion,
+        ItemsPerLunarExpansion,
+        ItemsPerVoidExpansion,
+        ItemsPerEquipmentExpansion,
+    ], start_collapsed=True),
     OptionGroup("Classic Mode Options", [
         TotalLocations,
     ], start_collapsed=True),
@@ -466,6 +603,21 @@ class ROR2Options(PerGameCommonOptions):
     shrine_use_step: ShrineUseStep
     enable_trap: AllowTrapItems
     enable_lunar: AllowLunarItems
+    item_pool_limiting: ItemPoolLimiting
+    starting_white_pool: StartingWhitePool
+    starting_green_pool: StartingGreenPool
+    starting_red_pool: StartingRedPool
+    starting_boss_pool: StartingBossPool
+    starting_lunar_pool: StartingLunarPool
+    starting_void_pool: StartingVoidPool
+    starting_equipment_pool: StartingEquipmentPool
+    items_per_white_expansion: ItemsPerWhiteExpansion
+    items_per_green_expansion: ItemsPerGreenExpansion
+    items_per_red_expansion: ItemsPerRedExpansion
+    items_per_boss_expansion: ItemsPerBossExpansion
+    items_per_lunar_expansion: ItemsPerLunarExpansion
+    items_per_void_expansion: ItemsPerVoidExpansion
+    items_per_equipment_expansion: ItemsPerEquipmentExpansion
     item_weights: ItemWeights
     item_pool_presets: ItemPoolPresetToggle
     # define the weights of the generated item pool.

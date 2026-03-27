@@ -1,6 +1,9 @@
+import math
 import string
 
-from .items import RiskOfRainItem, item_table, item_pool_weights, offset, filler_table, environment_offset
+from .items import (RiskOfRainItem, item_table, item_pool_weights, offset, filler_table, environment_offset,
+                     TIER_TOTAL_WHITE, TIER_TOTAL_GREEN, TIER_TOTAL_RED, TIER_TOTAL_BOSS,
+                     TIER_TOTAL_LUNAR, TIER_TOTAL_VOID, TIER_TOTAL_EQUIPMENT)
 from .locations import RiskOfRainLocation, item_pickups, get_locations, bazaar_shop_pickups  
 from .rules import set_rules
 from .ror2environments import environment_vanilla_table, environment_vanilla_orderedstages_table, \
@@ -39,7 +42,7 @@ class RiskOfRainWorld(World):
     game = "Risk of Rain 2"
     options_dataclass = ROR2Options
     options: ROR2Options
-    topology_present = False
+    topology_present = True
     item_name_to_id = {name: data.code for name, data in item_table.items()}
     item_name_groups = {
         "Stages": {name for name, data in item_table.items() if data.category == "Stage"},
@@ -47,6 +50,7 @@ class RiskOfRainWorld(World):
         "Upgrades": {name for name, data in item_table.items() if data.category == "Upgrade"},
         "Fillers": {name for name, data in item_table.items() if data.category == "Filler"},
         "Traps": {name for name, data in item_table.items() if data.category == "Trap"},
+        "Pool": {name for name, data in item_table.items() if data.category == "Pool"},
     }
     location_name_to_id = {**item_pickups, **bazaar_shop_pickups}
 
@@ -186,6 +190,35 @@ class RiskOfRainWorld(World):
             )
             # Add Bazaar locations to the total so junk fills them
             total_locations += self.options.bazaar_shop_checks.value  # Bazaar shop slots
+        # Add pool expansion items when item pool limiting is enabled
+        if self.options.item_pool_limiting:
+            pool_tiers = [
+                ("White Pool Expansion", TIER_TOTAL_WHITE, self.options.starting_white_pool.value,
+                 self.options.items_per_white_expansion.value),
+                ("Green Pool Expansion", TIER_TOTAL_GREEN, self.options.starting_green_pool.value,
+                 self.options.items_per_green_expansion.value),
+                ("Red Pool Expansion", TIER_TOTAL_RED, self.options.starting_red_pool.value,
+                 self.options.items_per_red_expansion.value),
+                ("Boss Pool Expansion", TIER_TOTAL_BOSS, self.options.starting_boss_pool.value,
+                 self.options.items_per_boss_expansion.value),
+                ("Lunar Pool Expansion", TIER_TOTAL_LUNAR, self.options.starting_lunar_pool.value,
+                 self.options.items_per_lunar_expansion.value),
+                ("Void Pool Expansion", TIER_TOTAL_VOID, self.options.starting_void_pool.value,
+                 self.options.items_per_void_expansion.value),
+                ("Equipment Pool Expansion", TIER_TOTAL_EQUIPMENT, self.options.starting_equipment_pool.value,
+                 self.options.items_per_equipment_expansion.value),
+            ]
+            for name, total_in_tier, starting, per_expansion in pool_tiers:
+                # Skip disabled tiers
+                if name == "Lunar Pool Expansion" and not self.options.enable_lunar:
+                    continue
+                if name == "Void Pool Expansion" and not self.options.dlc_sotv:
+                    continue
+                remaining = total_in_tier - starting
+                if remaining > 0:
+                    num_expansions = math.ceil(remaining / per_expansion)
+                    itempool += [name] * num_expansions
+
         # Create junk items
         print(f"total_locations: {total_locations}")
         print(f"itempool size before filler: {len(itempool)}")
@@ -263,6 +296,13 @@ class RiskOfRainWorld(World):
                                             "scanner_per_stage", "altars_per_stage", "total_revivals",
                                             "start_with_revive", "final_stage_death", "death_link", "require_stages",
                                             "progressive_stages", "dlc_sotv", "dlc_sots", "dlc_ac",
+                                            "item_pool_limiting", "starting_white_pool", "starting_green_pool",
+                                            "starting_red_pool", "starting_boss_pool", "starting_lunar_pool",
+                                            "starting_void_pool", "starting_equipment_pool",
+                                            "items_per_white_expansion", "items_per_green_expansion",
+                                            "items_per_red_expansion", "items_per_boss_expansion",
+                                            "items_per_lunar_expansion", "items_per_void_expansion",
+                                            "items_per_equipment_expansion",
                                             "bazaar_shop_checks",
                                             casing="camel")
         return {

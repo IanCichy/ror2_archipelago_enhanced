@@ -18,9 +18,10 @@ Sprint 1: Full DLC Support               [MUST DO FIRST - all others depend on i
     +---> Sprint 7: Skill Swap Randomizer [Highest complexity, standalone]
     +---> Sprint 11: New Traps           [Medium, standalone, fun factor]
     +---> Sprint 12: Bazaar Enhancements [Medium, standalone, hub world feel]
+    +---> Sprint 13: Heat Mode           [High complexity, standalone, 3rd game mode]
 ```
 
-**Recommended order:** 1 → 8 → 10 → 2 → 9 → 5 → 3 → 11 → 12 → 4 → 6 → 7
+**Recommended order:** 1 → 8 → 10 → 2 → 9 → 5 → 3 → 11 → 12 → 4 → 6 → 7 → 13
 
 ## Sprint Summary
 
@@ -29,7 +30,7 @@ Sprint 1: Full DLC Support               [MUST DO FIRST - all others depend on i
 | 1 | [Full DLC Support](sprint-1-dlc-support.md) | Medium | 0 | None (existing ranges) |
 | 2 | [Stage Check Prioritization](sprint-2-stage-check-prioritization.md) | Low | 0 | None |
 | 3 | [Portal/Hidden Realm Control](sprint-3-portal-control.md) | Medium | 0 | 37600-37609 |
-| 4 | [Item Pool Limiting](sprint-4-item-pool-limiting.md) | Medium-High | 1-2 | 37100-37109 |
+| 4 | [Item Pool Limiting](sprint-4-item-pool-limiting.md) | Medium-High | 1-2 | 37101-37107 | **Implemented** |
 | 5 | [Drone Randomizer](sprint-5-drone-randomizer.md) | Low | 1 | 37200-37215 |
 | 6 | [Stage Randomizer](sprint-6-stage-randomizer.md) | High | 1 | None |
 | 7 | [Skill Swap Randomizer](sprint-7-skill-randomizer.md) | Very High | 2 | 38500-38699 |
@@ -38,6 +39,7 @@ Sprint 1: Full DLC Support               [MUST DO FIRST - all others depend on i
 | 10 | [Money Bank](sprint-10-money-bank.md) | Medium | 0 | None (or 37304) |
 | 11 | [New Traps](sprint-11-new-traps.md) | Medium | 0 | 37405-37410 |
 | 12 | [Bazaar Enhancements](sprint-12-bazaar-enhancements.md) | Medium | 0-1 | None |
+| 13 | [Heat Mode](sprint-13-heat-mode.md) | High | 1-2 | 37800-37849 |
 
 ## AP Item ID Range Allocation
 
@@ -62,6 +64,7 @@ Sprint 1: Full DLC Support               [MUST DO FIRST - all others depend on i
 37304        Bank Deposit (optional)         (Sprint 10)
 37600-37609  Portal Unlock items            (Sprint 3)
 37610-37699  Reserved for future portals
+37800-37849  Heat Mode items                (Sprint 13)
 38500-38699  Skill Unlock items             (Sprint 7)
 38700-38704  Bazaar Shop location checks    (Sprint 12)
 ```
@@ -142,9 +145,9 @@ Gunner, Healing, Gunner Turret, Junk, Emergency, Equipment, Missile, Incinerator
 | `Handlers/StageBlockerHandler.cs` | Stage blocking, portal control, scene hooks | 1, 3, 6 |
 | `Handlers/LocationHandler.cs` | Location checks, weighted selection | 1, 2, 6 |
 | `Lookup/LocationNames.cs` | Scene name/ID mappings | 1 |
-| `worlds/ror2/items.py` | Python item definitions | 3, 4, 5, 7 |
-| `worlds/ror2/options.py` | Python YAML options | 2, 3, 4, 5, 6, 7 |
-| `worlds/ror2/regions.py` | Python region/stage graph | 1, 3, 6 |
+| `worlds/ror2/items.py` | Python item definitions | 3, 4, 5, 7, 13 |
+| `worlds/ror2/options.py` | Python YAML options | 2, 3, 4, 5, 6, 7, 13 |
+| `worlds/ror2/regions.py` | Python region/stage graph | 1, 3, 6, 13 |
 | `worlds/ror2/ror2environments.py` | Python environment tables | 1 |
 
 ## Wiki Reference

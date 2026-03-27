@@ -1,96 +1,103 @@
-﻿using Archipelago.RiskOfRain2.Handlers;
-using System.Collections.Generic;
+using Archipelago.RiskOfRain2.Services;
 using RoR2.UI;
+using System.Collections.Generic;
 using static RoR2.UI.ObjectivePanelController;
 
-namespace Archipelago.RiskOfRain2.UI
+namespace Archipelago.RiskOfRain2.UI;
+
+/// <summary>
+/// Provides static methods and properties for tracking and managing Archipelago location objectives within the current
+/// game environment.
+/// </summary>
+/// <remarks>This controller integrates with the objective panel system to display and update the status of
+/// Archipelago-related checks, such as chests, shrines, scavengers, scanners, and Newt Altars, for the current scene.
+/// Use the provided methods to enable or disable the display of these objectives. All properties and methods are static
+/// and affect the global state of Archipelago objectives in the environment.</remarks>
+public class ArchipelagoLocationsInEnvironmentController
 {
-    public class ArchipelagoLocationsInEnvironmentController
+    public class ChecksInEnvironment : ObjectiveTracker
     {
-        public class ChecksInEnvironment : ObjectiveTracker
-        {
-            private int lastChests = -1;
-            private int lastShrines = -1;
-            private int lastScavangers = -1;
-            private int lastScanners = -1;
-            private int lastNewts = -1;
-            private string lastScene;
+        private int lastChests = -1;
+        private int lastShrines = -1;
+        private int lastScavangers = -1;
+        private int lastScanners = -1;
+        private int lastNewts = -1;
+        private string lastScene;
 
-            public override string GenerateString()
+        public override string GenerateString()
+        {
+            var lines = new List<string>();
+            if (CurrentChests > 0) lines.Add($"  <color=#E2E2E2>Chests: {CurrentChests} remaining</color>");
+            if (CurrentShrines > 0) lines.Add($"  <color=#F2C94C>Shrines: {CurrentShrines} remaining</color>");
+            if (CurrentScavangers > 0) lines.Add($"  <color=#BB86FC>Scav: {CurrentScavangers} remaining</color>");
+            if (CurrentScanners > 0) lines.Add($"  <color=#6FCF97>Scanner: {CurrentScanners} remaining</color>");
+            if (CurrentNewts > 0) lines.Add($"  <color=#56B4E9>Newt Altar: {CurrentNewts} remaining</color>");
+
+            lastChests = CurrentChests;
+            lastShrines = CurrentShrines;
+            lastScavangers = CurrentScavangers;
+            lastScanners = CurrentScanners;
+            lastNewts = CurrentNewts;
+            lastScene = CurrentScene;
+
+            if (lines.Count == 0)
+                return $"{CurrentScene}\n  <style=cIsHealing>All AP checks complete on this stage!</style>";
+
+            return $"{CurrentScene}\n{string.Join("\n", lines)}";
+        }
+
+        public override bool IsDirty()
+        {
+            return CurrentChests != lastChests
+                || CurrentShrines != lastShrines
+                || CurrentScavangers != lastScavangers
+                || CurrentScanners != lastScanners
+                || CurrentNewts != lastNewts
+                || CurrentScene != lastScene;
+        }
+    }
+
+    static ArchipelagoLocationsInEnvironmentController()
+    {
+        ObjectivePanelController.collectObjectiveSources += ObjectivePanelController_collectObjectiveSources;
+    }
+
+    public static void disable()
+    {
+        ObjectivePanelController.collectObjectiveSources -= ObjectivePanelController_collectObjectiveSources;
+    }
+
+    private static void ObjectivePanelController_collectObjectiveSources(RoR2.CharacterMaster arg1, List<ObjectiveSourceDescriptor> arg2)
+    {
+        if (addObjective)
+        {
+            arg2.Add(new ObjectiveSourceDescriptor()
             {
-                var lines = new List<string>();
-                if (CurrentChests > 0)     lines.Add($"  <color=#E2E2E2>Chests: {CurrentChests} remaining</color>");
-                if (CurrentShrines > 0)    lines.Add($"  <color=#F2C94C>Shrines: {CurrentShrines} remaining</color>");
-                if (CurrentScavangers > 0) lines.Add($"  <color=#BB86FC>Scav: {CurrentScavangers} remaining</color>");
-                if (CurrentScanners > 0)   lines.Add($"  <color=#6FCF97>Scanner: {CurrentScanners} remaining</color>");
-                if (CurrentNewts > 0)      lines.Add($"  <color=#56B4E9>Newt Altar: {CurrentNewts} remaining</color>");
-
-                lastChests = CurrentChests;
-                lastShrines = CurrentShrines;
-                lastScavangers = CurrentScavangers;
-                lastScanners = CurrentScanners;
-                lastNewts = CurrentNewts;
-                lastScene = CurrentScene;
-
-                if (lines.Count == 0)
-                    return $"{CurrentScene}\n  <style=cIsHealing>All AP checks complete on this stage!</style>";
-
-                return $"{CurrentScene}\n{string.Join("\n", lines)}";
-            }
-
-            public override bool IsDirty()
-            {
-                return CurrentChests != lastChests
-                    || CurrentShrines != lastShrines
-                    || CurrentScavangers != lastScavangers
-                    || CurrentScanners != lastScanners
-                    || CurrentNewts != lastNewts
-                    || CurrentScene != lastScene;
-            }
+                master = arg1,
+                objectiveType = typeof(ChecksInEnvironment),
+                source = null
+            });
         }
+    }
 
-        static ArchipelagoLocationsInEnvironmentController()
-        {
-            ObjectivePanelController.collectObjectiveSources += ObjectivePanelController_collectObjectiveSources;
-        }
+    internal static LocationInformationTemplate count = new LocationInformationTemplate();
 
-        public static void disable()
-        {
-            ObjectivePanelController.collectObjectiveSources -= ObjectivePanelController_collectObjectiveSources;
-        }
+    public static string CurrentScene { get; set; }
+    public static int CurrentChests { get; set; }
+    public static int CurrentShrines { get; set; }
+    public static int CurrentScavangers { get; set; }
+    public static int CurrentScanners { get; set; }
+    public static int CurrentNewts { get; set; }
 
-        private static void ObjectivePanelController_collectObjectiveSources(RoR2.CharacterMaster arg1, List<ObjectiveSourceDescriptor> arg2)
-        {
-            if (addObjective)
-            {
-                arg2.Add(new ObjectiveSourceDescriptor()
-                {
-                    master = arg1,
-                    objectiveType = typeof(ChecksInEnvironment),
-                    source = null
-                });
-            }
-        }
+    private static bool addObjective;
 
-        internal static LocationHandler.LocationInformationTemplate count = new LocationHandler.LocationInformationTemplate();
+    public static void AddObjective()
+    {
+        addObjective = true;
+    }
 
-        public static string CurrentScene { get; set; }
-        public static int CurrentChests { get; set; }
-        public static int CurrentShrines { get; set; }
-        public static int CurrentScavangers { get; set; }
-        public static int CurrentScanners { get; set; }
-        public static int CurrentNewts { get; set; }
-
-        private static bool addObjective;
-
-        public static void AddObjective()
-        {
-            addObjective = true;
-        }
-
-        public static void RemoveObjective()
-        {
-            addObjective = false;
-        }
+    public static void RemoveObjective()
+    {
+        addObjective = false;
     }
 }

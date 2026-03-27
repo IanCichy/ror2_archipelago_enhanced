@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Archipelago.RiskOfRain2.Extensions
+namespace Archipelago.RiskOfRain2.Extensions;
+
+public static class IEnumerableExtensions
 {
-    public static class IEnumerableExtensions
+    private static readonly Random rand = new();
+    public static T PickRandom<T>(this IEnumerable<T> self)
     {
-        private static Random rand = new Random();
-        public static T Choice<T>(this IEnumerable<T> self)
-        {
-            var upper = self.Count();
-            return self.Skip(rand.Next(upper)).Take(1).SingleOrDefault();
-        }
+        var list = self.ToList();
+        if (list.Count == 0) return default;
+        return list[rand.Next(list.Count)];
     }
 }
