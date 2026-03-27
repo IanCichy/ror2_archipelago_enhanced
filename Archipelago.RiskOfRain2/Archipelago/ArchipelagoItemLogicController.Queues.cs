@@ -125,6 +125,10 @@ public partial class ArchipelagoItemLogicController
             {
                 StageBlockerService.AmountOfStages += 1;
                 StageBlockerService.UnlockEnvironmentsForProgressiveStages(StageBlockerService.AmountOfStages);
+                // Keep StageUnlocks in sync so the UI shows the correct checkmarks
+                string stageKey = $"Stage {StageBlockerService.AmountOfStages}";
+                if (StageBlockerService.StageUnlocks.ContainsKey(stageKey))
+                    StageBlockerService.StageUnlocks[stageKey] = true;
             }
         }
         else if (StageBlockerService != null)

@@ -226,6 +226,11 @@ class StageBlockerService : IService
             if (entry.Value == stageTier && AllSessionEnvironments.Contains(entry.Key))
             {
                 UnlockedEnvironments.Add(entry.Key);
+                if (blockedStringStages.Remove(entry.Key))
+                {
+                    unblockedStringStages.Add(entry.Key);
+                    Log.LogDebug($"Stage tier unlock: unblocked {entry.Key} (tier {stageTier})");
+                }
             }
         }
     }
