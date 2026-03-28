@@ -1,0 +1,104 @@
+description: Risk of Rain 2 - Archipelago Multiworld Configuration
+name: YourName
+
+game: Risk of Rain 2
+requires:
+  version: 0.5.0
+
+Risk of Rain 2:
+  # ============================================================
+  # GAME MODE
+  # ============================================================
+  goal: 1
+
+  # ============================================================
+  # VICTORY CONDITION
+  # ============================================================
+  # any = 0, mithrix = 1, voidling = 2 (SOTV), limbo = 3,
+  # false_son = 4 (SOTS), solus_heart = 5 (AC)
+  victory: 0
+
+  final_stage_death: 0
+
+  # ============================================================
+  # DLC TOGGLES
+  # ============================================================
+  dlc_sotv: 1
+  dlc_sots: 1
+  dlc_ac: 1
+
+  # ============================================================
+  # EXPLORE MODE OPTIONS
+  # ============================================================
+  chests_per_stage: 10
+  shrines_per_stage: 5
+  scavengers_per_stage: 0
+  scanner_per_stage: 1
+  altars_per_stage: 1
+
+  require_stages: 1
+  progressive_stages: 0
+
+  # ============================================================
+  # CLASSIC MODE OPTIONS
+  # ============================================================
+  total_locations: 40
+
+  # ============================================================
+  # GENERAL OPTIONS
+  # ============================================================
+  item_pickup_step: 1
+  shrine_use_step: 0
+  total_revivals: 4
+  start_with_revive: 1
+  death_link: 0
+
+  # ============================================================
+  # ITEM POOL LIMITING
+  # Restrict which in-game items can drop. AP checks send Pool
+  # Expansion items that gradually unlock more items per tier.
+  # ============================================================
+  item_pool_limiting: 0
+  starting_white_pool: 5
+  starting_green_pool: 3
+  starting_red_pool: 1
+  starting_boss_pool: 1
+  starting_lunar_pool: 0
+  starting_void_pool: 0
+  starting_equipment_pool: 3
+  items_per_white_expansion: 3
+  items_per_green_expansion: 3
+  items_per_red_expansion: 3
+  items_per_boss_expansion: 2
+  items_per_lunar_expansion: 1
+  items_per_void_expansion: 1
+  items_per_equipment_expansion: 4
+
+  # ============================================================
+  # ITEM WEIGHTS
+  # ============================================================
+  item_pool_presets: 0
+  item_weights: 0
+
+  white_scrap: 32
+  green_scrap: 16
+  yellow_scrap: 1
+  red_scrap: 4
+  common_item: 64
+  uncommon_item: 32
+  legendary_item: 8
+  boss_item: 4
+  lunar_item: 16
+  void_item: 16
+  equipment: 32
+  money: 64
+  lunar_coin: 20
+  experience: 40
+
+  enable_trap: 0
+  mountain_trap: 5
+  time_warp_trap: 20
+  combat_trap: 20
+  teleport_trap: 20
+
+  enable_lunar: 0

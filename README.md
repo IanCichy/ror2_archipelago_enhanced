@@ -33,8 +33,11 @@ Each DLC can be individually toggled in your YAML settings.
 
 **Classic Mode** - Item pickups fill a counter that sends location checks. Simpler, no stage gating.
 
+### Item Pool Limiting
+Restrict which in-game RoR2 items can drop to a limited starting pool. AP checks send Pool Expansion items that gradually unlock more items per rarity tier. Configure starting pool sizes and expansion rates per tier in your YAML. The scoreboard shows your current pool status.
+
 ### In-Game UI
-- **Scoreboard (Tab)** - 3-page overlay showing session info, environment unlock status (red/yellow/green), stage keys, hidden realms, and special stages
+- **Scoreboard (Tab)** - Multi-page overlay showing session info, environment unlock status (red/yellow/green), stage keys, hidden realms, special stages, and item pool status
 - **Objectives Panel** - Per-stage check breakdown (chests, shrines, scanners, newt altars) with color-coded counts
 - **Check Countdown** - "Next item check in X pickup(s)" tracker
 - **Connect Panel** - In-lobby AP connection with auto-minimize on connect
@@ -96,6 +99,15 @@ Create a YAML at [Archipelago RoR2 Settings](https://archipelago.gg/games/Risk%2
 | `dlc_sotv` | true/false | Enable SOTV content |
 | `dlc_sots` | true/false | Enable SOTS content |
 | `dlc_ac` | true/false | Enable AC content |
+| `item_pool_limiting` | true/false | Restrict item drops to a limited pool |
+| `starting_white_pool` | 1-36 | Starting white items available (default 5) |
+| `starting_green_pool` | 1-42 | Starting green items available (default 3) |
+| `starting_red_pool` | 1-36 | Starting red items available (default 1) |
+| `starting_boss_pool` | 1-22 | Starting boss items available (default 1) |
+| `starting_lunar_pool` | 0-20 | Starting lunar items available (default 0) |
+| `starting_void_pool` | 0-14 | Starting void items available (default 0) |
+| `starting_equipment_pool` | 1-34 | Starting equipment available (default 3) |
+| `items_per_*_expansion` | 1-10 | Items unlocked per Pool Expansion item (per tier) |
 
 Item weight presets: Default, Uncommon, Legendary, Chaos, No Scraps, Even, Scraps Only, Lunartic, Void
 
