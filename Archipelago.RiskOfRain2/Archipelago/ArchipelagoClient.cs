@@ -24,6 +24,7 @@ public partial class ArchipelagoClient : IDisposable
     internal LocationCheckService LocationCheckService { get; private set; }
     internal ShrineChanceService ShrineChanceService { get; private set; }
     internal ItemPoolService ItemPoolService { get; private set; }
+    internal CraftingStationService CraftingStationService { get; private set; }
 
     public ArchipelagoItemLogicController ItemLogic;
 

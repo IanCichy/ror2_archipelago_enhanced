@@ -30,6 +30,7 @@ public partial class ArchipelagoItemLogicController : IDisposable
 
     internal StageBlockerService StageBlockerService { get; set; }
     internal ItemPoolService ItemPoolService { get; set; }
+    internal CraftingStationService CraftingStationService { get; set; }
 
     public long[] ChecksTogether { get; set; }
     public long[] MissingChecks { get; set; }
@@ -45,6 +46,7 @@ public partial class ArchipelagoItemLogicController : IDisposable
     private ConcurrentQueue<KeyValuePair<long, string>> trapReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
     private ConcurrentQueue<KeyValuePair<long, string>> stageReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
     private ConcurrentQueue<KeyValuePair<long, string>> poolReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
+    private ConcurrentQueue<KeyValuePair<long, string>> craftingReceivedQueue = new ConcurrentQueue<KeyValuePair<long, string>>();
     // TODO get magic numbers from somewhere else (eg move to LocationCheckService.cs)
     private const long environmentRangeLower = 37700;
     private const long environmentRangeUpper = 37999;
@@ -53,7 +55,9 @@ public partial class ArchipelagoItemLogicController : IDisposable
     private const long trapRangeLower = 37400;
     private const long trapRangeUpper = 37499;
     private const long poolRangeLower = 37100;
-    private const long poolRangeUpper = 37199;
+    private const long poolRangeUpper = 37149;
+    private const long craftingRangeLower = 37150;
+    private const long craftingRangeUpper = 37169;
     private const long stageRangeLower = 37500;
     private const long stageRangeUpper = 37599;
     private bool spawnedMonster = false;
@@ -365,6 +369,10 @@ public partial class ArchipelagoItemLogicController : IDisposable
         else if (poolRangeLower <= itemId && itemId <= poolRangeUpper)
         {
             poolReceivedQueue.Enqueue(new KeyValuePair<long, string>(itemId, itemName));
+        }
+        else if (craftingRangeLower <= itemId && itemId <= craftingRangeUpper)
+        {
+            craftingReceivedQueue.Enqueue(new KeyValuePair<long, string>(itemId, itemName));
         }
         else if (stageRangeLower <= itemId && itemId <= stageRangeUpper)
         {

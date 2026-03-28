@@ -27,6 +27,11 @@ public partial class ArchipelagoItemLogicController
             HandleReceivedPoolQueueItem();
         }
 
+        if (!craftingReceivedQueue.IsEmpty)
+        {
+            HandleReceivedCraftingQueueItem();
+        }
+
         if (IsInGame)
         {
             if (!itemReceivedQueue.IsEmpty)
@@ -158,6 +163,18 @@ public partial class ArchipelagoItemLogicController
             string tierName = itemNameReceived?.Replace(" Pool Expansion", "") ?? "Unknown";
             string itemList = string.Join(", ", newItems);
             ChatMessage.Send($"<style=cIsUtility>[AP]</style> <color={tierColor}>{tierName}</color> pool expanded! Now available: <color={tierColor}>{itemList}</color>");
+        }
+    }
+
+    private void HandleReceivedCraftingQueueItem()
+    {
+        if (!craftingReceivedQueue.TryDequeue(out var itemReceived)) return;
+        if (CraftingStationService == null) return;
+
+        string stationName = CraftingStationService.UnlockNext();
+        if (stationName != null)
+        {
+            ChatMessage.Send($"<style=cIsUtility>[AP]</style> Crafting station unlocked: <color=#FFA500>{stationName}</color>");
         }
     }
 

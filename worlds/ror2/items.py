@@ -20,6 +20,7 @@ filler_offset: int = offset + 300
 trap_offset: int = offset + 400
 stage_offset: int = offset + 500
 pool_offset: int = offset + 100
+crafting_offset: int = offset + 150
 environment_offset: int = offset + 700
 # Upgrade item ids 37002 - 37012
 upgrade_table: Dict[str, RiskOfRainItemData] = {
@@ -83,7 +84,13 @@ TIER_TOTAL_LUNAR: int = 20
 TIER_TOTAL_VOID: int = 14
 TIER_TOTAL_EQUIPMENT: int = 34
 
-item_table = {**upgrade_table, **other_table, **filler_table, **trap_table, **stage_table, **pool_table}
+# Crafting station item ids 37151 - 37155
+crafting_table: Dict[str, RiskOfRainItemData] = {
+    "Progressive Crafting": RiskOfRainItemData("Crafting", 1 + crafting_offset, ItemClassification.useful),
+}
+CRAFTING_STATION_COUNT: int = 5  # Scrapper, Printer, Cauldron, Cleansing Pool, Recycler
+
+item_table = {**upgrade_table, **other_table, **filler_table, **trap_table, **stage_table, **pool_table, **crafting_table}
 # Environment item ids 37700 - 37746
 ##################################################
 # environments

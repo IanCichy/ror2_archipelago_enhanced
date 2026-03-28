@@ -171,6 +171,17 @@ class DLC_AC(Toggle):
     display_name = "Enable DLC - AC"
 
 
+class CraftingStationMode(Choice):
+    """Controls crafting station (scrapper, printer, cauldron, etc.) availability.
+    Off: Normal vanilla spawns. Soft: Normal spawns plus guaranteed stations near teleporter as you unlock them.
+    Hard: Crafting stations don't spawn at all until unlocked via AP items."""
+    display_name = "Crafting Station Mode"
+    option_off = 0
+    option_soft = 1
+    option_hard = 2
+    default = 0
+
+
 class ItemPoolLimiting(Toggle):
     """Restrict which in-game items can drop to a limited starting pool.
     AP checks gradually expand the available pool by adding items of each rarity tier."""
@@ -525,6 +536,9 @@ ror2_option_groups = [
         RequireStages,
         ProgressiveStages,
     ]),
+    OptionGroup("Crafting Stations", [
+        CraftingStationMode,
+    ], start_collapsed=True),
     OptionGroup("Item Pool Limiting", [
         ItemPoolLimiting,
         StartingWhitePool,
@@ -588,6 +602,7 @@ class ROR2Options(PerGameCommonOptions):
     dlc_ac: DLC_AC
     require_stages: RequireStages
     progressive_stages: ProgressiveStages
+    crafting_station_mode: CraftingStationMode
     death_link: DeathLink
     item_pickup_step: ItemPickupStep
     shrine_use_step: ShrineUseStep
