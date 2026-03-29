@@ -50,11 +50,14 @@ public class CraftingStationService : IService
     private int mode = 0; // 0=off, 1=soft, 2=hard
     private HashSet<string> allowedSpawnCards = new();
 
+    public static CraftingStationService Instance { get; private set; }
+
     public int UnlockedCount => unlockedCount;
     public int Mode => mode;
 
     public void Initialize(Dictionary<string, object> slotData)
     {
+        Instance = this;
         mode = 0;
         if (slotData.TryGetValue("craftingStationMode", out var modeObj))
         {
@@ -108,6 +111,7 @@ public class CraftingStationService : IService
     {
         SceneDirector.onGenerateInteractableCardSelection -= FilterCraftingStations;
         On.RoR2.TeleporterInteraction.ChargingState.OnEnter -= TeleporterCharging_SpawnStations;
+        Instance = null;
     }
 
     /// <summary>

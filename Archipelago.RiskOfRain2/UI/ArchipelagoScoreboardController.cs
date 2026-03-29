@@ -433,5 +433,21 @@ public class ArchipelagoScoreboardController : MonoBehaviour
             if (!allEnvs.Contains(kvp.Key)) continue;
             sb.AppendLine($"  {FormatEnv(kvp.Key, unlocked)}");
         }
+
+        // Crafting stations (only shown when mode is active)
+        if (CraftingStationService.Instance != null && CraftingStationService.Instance.Mode > 0)
+        {
+            sb.AppendLine();
+            string modeLabel = CraftingStationService.Instance.Mode == 1 ? "Soft" : "Hard";
+            sb.AppendLine($"<style=cIsUtility>── Crafting Stations ({modeLabel}) ──</style>");
+            for (int i = 0; i < 5; i++)
+            {
+                string name = CraftingStationService.Instance.GetStationName(i);
+                var icon = CraftingStationService.Instance.IsUnlocked(i)
+                    ? "<style=cIsHealing>\u2713</style>"
+                    : "<style=cDeath>\u2717</style>";
+                sb.AppendLine($"  {icon} {name}");
+            }
+        }
     }
 }
