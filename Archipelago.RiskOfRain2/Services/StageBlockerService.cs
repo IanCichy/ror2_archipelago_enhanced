@@ -303,7 +303,7 @@ class StageBlockerService : IService
         }
         return blockedStringStages.Contains(stageName);
     }
-    private void MarkAllStagesComplete()
+    public void MarkAllStagesComplete()
     {
         foreach (var env in UnlockedEnvironments)
             CompletedEnvironments.Add(env);
@@ -687,6 +687,23 @@ class StageBlockerService : IService
         "goldshores", "artifactworld", "limbo", "mysteryspace",
     };
 
+    private void AddUnblockedStagesForTier(int targetTier, HashSet<string> exclude = null)
+    {
+        foreach (string unblocked in unblockedStringStages)
+        {
+            if (exclude != null && exclude.Contains(unblocked)) continue;
+            if (PortalExcludedStages.Contains(unblocked)) continue;
+            if (!StageLookup.TryGetValue(unblocked, out int tier) || tier != targetTier) continue;
+
+            SceneDef sd = SceneCatalog.FindSceneDef(unblocked);
+            if (sd != null)
+            {
+                availableStages.Add(sd);
+                Log.LogDebug($"Seer: added {unblocked} (tier {tier})");
+            }
+        }
+    }
+
     public void GetAvailableStages()
     {
         availableStages.Clear();
@@ -739,26 +756,11 @@ class StageBlockerService : IService
                 }
             }
 
-            // Add any unblocked environments in the same target tier that the game missed
             if (targetTier > 0)
             {
                 var existingNames = new HashSet<string>();
                 foreach (var s in availableStages) existingNames.Add(s.cachedName);
-
-                foreach (string unblocked in unblockedStringStages)
-                {
-                    if (existingNames.Contains(unblocked)) continue;
-                    if (PortalExcludedStages.Contains(unblocked)) continue;
-                    if (!StageLookup.TryGetValue(unblocked, out int tier)) continue;
-                    if (tier != targetTier) continue;
-
-                    SceneDef sd = SceneCatalog.FindSceneDef(unblocked);
-                    if (sd != null)
-                    {
-                        availableStages.Add(sd);
-                        Log.LogDebug($"Seer augment: added {unblocked} (tier {tier})");
-                    }
-                }
+                AddUnblockedStagesForTier(targetTier, existingNames);
             }
         }
         else if (availableStages.Count == 0 && unblockedStringStages != null)
@@ -770,19 +772,8 @@ class StageBlockerService : IService
 
             for (int tier = currentTier + 1; tier <= 4; tier++)
             {
-                foreach (string unblocked in unblockedStringStages)
-                {
-                    if (PortalExcludedStages.Contains(unblocked)) continue;
-                    if (!StageLookup.TryGetValue(unblocked, out int t) || t != tier) continue;
-
-                    SceneDef sd = SceneCatalog.FindSceneDef(unblocked);
-                    if (sd != null)
-                    {
-                        availableStages.Add(sd);
-                        Log.LogDebug($"Seer tier-skip: added {unblocked} (tier {tier})");
-                    }
-                }
-                if (availableStages.Count > 0) break; // stop at first tier with destinations
+                AddUnblockedStagesForTier(tier);
+                if (availableStages.Count > 0) break;
             }
         }
 

@@ -293,11 +293,17 @@ public class ItemPoolService : IService
     /// </summary>
     public void FilterRunDropLists(Run run)
     {
-        run.availableTier1DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
-        run.availableTier2DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
-        run.availableTier3DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
-        run.availableBossDropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
-        run.availableLunarItemDropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        void FilterByItem(List<PickupIndex> list) =>
+            list.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+
+        void FilterByEquipment(List<PickupIndex> list) =>
+            list.RemoveAll(idx => !IsEquipmentAllowed(PickupCatalog.GetPickupDef(idx)?.equipmentIndex ?? EquipmentIndex.None));
+
+        FilterByItem(run.availableTier1DropList);
+        FilterByItem(run.availableTier2DropList);
+        FilterByItem(run.availableTier3DropList);
+        FilterByItem(run.availableBossDropList);
+        FilterByItem(run.availableLunarItemDropList);
         run.availableLunarCombinedDropList.RemoveAll(idx =>
         {
             var def = PickupCatalog.GetPickupDef(idx);
@@ -306,11 +312,11 @@ public class ItemPoolService : IService
             if (def.equipmentIndex != EquipmentIndex.None) return !IsEquipmentAllowed(def.equipmentIndex);
             return false;
         });
-        run.availableVoidTier1DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
-        run.availableVoidTier2DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
-        run.availableVoidTier3DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
-        run.availableVoidBossDropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
-        run.availableEquipmentDropList.RemoveAll(idx => !IsEquipmentAllowed(PickupCatalog.GetPickupDef(idx)?.equipmentIndex ?? EquipmentIndex.None));
+        FilterByItem(run.availableVoidTier1DropList);
+        FilterByItem(run.availableVoidTier2DropList);
+        FilterByItem(run.availableVoidTier3DropList);
+        FilterByItem(run.availableVoidBossDropList);
+        FilterByEquipment(run.availableEquipmentDropList);
 
         Log.LogDebug($"FilterRunDropLists: T1={run.availableTier1DropList.Count}, T2={run.availableTier2DropList.Count}, " +
                      $"T3={run.availableTier3DropList.Count}, Boss={run.availableBossDropList.Count}, " +
