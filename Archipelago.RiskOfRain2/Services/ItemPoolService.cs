@@ -2,6 +2,7 @@ using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace Archipelago.RiskOfRain2.Services;
 
@@ -253,19 +254,83 @@ public class ItemPoolService : IService
         }
 
         OnPoolChanged?.Invoke();
+        // Rebuild run drop tables so printers/scrappers see the newly unlocked items
+        if (newNames.Count > 0)
+        {
+            RebuildRunDropTables();
+        }
         return newNames;
     }
 
     public void Register()
     {
         On.RoR2.BasicPickupDropTable.GenerateWeightedSelection += FilterDropTable;
+        On.RoR2.Run.BuildDropTable += Run_BuildDropTable;
     }
 
     public void Unregister()
     {
         On.RoR2.BasicPickupDropTable.GenerateWeightedSelection -= FilterDropTable;
+        On.RoR2.Run.BuildDropTable -= Run_BuildDropTable;
         Instance = null;
         IsActive = false;
+    }
+
+    /// <summary>
+    /// After the run builds its drop lists, filter them to only include allowed items.
+    /// This makes printers, scrappers, cauldrons, and all other interactables that read
+    /// from Run.availableTierXDropList respect the item pool.
+    /// </summary>
+    private void Run_BuildDropTable(On.RoR2.Run.orig_BuildDropTable orig, Run self)
+    {
+        orig(self);
+        if (!PoolEnabled) return;
+        FilterRunDropLists(self);
+    }
+
+    /// <summary>
+    /// Removes non-allowed items from the run's available drop lists.
+    /// </summary>
+    public void FilterRunDropLists(Run run)
+    {
+        run.availableTier1DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableTier2DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableTier3DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableBossDropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableLunarItemDropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableLunarCombinedDropList.RemoveAll(idx =>
+        {
+            var def = PickupCatalog.GetPickupDef(idx);
+            if (def == null) return false;
+            if (def.itemIndex != ItemIndex.None) return !IsItemAllowed(def.itemIndex);
+            if (def.equipmentIndex != EquipmentIndex.None) return !IsEquipmentAllowed(def.equipmentIndex);
+            return false;
+        });
+        run.availableVoidTier1DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableVoidTier2DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableVoidTier3DropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableVoidBossDropList.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
+        run.availableEquipmentDropList.RemoveAll(idx => !IsEquipmentAllowed(PickupCatalog.GetPickupDef(idx)?.equipmentIndex ?? EquipmentIndex.None));
+
+        Log.LogDebug($"FilterRunDropLists: T1={run.availableTier1DropList.Count}, T2={run.availableTier2DropList.Count}, " +
+                     $"T3={run.availableTier3DropList.Count}, Boss={run.availableBossDropList.Count}, " +
+                     $"Equip={run.availableEquipmentDropList.Count}");
+    }
+
+    /// <summary>
+    /// Forces the run to rebuild its drop tables and refilter. Call after pool expansion.
+    /// </summary>
+    public void RebuildRunDropTables()
+    {
+        if (Run.instance != null)
+        {
+            Run.instance.BuildDropTable();
+            // Also regenerate all BasicPickupDropTable selectors so chests pick from updated lists
+            foreach (var dropTable in UnityEngine.Resources.FindObjectsOfTypeAll<BasicPickupDropTable>())
+            {
+                dropTable.RegenerateDropTable(Run.instance);
+            }
+        }
     }
 
     #region Drop Table Hooks
