@@ -317,6 +317,8 @@ public partial class ArchipelagoClient
         session.Socket.SendPacketAsync(packet);
 
         // Mark all checks complete in the UI so the scoreboard/objective panel reflects victory
+        foreach (var env in StageBlockerService.UnlockedEnvironments)
+            StageBlockerService.CompletedEnvironments.Add(env);
         ArchipelagoTotalChecksObjectiveController.CurrentChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
         new SyncTotalCheckProgress(
             ArchipelagoTotalChecksObjectiveController.CurrentChecks,
