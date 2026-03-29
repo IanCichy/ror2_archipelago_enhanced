@@ -1,5 +1,6 @@
 ﻿using Archipelago.RiskOfRain2.Console;
 using Archipelago.RiskOfRain2.Extensions;
+using Archipelago.RiskOfRain2.Network;
 using EntityStates;
 using R2API.Utils;
 using RoR2;
@@ -130,6 +131,7 @@ class StageBlockerService : IService
         ArchipelagoConsoleCommand.OnArchipelagoShowUnlockedStagesCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoShowUnlockedStagesCommandCalled;
         On.RoR2.SceneDef.AddDestinationsToWeightedSelection += SceneDef_AddDestinationsToWeightedSelection;
         On.RoR2.PortalSpawner.Start += PortalSpawner_Start;
+        AllChecksComplete.OnAllChecksComplete += MarkAllStagesComplete;
     }
 
     public void Unregister()
@@ -151,6 +153,7 @@ class StageBlockerService : IService
         On.RoR2.VoidStageMissionController.OnDisable -= VoidStageMissionController_OnDisable;
         On.RoR2.SceneDef.AddDestinationsToWeightedSelection -= SceneDef_AddDestinationsToWeightedSelection;
         On.RoR2.PortalSpawner.Start -= PortalSpawner_Start;
+        AllChecksComplete.OnAllChecksComplete -= MarkAllStagesComplete;
 
         // Reset values to prevent issues when restarting a run
         blockedStages = null;
@@ -300,6 +303,12 @@ class StageBlockerService : IService
         }
         return blockedStringStages.Contains(stageName);
     }
+    private void MarkAllStagesComplete()
+    {
+        foreach (var env in UnlockedEnvironments)
+            CompletedEnvironments.Add(env);
+    }
+
     private void ArchipelagoConsoleCommand_OnArchipelagoShowUnlockedStagesCommandCalled()
     {
         foreach (var scene in unblockedStringStages)
@@ -684,6 +693,33 @@ class StageBlockerService : IService
         manuallyPickingStage = true;
         Run.instance.PickNextStageSceneFromCurrentSceneDestinations();
         manuallyPickingStage = false;
+
+        // Remove stages that passed the blockedStringStages check in CanPickStage
+        // but whose tier key hasn't been received yet (the tier-based check in
+        // CheckBlocked only runs when nextStageScene != null, which it wasn't
+        // during CanPickStage). Without this, individually-unlocked environments
+        // from a locked tier prevent the fallback tier-skip from running.
+        if (!ProgressiveStages)
+        {
+            availableStages.RemoveAll(stage =>
+            {
+                if (StageLookup.TryGetValue(stage.cachedName, out int tier) && tier > 0)
+                {
+                    string stageKey = $"Stage {tier}";
+                    return StageUnlocks.ContainsKey(stageKey) && !StageUnlocks[stageKey];
+                }
+                return false;
+            });
+        }
+        else
+        {
+            availableStages.RemoveAll(stage =>
+            {
+                if (StageLookup.TryGetValue(stage.cachedName, out int tier) && tier > 0)
+                    return tier > AmountOfStages;
+                return false;
+            });
+        }
 
         // Augment with tier-skip destinations: if the game's destination list
         // is missing unblocked environments in the target tier, add them.
