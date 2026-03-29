@@ -279,6 +279,7 @@ class RiskOfRainWorld(World):
                                             "scanner_per_stage", "altars_per_stage", "total_revivals",
                                             "start_with_revive", "final_stage_death", "death_link", "require_stages",
                                             "progressive_stages", "stage_check_priority",
+                                            "show_seer_portals",
                                             "dlc_sotv", "dlc_sots", "dlc_ac",
                                             "item_pool_limiting", "starting_white_pool", "starting_green_pool",
                                             "starting_red_pool", "starting_boss_pool", "starting_lunar_pool",

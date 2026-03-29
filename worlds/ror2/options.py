@@ -312,6 +312,11 @@ class ProgressiveStages(DefaultOnToggle):
     display_name = "Progressive Stages"
 
 
+class ShowSeerPortals(DefaultOnToggle):
+    """Spawn seer portals around the teleporter showing which environments you can travel to next."""
+    display_name = "Show Seer Portals"
+
+
 class GreenScrap(Range):
     """Weight of Green Scraps in the item pool.
 
@@ -535,6 +540,7 @@ ror2_option_groups = [
         RequireStages,
         ProgressiveStages,
         StageCheckPriority,
+        ShowSeerPortals,
     ]),
     OptionGroup("Item Pool Limiting", [
         ItemPoolLimiting,
@@ -600,6 +606,7 @@ class ROR2Options(PerGameCommonOptions):
     require_stages: RequireStages
     progressive_stages: ProgressiveStages
     stage_check_priority: StageCheckPriority
+    show_seer_portals: ShowSeerPortals
     death_link: DeathLink
     item_pickup_step: ItemPickupStep
     shrine_use_step: ShrineUseStep
