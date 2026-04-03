@@ -87,7 +87,11 @@ public partial class ArchipelagoClient
             ItemPoolService = new ItemPoolService();
             ItemPoolService.Initialize(cachedSlotData);
             ItemLogic.ItemPoolService = ItemPoolService;
+            // needed for when same session is used. Prevents user from needing to
+            // disconnect and reconnect
+            ItemPoolService.ApplyItemFilterToCurrentRun();
         }
+        HookGame();
 
         // Initialize ItemLogic location tracking from session state.
         // On first connect, Session_PacketReceived won't fire because ItemLogic
@@ -109,7 +113,6 @@ public partial class ArchipelagoClient
         {
             DeathLinkManager?.Register();
         }
-        HookGame();
 
         // These messages are idempotent — safe to re-send on session reuse
         new ArchipelagoStartMessage().Send(NetworkDestination.Clients);

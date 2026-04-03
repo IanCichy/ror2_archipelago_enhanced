@@ -259,17 +259,35 @@ public class ItemPoolService : IService
     public void Register()
     {
         On.RoR2.BasicPickupDropTable.GenerateWeightedSelection += FilterDropTable;
+        On.RoR2.Run.BuildDropTable += Run_BuildDropTable;
     }
 
     public void Unregister()
     {
         On.RoR2.BasicPickupDropTable.GenerateWeightedSelection -= FilterDropTable;
+        On.RoR2.Run.BuildDropTable -= Run_BuildDropTable;
         Instance = null;
         IsActive = false;
     }
 
+    // creates the item drop tables game will use for run
+    private void Run_BuildDropTable(On.RoR2.Run.orig_BuildDropTable orig, Run self)
+    {
+        orig(self);
+        ApplyItemFilterToCurrentRun();
+        Log.LogDebug("Run_BuildDropTable: filtered drop lists applied.");
+    }
+    // method to recreate the Item Filter Drop Table to the current run
+    public void ApplyItemFilterToCurrentRun()
+    {
+        if (Run.instance == null) return;     
+        foreach (var dropTable in UnityEngine.Resources.FindObjectsOfTypeAll<BasicPickupDropTable>())
+        {
+            dropTable.RegenerateDropTable(Run.instance);
+        }
+        Log.LogDebug("ItemPoolService: applied filters to current run.");
+    }
     #region Drop Table Hooks
-
     private void FilterDropTable(
         On.RoR2.BasicPickupDropTable.orig_GenerateWeightedSelection orig,
         BasicPickupDropTable self,

@@ -154,6 +154,7 @@ public partial class ArchipelagoItemLogicController
         var newItems = ItemPoolService.ExpandPool(itemIdReceived);
         if (newItems.Count > 0)
         {
+            ItemPoolService.ApplyItemFilterToCurrentRun(); // update the item pool during a run
             string tierColor = GetPoolTierColor(itemIdReceived);
             string tierName = itemNameReceived?.Replace(" Pool Expansion", "") ?? "Unknown";
             string itemList = string.Join(", ", newItems);
