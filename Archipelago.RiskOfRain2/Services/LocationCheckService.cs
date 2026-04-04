@@ -198,6 +198,32 @@ class LocationCheckService : IService
             StageBlockerService.CompletedEnvironments.Add(sceneName);
         }
     }
+
+    /// <summary>
+    /// Ensures a scene's location data is caught up without requiring it to be the active scene.
+    /// </summary>
+    public void CatchUpSceneIfNeeded(string sceneName)
+    {
+        int index = GetSceneIndex(sceneName);
+        if (currentlocations.ContainsKey(index))
+        {
+            CatchUpSceneLocations(sceneName);
+        }
+    }
+
+    /// <summary>
+    /// Returns the number of remaining checks for a scene, or -1 if the scene has no locations.
+    /// </summary>
+    public int GetRemainingChecks(string sceneName)
+    {
+        int index = GetSceneIndex(sceneName);
+        if (currentlocations.TryGetValue(index, out var locs))
+        {
+            return locs.Total();
+        }
+        return -1;
+    }
+
     public void Register()
     {
         // Etc

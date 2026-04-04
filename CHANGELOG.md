@@ -1,3 +1,24 @@
+**1.7.0 (Beta 2)**
+* **Item Pool Limiting (Sprint 4)**
+    * Restrict which in-game items can drop to a limited starting pool
+    * 7 Pool Expansion AP items (White, Green, Red, Boss, Lunar, Void, Equipment)
+    * 15 new YAML options for starting pool sizes and expansion rates
+    * Scoreboard pool page showing current/total items per tier
+* **Unified Victory Logic**
+    * Refactored victory detection into centralized system
+    * Boss-kill victory detection for encounters without GameEndingDef (False Son, Solus Heart)
+    * Stage mapping centralized in StageLookup dictionary
+* **Bug Fixes:**
+    * Fixed KeyNotFoundException crash when teleporter checked tier-0 stages (starting stages mapped to tier 0 in StageLookup)
+    * Fixed progressive stage items not syncing StageUnlocks — UI showed X marks and environments were tier-gated even after receiving stage items
+    * Fixed progressive stage tier unlock not actually unblocking environments for gameplay (UI showed unlocked but CanPickStage still blocked them)
+    * Fixed double-increment bug in location check counter
+    * Fixed objective UI panels rebuilding every frame instead of on state change
+    * Fixed objective UI dirty-tracking bugs
+* **Other**
+    * Added Python apworld builder script
+    * Documentation overhaul (architecture, features, game integration, AP world docs)
+
 **1.6.0**
 * **Connection Lifecycle Rework**
     * AP session now survives across runs — no need to reconnect between games
