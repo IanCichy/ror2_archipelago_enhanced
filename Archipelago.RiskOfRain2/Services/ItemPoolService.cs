@@ -254,11 +254,6 @@ public class ItemPoolService : IService
         }
 
         OnPoolChanged?.Invoke();
-        // Rebuild run drop tables so printers/scrappers see the newly unlocked items
-        if (newNames.Count > 0)
-        {
-            RebuildRunDropTables();
-        }
         return newNames;
     }
 
@@ -266,28 +261,14 @@ public class ItemPoolService : IService
     {
         On.RoR2.BasicPickupDropTable.GenerateWeightedSelection += FilterDropTable;
         On.RoR2.Run.BuildDropTable += Run_BuildDropTable;
-        On.RoR2.Run.BuildDropTable += Run_BuildDropTable;
     }
 
     public void Unregister()
     {
         On.RoR2.BasicPickupDropTable.GenerateWeightedSelection -= FilterDropTable;
         On.RoR2.Run.BuildDropTable -= Run_BuildDropTable;
-        On.RoR2.Run.BuildDropTable -= Run_BuildDropTable;
         Instance = null;
         IsActive = false;
-    }
-
-    /// <summary>
-    /// After the run builds its drop lists, filter them to only include allowed items.
-    /// This makes printers, scrappers, cauldrons, and all other interactables that read
-    /// from Run.availableTierXDropList respect the item pool.
-    /// </summary>
-    private void Run_BuildDropTable(On.RoR2.Run.orig_BuildDropTable orig, Run self)
-    {
-        orig(self);
-        if (!PoolEnabled) return;
-        FilterRunDropLists(self);
     }
 
     /// <summary>
