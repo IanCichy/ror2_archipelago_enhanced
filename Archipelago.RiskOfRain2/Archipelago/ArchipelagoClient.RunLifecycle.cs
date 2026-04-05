@@ -87,11 +87,15 @@ public partial class ArchipelagoClient
             ItemPoolService = new ItemPoolService();
             ItemPoolService.Initialize(cachedSlotData);
             ItemLogic.ItemPoolService = ItemPoolService;
-            // needed for when same session is used. Prevents user from needing to
-            // disconnect and reconnect
-            ItemPoolService.ApplyItemFilterToCurrentRun();
         }
         HookGame();
+        // needed for when same session is used. Prevents user from needing to
+        // disconnect and reconnect. I know it's ugly but this is necessary!
+        if (cachedItemPoolLimiting)
+        {
+            ItemPoolService.Register();
+            ItemPoolService.ApplyItemFilterToCurrentRun();
+        }
 
         // Initialize ItemLogic location tracking from session state.
         // On first connect, Session_PacketReceived won't fire because ItemLogic
@@ -445,6 +449,8 @@ public partial class ArchipelagoClient
             if (needsRepick)
             {
                 obj.PickNextStageSceneFromCurrentSceneDestinations();
+                // Force the game to load the corrected scene
+                UnityEngine.Networking.NetworkManager.singleton.ServerChangeScene(obj.nextStageScene.cachedName);
             }
         }
     }
