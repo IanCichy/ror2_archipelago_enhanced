@@ -87,6 +87,7 @@ class StageBlockerService : IService
     HashSet<string> unblockedStringStages;
     List<SceneDef> availableStages;
     private bool manuallyPickingStage = false; // used to keep track of when the call to PickNextStageScene is from the StageBlocker
+    private bool creatingOwnPortals = false; // bypass SetTargetScene blocking for our own seer portals
     private bool voidPortalSpawned = false; // used for the deep void portal in Void Locus.
     private SceneDef prevOrderedStage = null; // used to keep track of what the scene was before the next scene is selected
     public static bool ProgressiveStages = false;
@@ -577,6 +578,15 @@ class StageBlockerService : IService
         // In that case, we can just block the seer be able to be interacted with.
         // We also should hide the destination of the Seer since the it will not be reenabled when the player obtains the environment.
 
+        // Our own seer portals (created by GetAvailableStages) have already been
+        // validated — skip the CheckBlocked call so individually-unlocked stages
+        // from a locked tier aren't re-blocked by the tier key check.
+        if (creatingOwnPortals)
+        {
+            orig(self, sceneDef);
+            return;
+        }
+
         string sceneName = sceneDef.cachedName;
         if (CheckBlocked(sceneName))
         {
@@ -779,7 +789,9 @@ class StageBlockerService : IService
 
         if (availableStages.Count > 0 && ShowSeerPortals && seerPortal != null)
         {
+            creatingOwnPortals = true;
             seerPortal.CreatePortal(availableStages);
+            creatingOwnPortals = false;
         }
     }
 
