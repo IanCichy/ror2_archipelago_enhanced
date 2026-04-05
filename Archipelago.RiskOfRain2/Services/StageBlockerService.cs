@@ -1,5 +1,6 @@
 ﻿using Archipelago.RiskOfRain2.Console;
 using Archipelago.RiskOfRain2.Extensions;
+using Archipelago.RiskOfRain2.Network;
 using EntityStates;
 using R2API.Utils;
 using RoR2;
@@ -130,6 +131,7 @@ class StageBlockerService : IService
         ArchipelagoConsoleCommand.OnArchipelagoShowUnlockedStagesCommandCalled += ArchipelagoConsoleCommand_OnArchipelagoShowUnlockedStagesCommandCalled;
         On.RoR2.SceneDef.AddDestinationsToWeightedSelection += SceneDef_AddDestinationsToWeightedSelection;
         On.RoR2.PortalSpawner.Start += PortalSpawner_Start;
+        AllChecksComplete.OnAllChecksComplete += MarkAllStagesComplete;
     }
 
     public void Unregister()
@@ -151,6 +153,7 @@ class StageBlockerService : IService
         On.RoR2.VoidStageMissionController.OnDisable -= VoidStageMissionController_OnDisable;
         On.RoR2.SceneDef.AddDestinationsToWeightedSelection -= SceneDef_AddDestinationsToWeightedSelection;
         On.RoR2.PortalSpawner.Start -= PortalSpawner_Start;
+        AllChecksComplete.OnAllChecksComplete -= MarkAllStagesComplete;
 
         // Reset values to prevent issues when restarting a run
         blockedStages = null;
@@ -300,6 +303,12 @@ class StageBlockerService : IService
         }
         return blockedStringStages.Contains(stageName);
     }
+    public void MarkAllStagesComplete()
+    {
+        foreach (var env in UnlockedEnvironments)
+            CompletedEnvironments.Add(env);
+    }
+
     private void ArchipelagoConsoleCommand_OnArchipelagoShowUnlockedStagesCommandCalled()
     {
         foreach (var scene in unblockedStringStages)
@@ -670,12 +679,104 @@ class StageBlockerService : IService
         return orig(self, scenedef);
     }
 
+    // Stages that should never appear as seer portal destinations
+    private static readonly HashSet<string> PortalExcludedStages = new()
+    {
+        "moon2", "voidstage", "voidraid", "meridian",
+        "solutionalhaunt", "solusweb", "arena", "bazaar",
+        "goldshores", "artifactworld", "limbo", "mysteryspace",
+    };
+
+    private void AddUnblockedStagesForTier(int targetTier, HashSet<string> exclude = null)
+    {
+        foreach (string unblocked in unblockedStringStages)
+        {
+            if (exclude != null && exclude.Contains(unblocked)) continue;
+            if (PortalExcludedStages.Contains(unblocked)) continue;
+            if (!StageLookup.TryGetValue(unblocked, out int tier) || tier != targetTier) continue;
+
+            SceneDef sd = SceneCatalog.FindSceneDef(unblocked);
+            if (sd != null)
+            {
+                availableStages.Add(sd);
+                Log.LogDebug($"Seer: added {unblocked} (tier {tier})");
+            }
+        }
+    }
+
     public void GetAvailableStages()
     {
         availableStages.Clear();
         manuallyPickingStage = true;
         Run.instance.PickNextStageSceneFromCurrentSceneDestinations();
         manuallyPickingStage = false;
+
+        // Remove stages that passed the blockedStringStages check in CanPickStage
+        // but whose tier key hasn't been received yet (the tier-based check in
+        // CheckBlocked only runs when nextStageScene != null, which it wasn't
+        // during CanPickStage). Without this, individually-unlocked environments
+        // from a locked tier prevent the fallback tier-skip from running.
+        if (!ProgressiveStages)
+        {
+            availableStages.RemoveAll(stage =>
+            {
+                if (StageLookup.TryGetValue(stage.cachedName, out int tier) && tier > 0)
+                {
+                    string stageKey = $"Stage {tier}";
+                    return StageUnlocks.ContainsKey(stageKey) && !StageUnlocks[stageKey];
+                }
+                return false;
+            });
+        }
+        else
+        {
+            availableStages.RemoveAll(stage =>
+            {
+                if (StageLookup.TryGetValue(stage.cachedName, out int tier) && tier > 0)
+                    return tier > AmountOfStages;
+                return false;
+            });
+        }
+
+        // Augment with tier-skip destinations: if the game's destination list
+        // is missing unblocked environments in the target tier, add them.
+        // This handles cases where the game's scene-to-scene routing doesn't
+        // include all environments our mod has unblocked (e.g. DLC stages,
+        // or tier-skipping past a locked tier).
+        if (availableStages.Count > 0 && unblockedStringStages != null)
+        {
+            // Determine the target tier from what the game picked
+            int targetTier = -1;
+            foreach (var stage in availableStages)
+            {
+                if (StageLookup.TryGetValue(stage.cachedName, out int t) && t > 0)
+                {
+                    targetTier = t;
+                    break;
+                }
+            }
+
+            if (targetTier > 0)
+            {
+                var existingNames = new HashSet<string>();
+                foreach (var s in availableStages) existingNames.Add(s.cachedName);
+                AddUnblockedStagesForTier(targetTier, existingNames);
+            }
+        }
+        else if (availableStages.Count == 0 && unblockedStringStages != null)
+        {
+            // No normal destinations — find the next reachable tier and show those
+            int currentTier = SceneCatalog.mostRecentSceneDef != null
+                ? (StageLookup.TryGetValue(SceneCatalog.mostRecentSceneDef.cachedName, out int ct) ? ct : -1)
+                : -1;
+
+            for (int tier = currentTier + 1; tier <= 4; tier++)
+            {
+                AddUnblockedStagesForTier(tier);
+                if (availableStages.Count > 0) break;
+            }
+        }
+
         if (availableStages.Count > 0 && ShowSeerPortals && seerPortal != null)
         {
             seerPortal.CreatePortal(availableStages);

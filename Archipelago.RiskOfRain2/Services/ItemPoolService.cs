@@ -2,6 +2,7 @@ using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace Archipelago.RiskOfRain2.Services;
 
@@ -259,17 +260,86 @@ public class ItemPoolService : IService
     public void Register()
     {
         On.RoR2.BasicPickupDropTable.GenerateWeightedSelection += FilterDropTable;
+        On.RoR2.Run.BuildDropTable += Run_BuildDropTable;
     }
 
     public void Unregister()
     {
         On.RoR2.BasicPickupDropTable.GenerateWeightedSelection -= FilterDropTable;
+        On.RoR2.Run.BuildDropTable -= Run_BuildDropTable;
         Instance = null;
         IsActive = false;
     }
 
-    #region Drop Table Hooks
+    /// <summary>
+    /// Removes non-allowed items from the run's available drop lists.
+    /// </summary>
+    public void FilterRunDropLists(Run run)
+    {
+        void FilterByItem(List<PickupIndex> list) =>
+            list.RemoveAll(idx => !IsItemAllowed(PickupCatalog.GetPickupDef(idx)?.itemIndex ?? ItemIndex.None));
 
+        void FilterByEquipment(List<PickupIndex> list) =>
+            list.RemoveAll(idx => !IsEquipmentAllowed(PickupCatalog.GetPickupDef(idx)?.equipmentIndex ?? EquipmentIndex.None));
+
+        FilterByItem(run.availableTier1DropList);
+        FilterByItem(run.availableTier2DropList);
+        FilterByItem(run.availableTier3DropList);
+        FilterByItem(run.availableBossDropList);
+        FilterByItem(run.availableLunarItemDropList);
+        run.availableLunarCombinedDropList.RemoveAll(idx =>
+        {
+            var def = PickupCatalog.GetPickupDef(idx);
+            if (def == null) return false;
+            if (def.itemIndex != ItemIndex.None) return !IsItemAllowed(def.itemIndex);
+            if (def.equipmentIndex != EquipmentIndex.None) return !IsEquipmentAllowed(def.equipmentIndex);
+            return false;
+        });
+        FilterByItem(run.availableVoidTier1DropList);
+        FilterByItem(run.availableVoidTier2DropList);
+        FilterByItem(run.availableVoidTier3DropList);
+        FilterByItem(run.availableVoidBossDropList);
+        FilterByEquipment(run.availableEquipmentDropList);
+
+        Log.LogDebug($"FilterRunDropLists: T1={run.availableTier1DropList.Count}, T2={run.availableTier2DropList.Count}, " +
+                     $"T3={run.availableTier3DropList.Count}, Boss={run.availableBossDropList.Count}, " +
+                     $"Equip={run.availableEquipmentDropList.Count}");
+    }
+
+    /// <summary>
+    /// Forces the run to rebuild its drop tables and refilter. Call after pool expansion.
+    /// </summary>
+    public void RebuildRunDropTables()
+    {
+        if (Run.instance != null)
+        {
+            Run.instance.BuildDropTable();
+            // Also regenerate all BasicPickupDropTable selectors so chests pick from updated lists
+            foreach (var dropTable in UnityEngine.Resources.FindObjectsOfTypeAll<BasicPickupDropTable>())
+            {
+                dropTable.RegenerateDropTable(Run.instance);
+            }
+        }
+    }
+
+    // creates the item drop tables game will use for run
+    private void Run_BuildDropTable(On.RoR2.Run.orig_BuildDropTable orig, Run self)
+    {
+        orig(self);
+        ApplyItemFilterToCurrentRun();
+        Log.LogDebug("Run_BuildDropTable: filtered drop lists applied.");
+    }
+    // method to recreate the Item Filter Drop Table to the current run
+    public void ApplyItemFilterToCurrentRun()
+    {
+        if (Run.instance == null) return;     
+        foreach (var dropTable in UnityEngine.Resources.FindObjectsOfTypeAll<BasicPickupDropTable>())
+        {
+            dropTable.RegenerateDropTable(Run.instance);
+        }
+        Log.LogDebug("ItemPoolService: applied filters to current run.");
+    }
+    #region Drop Table Hooks
     private void FilterDropTable(
         On.RoR2.BasicPickupDropTable.orig_GenerateWeightedSelection orig,
         BasicPickupDropTable self,

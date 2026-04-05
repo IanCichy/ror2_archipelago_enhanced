@@ -171,6 +171,16 @@ class DLC_AC(Toggle):
     display_name = "Enable DLC - AC"
 
 
+class StageCheckPriority(Choice):
+    """Controls whether stage selection is biased toward stages with remaining checks.
+    Off: No bias. Soft: Adds weight toward stages with checks. Hard: Stages with no checks are nearly excluded."""
+    display_name = "Stage Check Priority"
+    option_off = 0
+    option_soft = 1
+    option_hard = 2
+    default = 1
+
+
 class ItemPoolLimiting(Toggle):
     """Restrict which in-game items can drop to a limited starting pool.
     AP checks gradually expand the available pool by adding items of each rarity tier."""
@@ -529,6 +539,7 @@ ror2_option_groups = [
         AltarsPerEnvironment,
         RequireStages,
         ProgressiveStages,
+        StageCheckPriority,
         ShowSeerPortals,
     ]),
     OptionGroup("Item Pool Limiting", [
@@ -594,6 +605,7 @@ class ROR2Options(PerGameCommonOptions):
     dlc_ac: DLC_AC
     require_stages: RequireStages
     progressive_stages: ProgressiveStages
+    stage_check_priority: StageCheckPriority
     show_seer_portals: ShowSeerPortals
     death_link: DeathLink
     item_pickup_step: ItemPickupStep
