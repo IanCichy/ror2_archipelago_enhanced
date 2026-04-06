@@ -60,6 +60,8 @@ public partial class ArchipelagoClient
             }
 
             LocationCheckService = new LocationCheckService(session, LocationCheckService.BuildTemplateFromSlotData(cachedSlotData));
+            if (cachedSlotData.TryGetValue("stageCheckPriority", out var scpObj))
+                LocationCheckService.StageCheckPriority = Convert.ToInt32(scpObj);
             ShrineChanceService = new ShrineChanceService();
 
             ArchipelagoCheckCountdownController.ShrineStep = (int)cachedShrineUseStep;
@@ -315,6 +317,7 @@ public partial class ArchipelagoClient
         session.Socket.SendPacketAsync(packet);
 
         // Mark all checks complete in the UI so the scoreboard/objective panel reflects victory
+        StageBlockerService.MarkAllStagesComplete();
         ArchipelagoTotalChecksObjectiveController.CurrentChecks = ArchipelagoTotalChecksObjectiveController.TotalChecks;
         new SyncTotalCheckProgress(
             ArchipelagoTotalChecksObjectiveController.CurrentChecks,
@@ -417,9 +420,27 @@ public partial class ArchipelagoClient
         // so our CanPickStage hook wasn't in place. Re-validate the picked stage.
         if (StageBlockerService != null && obj.nextStageScene != null)
         {
-            if (StageBlockerService.CheckBlocked(obj.nextStageScene.cachedName))
+            bool needsRepick = false;
+            string sceneName = obj.nextStageScene.cachedName;
+
+            if (StageBlockerService.CheckBlocked(sceneName))
             {
-                Log.LogWarning($"Starting stage {obj.nextStageScene.cachedName} is blocked — re-picking.");
+                Log.LogWarning($"Starting stage {sceneName} is blocked — re-picking.");
+                needsRepick = true;
+            }
+            // Hard mode check priority: re-pick if the starting stage has 0 checks remaining
+            else if (LocationCheckService != null && LocationCheckService.StageCheckPriority == 2)
+            {
+                LocationCheckService.CatchUpSceneIfNeeded(sceneName);
+                if (LocationCheckService.GetRemainingChecks(sceneName) == 0)
+                {
+                    Log.LogWarning($"Starting stage {sceneName} has 0 checks remaining (hard mode) — re-picking.");
+                    needsRepick = true;
+                }
+            }
+
+            if (needsRepick)
+            {
                 obj.PickNextStageSceneFromCurrentSceneDestinations();
             }
         }

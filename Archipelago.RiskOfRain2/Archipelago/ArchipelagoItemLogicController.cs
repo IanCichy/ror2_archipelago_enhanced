@@ -428,6 +428,16 @@ public partial class ArchipelagoItemLogicController : IDisposable
             Log.LogDebug("Precollecting environment...");
             HandleReceivedEnvironmentQueueItem();
         }
+        while (!stageReceivedQueue.IsEmpty)
+        {
+            Log.LogDebug("Precollecting stage key...");
+            HandleReceivedStageQueueItem();
+        }
+        while (!poolReceivedQueue.IsEmpty)
+        {
+            Log.LogDebug("Precollecting pool expansion...");
+            HandleReceivedPoolQueueItem();
+        }
     }
 
 }
